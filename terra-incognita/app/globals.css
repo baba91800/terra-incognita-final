@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cyan: #00f5d4;
+  --cyan-dim: #00b4a0;
+  --green-neon: #39ff14;
+  --bg-base: #030810;
+  --bg-panel: rgba(7, 15, 26, 0.92);
+  --bg-border: rgba(0, 245, 212, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono), monospace;
+  background: var(--bg-base);
+  color: white;
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  background: #030810 !important;
+  font-family: var(--font-mono), monospace;
+}
+
+.leaflet-tile-pane {
+  filter: none;
+}
+
+.leaflet-control-zoom {
+  border: 1px solid var(--bg-border) !important;
+  background: var(--bg-panel) !important;
+  backdrop-filter: blur(12px);
+  border-radius: 6px !important;
+  overflow: hidden;
+  margin-top: 80px !important;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background: transparent !important;
+  color: var(--cyan) !important;
+  border: none !important;
+  font-size: 16px !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background: rgba(0, 245, 212, 0.1) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(0,0,0,0.4) !important;
+  color: rgba(255,255,255,0.2) !important;
+  font-size: 9px !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-tip-container {
+  display: none;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+
+/* HUD components */
+.hud-panel {
+  @apply bg-[rgba(7,15,26,0.88)] border border-[rgba(0,245,212,0.15)] rounded-lg p-3 backdrop-blur-md;
+}
+
+.hud-btn {
+  @apply border border-[rgba(0,245,212,0.2)] rounded text-cyan-400 
+         hover:bg-[rgba(0,245,212,0.1)] hover:border-[rgba(0,245,212,0.4)] 
+         transition-all duration-150 cursor-pointer font-mono;
+}
+
+.nav-btn {
+  @apply w-10 h-10 rounded border border-[rgba(0,245,212,0.2)] text-cyan-400
+         hover:bg-[rgba(0,245,212,0.15)] hover:border-[rgba(0,245,212,0.5)]
+         active:bg-[rgba(0,245,212,0.3)] active:scale-95
+         transition-all duration-100 cursor-pointer font-mono text-sm
+         flex items-center justify-center;
+}
+
+/* Notification toast */
+.notification-toast {
+  @apply bg-[rgba(7,15,26,0.95)] border border-[rgba(0,245,212,0.25)] 
+         rounded-lg px-4 py-3 backdrop-blur-lg
+         shadow-lg;
+  animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  min-width: 220px;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 245, 212, 0.2);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 245, 212, 0.4);
+}
+
+/* Player marker pulse */
+.player-marker {
+  animation: playerPulse 2s ease-in-out infinite;
+}
+
+@keyframes playerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
