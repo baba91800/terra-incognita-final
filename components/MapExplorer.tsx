@@ -37,8 +37,8 @@ export default function MapExplorer({
         attributionControl: false,
       })
 
-      // Dark OSM tile layer
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      // Light but styled tile layer — clear when revealed
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '©OSM ©CARTO',
         maxZoom: 19,
         subdomains: 'abcd',
