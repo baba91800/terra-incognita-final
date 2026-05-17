@@ -1,6 +1,6 @@
-export type TileKey = string // "x:y"
-export type TileState = 'hidden' | 'discovered'
+export type TileKey = string
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
+export type ObjType = 'tiles' | 'monuments' | 'countries' | 'score' | 'distance'
 
 export interface Monument {
   id: string
@@ -30,26 +30,18 @@ export interface Badge {
   icon: string
   earned: boolean
   earnedAt?: string
-  location?: string
 }
 
 export interface DailyObjective {
   id: string
-  date: string          // YYYY-MM-DD
+  date: string
   description: string
   icon: string
-  type: 'tiles' | 'monuments' | 'countries' | 'score' | 'distance'
+  type: ObjType
   target: number
   current: number
   completed: boolean
   reward: number
-}
-
-export interface PlayerLevel {
-  level: number
-  xp: number
-  xpForNext: number
-  title: string
 }
 
 export interface ExplorationPath {
@@ -71,7 +63,7 @@ export interface DiscoveryLog {
 
 export interface Notification {
   id: string
-  type: 'monument' | 'badge' | 'tile' | 'country' | 'level' | 'objective'
+  type: 'monument' | 'badge' | 'country' | 'level' | 'objective'
   title: string
   subtitle?: string
   points: number
