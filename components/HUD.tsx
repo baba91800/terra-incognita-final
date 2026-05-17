@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Badge, Monument, CountryDiscovery, DailyObjective, DiscoveryLog as DLType, ExplorationPath } from '@/types/game'
 import { RARITY_COLORS, RARITY_LABELS } from '@/lib/constants'
 import XPBar from './XPBar'
@@ -28,7 +28,6 @@ interface HUDProps {
   playerLat: number
   playerLng: number
   gpsActive: boolean
-  onMove: (dir: 'north' | 'south' | 'east' | 'west') => void
   onStartGPS: () => void
   onStopGPS: () => void
   onReset: () => void
@@ -41,14 +40,36 @@ export default function HUD({
   totalTiles, explorationPercent, totalDistance,
   badges, monuments, countries, objectives, discoveryLog, explorationPath,
   discoveredTiles, playerLat, playerLng,
-  gpsActive, onMove, onStartGPS, onStopGPS, onReset
+  gpsActive, onStartGPS, onStopGPS, onReset
 }: HUDProps) {
   const [panel, setPanel] = useState<Panel>('none')
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null)
+  const [showInstall, setShowInstall] = useState(false)
+
   const earnedBadges = badges.filter(b => b.earned)
   const discoveredMonuments = monuments.filter(m => m.discovered)
   const todayCompleted = objectives.filter(o => o.completed).length
 
   const togglePanel = (p: Panel) => setPanel(prev => prev === p ? 'none' : p)
+
+  // PWA install prompt
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault()
+      setInstallPrompt(e)
+      setShowInstall(true)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (!installPrompt) return
+    const prompt = installPrompt as BeforeInstallPromptEvent
+    prompt.prompt()
+    const result = await prompt.userChoice
+    if (result.outcome === 'accepted') setShowInstall(false)
+  }
 
   return (
     <>
@@ -79,22 +100,35 @@ export default function HUD({
             <XPBar level={level} levelTitle={levelTitle} xpIntoLevel={xpIntoLevel} xpForNext={xpForNext} />
           </div>
 
-          {/* Center: Title */}
+          {/* Center: Logo + Title */}
           <div className="flex-1 flex justify-center pt-1 pointer-events-none">
-            <div className="text-center">
-              <div className="text-[9px] tracking-[0.4em] text-white/15 uppercase">Project</div>
-              <div className="text-base font-bold tracking-[0.15em] text-white/70 uppercase font-mono">Terra Incognita</div>
+            <div className="text-center flex flex-col items-center">
+              <img src="/logo.png" alt="Terra Incognita" className="w-12 h-12 rounded-full border border-cyan-400/20 mb-1" />
+              <div className="text-[9px] tracking-[0.15em] text-white/40 uppercase font-mono">Terra Incognita</div>
             </div>
           </div>
 
           {/* Right: buttons */}
           <div className="flex flex-col gap-1.5 items-end pointer-events-auto">
+            {/* GPS button */}
             <button
               onClick={gpsActive ? onStopGPS : onStartGPS}
               className={`hud-btn text-xs px-3 py-1.5 ${gpsActive ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'text-cyan-400'}`}
             >
-              {gpsActive ? '📡 GPS ON' : '📍 GPS'}
+              {gpsActive ? '📡 GPS ON' : '📍 Activer GPS'}
             </button>
+
+            {/* Install PWA */}
+            {showInstall && (
+              <button
+                onClick={handleInstall}
+                className="hud-btn text-xs px-3 py-1.5 bg-cyan-400/20 border-cyan-400/50 text-cyan-300"
+              >
+                📲 Installer l'app
+              </button>
+            )}
+
+            {/* Panel buttons */}
             <div className="flex gap-1 flex-wrap justify-end max-w-[160px]">
               {[
                 { id: 'badges' as Panel,     icon: '🏅', count: earnedBadges.length },
@@ -113,18 +147,18 @@ export default function HUD({
                 </button>
               ))}
             </div>
+
+            <button onClick={onReset} className="text-[9px] text-red-400/30 hover:text-red-400/60 tracking-widest uppercase transition-colors">
+              Reset
+            </button>
           </div>
         </div>
       </div>
 
       {/* ── LEFT PANELS ── */}
-
-      {/* Badges */}
       {panel === 'badges' && (
         <div className="absolute top-44 left-3 z-[600] w-64 hud-panel pointer-events-auto max-h-[55vh] overflow-y-auto">
-          <div className="text-[10px] tracking-[0.2em] text-cyan-400/60 uppercase mb-3">
-            Badges — {earnedBadges.length}/{badges.length}
-          </div>
+          <div className="text-[10px] tracking-[0.2em] text-cyan-400/60 uppercase mb-3">Badges — {earnedBadges.length}/{badges.length}</div>
           <div className="space-y-2">
             {badges.map(b => (
               <div key={b.id} className={`flex items-center gap-3 p-2 rounded border transition-all ${b.earned ? 'border-cyan-400/30 bg-cyan-400/5' : 'border-white/5 opacity-40'}`}>
@@ -141,14 +175,12 @@ export default function HUD({
         </div>
       )}
 
-      {/* Daily Objectives */}
       {panel === 'objectives' && (
         <div className="absolute top-44 left-3 z-[600] pointer-events-auto">
           <ObjectivesPanel objectives={objectives} />
         </div>
       )}
 
-      {/* Discovery Log */}
       {panel === 'log' && (
         <div className="absolute top-44 left-3 z-[600] pointer-events-auto">
           <DiscoveryLog log={discoveryLog} totalDistance={totalDistance} />
@@ -156,21 +188,15 @@ export default function HUD({
       )}
 
       {/* ── RIGHT PANELS ── */}
-
-      {/* Monuments */}
       {panel === 'monuments' && (
         <div className="absolute top-44 right-3 z-[600] w-72 hud-panel pointer-events-auto max-h-[55vh] overflow-y-auto">
-          <div className="text-[10px] tracking-[0.2em] text-cyan-400/60 uppercase mb-3">
-            Monuments — {discoveredMonuments.length}/{monuments.length}
-          </div>
+          <div className="text-[10px] tracking-[0.2em] text-cyan-400/60 uppercase mb-3">Monuments — {discoveredMonuments.length}/{monuments.length}</div>
           <div className="space-y-2">
             {monuments.map(m => (
               <div key={m.id} className={`flex items-center gap-3 p-2 rounded border ${m.discovered ? 'border-white/20 bg-white/5' : 'border-white/5'}`}>
                 <div className="text-base">{m.discovered ? (m.type === 'museum' ? '🏛️' : m.type === 'cathedral' ? '⛪' : '🗺️') : '❓'}</div>
                 <div className="flex-1 min-w-0">
-                  <div className={`text-xs font-bold ${m.discovered ? 'text-white' : 'text-white/25'}`}>
-                    {m.discovered ? m.name : '??? Unknown Site'}
-                  </div>
+                  <div className={`text-xs font-bold ${m.discovered ? 'text-white' : 'text-white/25'}`}>{m.discovered ? m.name : '??? Unknown Site'}</div>
                   <div className="text-[9px] mt-0.5" style={{ color: RARITY_COLORS[m.rarity] }}>{RARITY_LABELS[m.rarity]}</div>
                 </div>
                 {m.discovered && <span className="text-green-400 text-xs">✓</span>}
@@ -180,24 +206,17 @@ export default function HUD({
         </div>
       )}
 
-      {/* Countries */}
       {panel === 'countries' && (
         <div className="absolute top-44 right-3 z-[600] w-72 hud-panel pointer-events-auto max-h-[55vh] overflow-y-auto">
-          <div className="text-[10px] tracking-[0.2em] text-cyan-400/60 uppercase mb-3">
-            Countries — {countries.length} discovered
-          </div>
-          {countries.length === 0 && (
-            <div className="text-white/25 text-xs text-center py-4">Move to a new country to unlock a bonus</div>
-          )}
+          <div className="text-[10px] tracking-[0.2em] text-cyan-400/60 uppercase mb-3">Countries — {countries.length} discovered</div>
+          {countries.length === 0 && <div className="text-white/25 text-xs text-center py-4">Visite un nouveau pays pour débloquer un bonus</div>}
           <div className="space-y-2">
             {[...countries].sort((a, b) => b.points - a.points).map(c => (
               <div key={c.code} className="flex items-center gap-3 p-2 rounded border border-white/10 bg-white/5">
                 <div className="text-xl">{c.flag}</div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-white">{c.name}</div>
-                  <div className="text-[9px] mt-0.5" style={{ color: RARITY_COLORS[c.rarity] }}>
-                    {RARITY_LABELS[c.rarity]} · +{c.points} XP
-                  </div>
+                  <div className="text-[9px] mt-0.5" style={{ color: RARITY_COLORS[c.rarity] }}>{RARITY_LABELS[c.rarity]} · +{c.points} XP</div>
                 </div>
               </div>
             ))}
@@ -205,21 +224,20 @@ export default function HUD({
         </div>
       )}
 
-      {/* Stats */}
       {panel === 'stats' && (
         <div className="absolute top-44 right-3 z-[600] w-72 hud-panel pointer-events-auto">
           <div className="text-[10px] tracking-[0.2em] text-cyan-400/60 uppercase mb-4">Statistics</div>
           <div className="space-y-3">
             {[
-              { label: 'Total XP',          value: xp.toLocaleString(),                   icon: '⚡' },
-              { label: 'Level',             value: `${level} — ${levelTitle}`,             icon: '🎖️' },
-              { label: 'Tiles Discovered',  value: totalTiles.toLocaleString(),             icon: '🗺️' },
-              { label: 'Distance Walked',   value: `${(totalDistance / 1000).toFixed(2)} km`, icon: '👟' },
-              { label: 'Monuments Found',   value: `${discoveredMonuments.length} / ${monuments.length}`, icon: '🏛️' },
-              { label: 'Countries Visited', value: countries.length.toString(),             icon: '🌍' },
-              { label: 'Badges Earned',     value: `${earnedBadges.length} / ${badges.length}`, icon: '🏅' },
-              { label: 'Zone Explored',     value: `${explorationPercent}%`,               icon: '📍' },
-              { label: 'Objectives Done',   value: objectives.filter(o => o.completed).length.toString(), icon: '🎯' },
+              { label: 'Total XP',           value: xp.toLocaleString(),                              icon: '⚡' },
+              { label: 'Level',              value: `${level} — ${levelTitle}`,                       icon: '🎖️' },
+              { label: 'Tiles Discovered',   value: totalTiles.toLocaleString(),                      icon: '🗺️' },
+              { label: 'Distance Walked',    value: `${(totalDistance / 1000).toFixed(2)} km`,        icon: '👟' },
+              { label: 'Monuments Found',    value: `${discoveredMonuments.length}/${monuments.length}`, icon: '🏛️' },
+              { label: 'Countries Visited',  value: countries.length.toString(),                      icon: '🌍' },
+              { label: 'Badges Earned',      value: `${earnedBadges.length}/${badges.length}`,        icon: '🏅' },
+              { label: 'Zone Explored',      value: `${explorationPercent}%`,                         icon: '📍' },
+              { label: 'Objectives Done',    value: objectives.filter(o => o.completed).length.toString(), icon: '🎯' },
             ].map(row => (
               <div key={row.label} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -233,7 +251,7 @@ export default function HUD({
         </div>
       )}
 
-      {/* ── MINI MAP (bottom-left) ── */}
+      {/* ── MINI MAP ── */}
       <div className="absolute bottom-4 left-3 z-[600] pointer-events-none">
         <MiniMap
           discoveredTiles={discoveredTiles}
@@ -243,28 +261,39 @@ export default function HUD({
         />
       </div>
 
-      {/* ── CONTROLS (bottom-center) ── */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[600] pointer-events-auto">
-        <div className="hud-panel">
-          <div className="text-[9px] tracking-[0.2em] text-white/20 uppercase text-center mb-2">Navigate · Arrow keys</div>
-          <div className="flex flex-col items-center gap-1.5">
-            <button onClick={() => onMove('north')} className="nav-btn">▲</button>
-            <div className="flex gap-1.5">
-              <button onClick={() => onMove('west')} className="nav-btn">◀</button>
-              <div className="w-10 h-10 rounded border border-white/10 flex items-center justify-center">
-                <span className="text-cyan-400/40 text-xs">📍</span>
-              </div>
-              <button onClick={() => onMove('east')} className="nav-btn">▶</button>
+      {/* ── GPS STATUS (bottom center) ── */}
+      {!gpsActive && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[600] pointer-events-auto">
+          <button
+            onClick={onStartGPS}
+            className="hud-panel flex items-center gap-3 px-5 py-3 cursor-pointer hover:border-cyan-400/40 transition-all"
+          >
+            <span className="text-2xl">📍</span>
+            <div>
+              <div className="text-xs font-bold text-cyan-400">Activer le GPS</div>
+              <div className="text-[10px] text-white/30">Pour commencer à explorer</div>
             </div>
-            <button onClick={() => onMove('south')} className="nav-btn">▼</button>
-          </div>
-          <div className="mt-2 flex justify-center">
-            <button onClick={onReset} className="text-[9px] text-red-400/30 hover:text-red-400/60 tracking-widest uppercase transition-colors">
-              Reset Progress
-            </button>
+          </button>
+        </div>
+      )}
+
+      {gpsActive && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[600] pointer-events-auto">
+          <div className="hud-panel flex items-center gap-3 px-4 py-2">
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-xs text-green-400 font-mono">GPS actif — marche pour explorer</span>
+            <button onClick={onStopGPS} className="text-[10px] text-red-400/50 hover:text-red-400 ml-2">Stop</button>
           </div>
         </div>
-      </div>
+      )}
     </>
   )
+}
+
+// TypeScript type for PWA install prompt
+declare global {
+  interface BeforeInstallPromptEvent extends Event {
+    prompt(): Promise<void>
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+  }
 }

@@ -12,9 +12,10 @@ const MapExplorer = dynamic(() => import('@/components/MapExplorer'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-[#030810]">
-      <div className="text-center">
+      <div className="flex flex-col items-center gap-4">
+        <img src="/logo.png" alt="Terra Incognita" className="w-24 h-24 rounded-full border-2 border-cyan-400/30 animate-pulse" />
         <div className="text-cyan-400 font-mono text-sm tracking-widest animate-pulse">INITIALIZING MAP...</div>
-        <div className="text-white/20 text-xs mt-2 tracking-wider">TERRA INCOGNITA</div>
+        <div className="text-white/20 text-xs tracking-wider">TERRA INCOGNITA</div>
       </div>
     </div>
   ),
@@ -23,9 +24,8 @@ const MapExplorer = dynamic(() => import('@/components/MapExplorer'), {
 export default function Home() {
   const engine = useGameEngine()
   const mapRef = useRef<L.Map | null>(null)
-  const [mapReady, setMapReady] = useState(false)
 
-  const handleMapReady = (map: L.Map) => { mapRef.current = map; setMapReady(true) }
+  const handleMapReady = (map: L.Map) => { mapRef.current = map }
 
   const handleReset = () => {
     if (!confirm('Reset all exploration progress? This cannot be undone.')) return
@@ -35,7 +35,8 @@ export default function Home() {
 
   if (!engine.initialized) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-[#030810]">
+      <div className="w-screen h-screen flex flex-col items-center justify-center bg-[#030810] gap-4">
+        <img src="/logo.png" alt="Terra Incognita" className="w-24 h-24 rounded-full border-2 border-cyan-400/30 animate-pulse" />
         <div className="text-cyan-400 font-mono text-sm tracking-widest animate-pulse">LOADING...</div>
       </div>
     )
@@ -70,7 +71,6 @@ export default function Home() {
         playerLat={engine.playerLat}
         playerLng={engine.playerLng}
         gpsActive={engine.gpsActive}
-        onMove={engine.moveDirect}
         onStartGPS={engine.startGPS}
         onStopGPS={engine.stopGPS}
         onReset={handleReset}
@@ -78,7 +78,7 @@ export default function Home() {
       <NotificationToast notifications={engine.notifications} />
       <div
         className="absolute inset-0 pointer-events-none z-[550]"
-        style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px)' }}
+        style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px)' }}
       />
     </main>
   )

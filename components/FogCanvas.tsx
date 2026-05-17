@@ -30,18 +30,19 @@ export default function FogCanvas({ mapRef, discoveredTiles, playerLat, playerLn
     const ctx = canvas.getContext('2d', { alpha: true })
     if (!ctx) return
 
-    // Step 1: clear to fully transparent
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    // Use offscreen canvas for clean compositing
+    const offscreen = document.createElement('canvas')
+    offscreen.width = canvas.width
+    offscreen.height = canvas.height
+    const octx = offscreen.getContext('2d', { alpha: true })
+    if (!octx) return
 
-    // Step 2: fill entire canvas with dense fog
-    ctx.globalCompositeOperation = 'source-over'
-    ctx.fillStyle = 'rgba(2, 5, 15, 0.97)'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // Step 1: fill offscreen with solid black fog
+    octx.fillStyle = 'rgb(2, 5, 15)'
+    octx.fillRect(0, 0, offscreen.width, offscreen.height)
 
-    // Step 3: destination-out = source alpha erases destination
-    // rgba center alpha=1 → fog alpha becomes 0 → map 100% visible
-    // rgba edge alpha=0   → fog untouched → stays black
-    ctx.globalCompositeOperation = 'destination-out'
+    // Step 2: cut holes using destination-out on offscreen
+    octx.globalCompositeOperation = 'destination-out'
 
     const bounds = map.getBounds()
     const zoom = map.getZoom()
@@ -56,35 +57,37 @@ export default function FogCanvas({ mapRef, discoveredTiles, playerLat, playerLn
       const tileLng = (tx + 0.5) * TILE_SIZE_METERS / METERS_PER_LNG
 
       if (
-        tileLat < bounds.getSouth() - 0.008 ||
-        tileLat > bounds.getNorth() + 0.008 ||
-        tileLng < bounds.getWest() - 0.008 ||
-        tileLng > bounds.getEast() + 0.008
+        tileLat < bounds.getSouth() - 0.01 ||
+        tileLat > bounds.getNorth() + 0.01 ||
+        tileLng < bounds.getWest() - 0.01 ||
+        tileLng > bounds.getEast() + 0.01
       ) return
 
       try {
         const point = map.latLngToContainerPoint([tileLat, tileLng])
         const metersPerPixel = (156543.03392 * Math.cos((tileLat * Math.PI) / 180)) / Math.pow(2, zoom)
-        const tilePixels = Math.max(6, TILE_SIZE_METERS / metersPerPixel)
-        const radius = tilePixels * 1.6
+        const tilePixels = Math.max(8, TILE_SIZE_METERS / metersPerPixel)
+        const radius = tilePixels * 2.0
 
-        const gradient = ctx.createRadialGradient(
-          point.x, point.y, 0,
+        // Pure solid erase in center, soft edge only at border
+        const gradient = octx.createRadialGradient(
+          point.x, point.y, tilePixels * 0.5,
           point.x, point.y, radius
         )
-        gradient.addColorStop(0,    'rgba(0, 0, 0, 1)')
-        gradient.addColorStop(0.75, 'rgba(0, 0, 0, 1)')
-        gradient.addColorStop(0.92, 'rgba(0, 0, 0, 0.5)')
-        gradient.addColorStop(1,    'rgba(0, 0, 0, 0)')
+        gradient.addColorStop(0,   'rgba(0,0,0,1)')
+        gradient.addColorStop(0.8, 'rgba(0,0,0,1)')
+        gradient.addColorStop(1,   'rgba(0,0,0,0)')
 
-        ctx.fillStyle = gradient
-        ctx.beginPath()
-        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2)
-        ctx.fill()
+        octx.fillStyle = gradient
+        octx.beginPath()
+        octx.arc(point.x, point.y, radius, 0, Math.PI * 2)
+        octx.fill()
       } catch {}
     })
 
-    ctx.globalCompositeOperation = 'source-over'
+    // Step 3: draw offscreen onto main canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.drawImage(offscreen, 0, 0)
 
   }, [discoveredTiles, playerLat, mapRef])
 

@@ -408,21 +408,6 @@ export function useGameEngine() {
     setGpsActive(false)
   }, [])
 
-  // ── Keyboard ─────────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault()
-      switch (e.key) {
-        case 'ArrowUp':    moveDirect('north'); break
-        case 'ArrowDown':  moveDirect('south'); break
-        case 'ArrowLeft':  moveDirect('west');  break
-        case 'ArrowRight': moveDirect('east');  break
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [moveDirect])
-
   // ── Initial reveal ────────────────────────────────────────
   useEffect(() => {
     if (initialized && monuments.length > 0) {
