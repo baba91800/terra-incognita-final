@@ -23,7 +23,7 @@ export default function MapExplorer({
   const monumentMarkersRef = useRef<Map<string, L.CircleMarker>>(new Map())
   const [mapReady, setMapReady] = useState(false)
 
-  // Init Leaflet map
+  // Init map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
@@ -37,17 +37,14 @@ export default function MapExplorer({
         attributionControl: false,
       })
 
-      // Light but styled tile layer — clear when revealed
+      // Voyager — clear, colorful, readable
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '©OSM ©CARTO',
         maxZoom: 19,
         subdomains: 'abcd',
       }).addTo(map)
 
-      // Zoom control (top-right, below HUD)
       L.control.zoom({ position: 'topright' }).addTo(map)
-
-      // Attribution small
       L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
 
       mapRef.current = map
@@ -56,22 +53,14 @@ export default function MapExplorer({
     }
 
     initMap()
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
-    }
+    return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
   }, []) // eslint-disable-line
 
-  // Update player marker
+  // Player marker
   useEffect(() => {
-    if (!mapRef.current || !mapReady) return
-
+    if (!mapReady) return
     import('leaflet').then(({ default: L }) => {
       const map = mapRef.current!
-
       if (playerMarkerRef.current) {
         playerMarkerRef.current.setLatLng([playerLat, playerLng])
       } else {
@@ -81,52 +70,46 @@ export default function MapExplorer({
           fillOpacity: 1,
           color: '#ffffff',
           weight: 2,
-          className: 'player-marker',
         }).addTo(map)
       }
-
-      // Pan to player smoothly
       map.panTo([playerLat, playerLng], { animate: true, duration: 0.3 })
     })
   }, [playerLat, playerLng, mapReady])
 
-  // Render monument markers
+  // Monument markers
   useEffect(() => {
     if (!mapReady) return
-
     import('leaflet').then(({ default: L }) => {
       const map = mapRef.current!
 
       monuments.forEach(m => {
-        const existing = monumentMarkersRef.current.get(m.id)
         const color = RARITY_COLORS[m.rarity]
+        const icon = (m as Monument & { icon?: string }).icon || '📍'
+        const existing = monumentMarkersRef.current.get(m.id)
 
         if (existing) {
-          // Update style if just discovered
           existing.setStyle({
-            fillColor: m.discovered ? color : '#1a1a2e',
-            fillOpacity: m.discovered ? 0.9 : 0.6,
-            color: m.discovered ? color : '#333355',
-            weight: m.discovered ? 2 : 1,
+            fillColor: m.discovered ? color : 'transparent',
+            fillOpacity: m.discovered ? 0.9 : 0,
+            color: m.discovered ? color : 'transparent',
+            weight: m.discovered ? 2 : 0,
           })
         } else {
           const marker = L.circleMarker([m.lat, m.lng], {
             radius: m.rarity === 'legendary' ? 10 : m.rarity === 'epic' ? 8 : 6,
-            fillColor: m.discovered ? color : '#1a1a2e',
-            fillOpacity: m.discovered ? 0.9 : 0.6,
-            color: m.discovered ? color : '#333355',
-            weight: m.discovered ? 2 : 1,
+            fillColor: m.discovered ? color : 'transparent',
+            fillOpacity: m.discovered ? 0.9 : 0,
+            color: m.discovered ? color : 'transparent',
+            weight: m.discovered ? 2 : 0,
           }).addTo(map)
 
+          // Popup with discovery info
           marker.bindPopup(`
-            <div style="background:#070f1a;border:1px solid ${color}40;color:#fff;padding:8px 12px;border-radius:6px;min-width:120px;">
-              <div style="font-size:9px;letter-spacing:0.2em;color:${color};text-transform:uppercase;margin-bottom:4px;">
-                ${m.discovered ? m.rarity : '???'}
-              </div>
-              <div style="font-size:13px;font-weight:bold;">
-                ${m.discovered ? m.name : '??? Unknown Site'}
-              </div>
-              ${m.discovered && m.discoveredAt ? `<div style="font-size:9px;color:#ffffff40;margin-top:4px;">Discovered ${new Date(m.discoveredAt).toLocaleDateString()}</div>` : ''}
+            <div style="background:#070f1a;border:1px solid ${color}60;color:#fff;padding:10px 14px;border-radius:8px;min-width:140px;font-family:monospace;">
+              <div style="font-size:20px;text-align:center;margin-bottom:6px;">${icon}</div>
+              <div style="font-size:9px;letter-spacing:0.2em;color:${color};text-transform:uppercase;margin-bottom:4px;">${m.rarity}</div>
+              <div style="font-size:13px;font-weight:bold;">${m.discovered ? m.name : '??? Unknown'}</div>
+              ${m.discovered && m.discoveredAt ? `<div style="font-size:9px;color:#ffffff30;margin-top:4px;">Discovered ${new Date(m.discoveredAt).toLocaleDateString()}</div>` : ''}
             </div>
           `, { className: 'custom-popup' })
 
@@ -145,6 +128,7 @@ export default function MapExplorer({
           discoveredTiles={discoveredTiles}
           playerLat={playerLat}
           playerLng={playerLng}
+          monuments={monuments}
         />
       )}
     </div>

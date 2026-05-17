@@ -9,6 +9,7 @@ export interface Monument {
   lng: number
   rarity: Rarity
   type: string
+  icon?: string
   discovered: boolean
   discoveredAt?: string
 }

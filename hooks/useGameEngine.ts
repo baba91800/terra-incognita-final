@@ -15,6 +15,7 @@ import {
   todayString,
 } from '@/lib/constants'
 import { distanceMeters, tilesInRadius, movePosition } from '@/lib/geo'
+import { fetchNearbyMonuments } from '@/lib/overpass'
 import {
   loadTiles, saveTiles,
   loadScore, saveScore,
@@ -372,7 +373,8 @@ export function useGameEngine() {
     const updated = revealAt(newLat, newLng, monumentsRef.current)
     monumentsRef.current = updated
     detectCountry(newLat, newLng)
-  }, [revealAt, detectCountry, trackPath, updateObjectives])
+    fetchMonuments(newLat, newLng)
+  }, [revealAt, detectCountry, trackPath, updateObjectives, fetchMonuments])
 
   // ── GPS ──────────────────────────────────────────────────
   const startGPS = useCallback(() => {
@@ -397,15 +399,35 @@ export function useGameEngine() {
         const updated = revealAt(latitude, longitude, monumentsRef.current)
         monumentsRef.current = updated
         detectCountry(latitude, longitude)
+        fetchMonuments(latitude, longitude)
       },
       err => { console.warn('GPS:', err); setGpsActive(false) },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
     )
-  }, [revealAt, detectCountry, trackPath, updateObjectives])
+  }, [revealAt, detectCountry, trackPath, updateObjectives, fetchMonuments])
 
   const stopGPS = useCallback(() => {
     if (gpsWatchId.current !== null) { navigator.geolocation.clearWatch(gpsWatchId.current); gpsWatchId.current = null }
     setGpsActive(false)
+  }, [])
+
+  // ── Fetch nearby monuments from OSM ──────────────────────
+  const lastFetchPos = useRef('')
+
+  const fetchMonuments = useCallback(async (lat: number, lng: number) => {
+    const posKey = `${lat.toFixed(2)},${lng.toFixed(2)}`
+    if (posKey === lastFetchPos.current) return
+    lastFetchPos.current = posKey
+
+    const existingIds = new Set(monumentsRef.current.map(m => m.id))
+    const newMonuments = await fetchNearbyMonuments(lat, lng, existingIds)
+
+    if (newMonuments.length > 0) {
+      const merged = [...monumentsRef.current, ...newMonuments]
+      monumentsRef.current = merged
+      setMonuments([...merged])
+      saveMonuments(merged)
+    }
   }, [])
 
   // ── Initial reveal ────────────────────────────────────────
@@ -413,6 +435,7 @@ export function useGameEngine() {
     if (initialized && monuments.length > 0) {
       revealAt(playerLatRef.current, playerLngRef.current, monumentsRef.current)
       detectCountry(playerLatRef.current, playerLngRef.current)
+      fetchMonuments(playerLatRef.current, playerLngRef.current)
     }
   }, [initialized]) // eslint-disable-line
 
