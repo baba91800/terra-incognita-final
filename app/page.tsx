@@ -1,8 +1,6 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import type L from 'leaflet'
 import nextDynamic from 'next/dynamic'
 import { useGameEngine } from '@/hooks/useGameEngine'
