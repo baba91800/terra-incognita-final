@@ -4,13 +4,13 @@ export const dynamic = 'force-dynamic'
 
 import { useRef, useState } from 'react'
 import type L from 'leaflet'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import HUD from '@/components/HUD'
 import NotificationToast from '@/components/NotificationToast'
 import { clearAll } from '@/lib/storage'
 
-const MapExplorer = dynamic(() => import('@/components/MapExplorer'), {
+const MapExplorer = nextDynamic(() => import('@/components/MapExplorer'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-[#030810]">
