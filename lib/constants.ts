@@ -81,8 +81,24 @@ export const OBJECTIVE_TEMPLATES = [
   { id: 'obj_dist_1000',   type: 'distance' as const,  target: 1000, reward: 500,  icon: '👟', description: 'Walk 1 km' },
 ]
 
-export function generateDailyObjectives(date: string): import('@/types/game').DailyObjective[] {
-  // Deterministic 3 objectives from date seed
+export type DailyObjectiveType = 'tiles' | 'monuments' | 'countries' | 'score' | 'distance'
+
+export interface DailyObjectiveTemplate {
+  id: string
+  type: DailyObjectiveType
+  target: number
+  reward: number
+  icon: string
+  description: string
+}
+
+export interface GeneratedObjective extends DailyObjectiveTemplate {
+  date: string
+  current: number
+  completed: boolean
+}
+
+export function generateDailyObjectives(date: string): GeneratedObjective[] {
   const seed = date.split('-').reduce((a, b) => a + parseInt(b), 0)
   const pick = (offset: number) => OBJECTIVE_TEMPLATES[(seed + offset) % OBJECTIVE_TEMPLATES.length]
   const picked = [pick(0), pick(3), pick(7)]
