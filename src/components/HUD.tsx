@@ -72,7 +72,7 @@ export default function HUD(p:Props) {
           {/* Center logo */}
           <div style={{flex:1,display:'flex',justifyContent:'center',paddingTop:4,pointerEvents:'none'}}>
             <div style={{textAlign:'center'}}>
-              <img src="/logo.png" alt="Terra" style={{width:44,height:44,borderRadius:'50%',border:'1px solid rgba(0,245,212,0.2)',marginBottom:4}} />
+              <img src="/logo.png" alt="Terra" style={{width:44,height:44,borderRadius:'50%',border:'1px solid rgba(0,245,212,0.2)',marginBottom:4,objectFit:'cover',flexShrink:0}} />
               <div style={{fontSize:9,letterSpacing:'0.15em',color:'rgba(255,255,255,0.3)',textTransform:'uppercase',fontFamily:'monospace'}}>Terra Incognita</div>
             </div>
           </div>

@@ -92,7 +92,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '©OSM ©CARTO', maxZoom: 19, subdomains: 'abcd',
       }).addTo(map)
-      L.control.zoom({ position: 'topright' }).addTo(map)
+      L.control.zoom({ position: 'bottomright' }).addTo(map)
       L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
       playerMarker.current = L.circleMarker([playerLat, playerLng], {
         radius: 8, fillColor: '#00f5d4', fillOpacity: 1, color: '#fff', weight: 2

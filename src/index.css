@@ -19,7 +19,7 @@ body {
   background: rgba(7,15,26,0.9) !important;
   border-radius: 6px !important;
   overflow: hidden;
-  margin-top: 80px !important;
+  margin-bottom: 80px !important;
 }
 .leaflet-control-zoom-in,
 .leaflet-control-zoom-out {
