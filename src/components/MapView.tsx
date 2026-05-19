@@ -1,6 +1,7 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import type { Monument } from '../types/game'
 import { RARITY_COLORS, TILE_SIZE } from '../lib/constants'
+import DiscoveryEffect, { type Effect } from './DiscoveryEffect'
 
 interface Props {
   playerLat: number; playerLng: number
@@ -17,8 +18,11 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
   const fogCanvas = useRef<HTMLCanvasElement>(null)
   const markersRef = useRef<Map<string, any>>(new Map())
   const animRef = useRef<number>(0)
+  const timeRef = useRef<number>(0)
+  const [effects, setEffects] = useState<Effect[]>([])
+  const prevMonuments = useRef<Set<string>>(new Set())
 
-  const drawFog = useCallback(() => {
+  const drawFog = useCallback((time: number = 0) => {
     const map = mapRef.current
     const canvas = fogCanvas.current
     if (!map || !canvas) return
@@ -31,29 +35,41 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
     off.width = canvas.width; off.height = canvas.height
     const octx = off.getContext('2d', { alpha: true })!
 
-    // Fog
+    // Fog base
     octx.fillStyle = 'rgb(2,5,15)'
     octx.fillRect(0, 0, off.width, off.height)
 
-    // Halos for undiscovered monuments
+    // Pulsing halos for undiscovered monuments
     octx.globalCompositeOperation = 'source-over'
+    const pulse = Math.sin(time * 0.002) * 0.5 + 0.5 // 0 to 1
+
     monuments.forEach(m => {
       if (m.discovered) return
       try {
         const pt = map.latLngToContainerPoint([m.lat, m.lng])
         const color = RARITY_COLORS[m.rarity]
-        const outerR = m.rarity === 'legendary' ? 80 : m.rarity === 'epic' ? 60 : m.rarity === 'rare' ? 45 : 30
+
+        // Pulsing outer glow
+        const baseR = m.rarity === 'legendary' ? 85 : m.rarity === 'epic' ? 65 : m.rarity === 'rare' ? 48 : 32
+        const outerR = baseR + pulse * (m.rarity === 'legendary' ? 20 : m.rarity === 'epic' ? 15 : 10)
+        const baseAlpha = m.rarity === 'legendary' ? 0.4 : m.rarity === 'epic' ? 0.35 : m.rarity === 'rare' ? 0.3 : 0.25
+        const alpha = baseAlpha + pulse * 0.15
+
         const og = octx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, outerR)
-        og.addColorStop(0, color + '55'); og.addColorStop(0.4, color + '33'); og.addColorStop(1, color + '00')
+        og.addColorStop(0, color + Math.round(alpha * 255).toString(16).padStart(2,'0'))
+        og.addColorStop(0.5, color + Math.round(alpha * 0.5 * 255).toString(16).padStart(2,'0'))
+        og.addColorStop(1, color + '00')
         octx.fillStyle = og; octx.beginPath(); octx.arc(pt.x, pt.y, outerR, 0, Math.PI * 2); octx.fill()
-        const innerR = m.rarity === 'legendary' ? 12 : m.rarity === 'epic' ? 9 : m.rarity === 'rare' ? 7 : 5
+
+        // Bright pulsing core
+        const innerR = (m.rarity === 'legendary' ? 14 : m.rarity === 'epic' ? 10 : m.rarity === 'rare' ? 8 : 5) + pulse * 3
         const ig = octx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, innerR)
-        ig.addColorStop(0, color + 'ff'); ig.addColorStop(1, color + '00')
+        ig.addColorStop(0, color + 'ff'); ig.addColorStop(0.6, color + 'aa'); ig.addColorStop(1, color + '00')
         octx.fillStyle = ig; octx.beginPath(); octx.arc(pt.x, pt.y, innerR, 0, Math.PI * 2); octx.fill()
       } catch {}
     })
 
-    // Cut holes for discovered tiles
+    // Cut holes — discovered tiles
     octx.globalCompositeOperation = 'destination-out'
     const bounds = map.getBounds()
     const zoom = map.getZoom()
@@ -69,9 +85,11 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
         const pt = map.latLngToContainerPoint([tLat, tLng])
         const mpp = (156543.03392 * Math.cos(tLat * Math.PI / 180)) / Math.pow(2, zoom)
         const tp = Math.max(8, TILE_SIZE / mpp)
-        const r = tp * 2.0
-        const g = octx.createRadialGradient(pt.x, pt.y, tp * 0.5, pt.x, pt.y, r)
-        g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.8, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)')
+        const r = tp * 2.2
+        const g = octx.createRadialGradient(pt.x, pt.y, tp * 0.3, pt.x, pt.y, r)
+        g.addColorStop(0, 'rgba(0,0,0,1)')
+        g.addColorStop(0.82, 'rgba(0,0,0,1)')
+        g.addColorStop(1, 'rgba(0,0,0,0)')
         octx.fillStyle = g; octx.beginPath(); octx.arc(pt.x, pt.y, r, 0, Math.PI * 2); octx.fill()
       } catch {}
     })
@@ -80,12 +98,24 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
     ctx.drawImage(off, 0, 0)
   }, [tiles, playerLat, monuments])
 
+  // Animation loop for pulsing halos
+  useEffect(() => {
+    let running = true
+    const loop = (t: number) => {
+      if (!running) return
+      timeRef.current = t
+      drawFog(t)
+      animRef.current = requestAnimationFrame(loop)
+    }
+    animRef.current = requestAnimationFrame(loop)
+    return () => { running = false; cancelAnimationFrame(animRef.current) }
+  }, [drawFog])
+
+  // Init map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
-    let L: any
-    import('leaflet').then(mod => {
-      L = mod.default
-      const map = L.map(containerRef.current, {
+    import('leaflet').then(({ default: L }) => {
+      const map = L.map(containerRef.current!, {
         center: [playerLat, playerLng], zoom: 17,
         zoomControl: false, attributionControl: false,
       })
@@ -95,45 +125,71 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
       L.control.zoom({ position: 'bottomright' }).addTo(map)
       L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
       playerMarker.current = L.circleMarker([playerLat, playerLng], {
-        radius: 8, fillColor: '#00f5d4', fillOpacity: 1, color: '#fff', weight: 2
+        radius: 9, fillColor: '#00f5d4', fillOpacity: 1, color: '#fff', weight: 2.5
       }).addTo(map)
-      map.on('move zoom moveend zoomend', () => {
-        cancelAnimationFrame(animRef.current)
-        animRef.current = requestAnimationFrame(drawFog)
-      })
       mapRef.current = map
       onMapReady(map)
-      drawFog()
     })
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
   }, []) // eslint-disable-line
 
+  // Player movement
   useEffect(() => {
     if (!mapRef.current || !playerMarker.current) return
     playerMarker.current.setLatLng([playerLat, playerLng])
-    mapRef.current.panTo([playerLat, playerLng], { animate: true, duration: 0.3 })
+    mapRef.current.panTo([playerLat, playerLng], { animate: true, duration: 0.4 })
   }, [playerLat, playerLng])
 
-  useEffect(() => {
-    cancelAnimationFrame(animRef.current)
-    animRef.current = requestAnimationFrame(drawFog)
-  }, [drawFog, tiles.size, monuments.length])
-
+  // Monument markers + discovery effects
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({ default: L }) => {
       monuments.forEach(m => {
         const color = RARITY_COLORS[m.rarity]
         const ex = markersRef.current.get(m.id)
+
+        // Check if just discovered → trigger effect
+        if (m.discovered && !prevMonuments.current.has(m.id)) {
+          prevMonuments.current.add(m.id)
+          try {
+            const pt = mapRef.current.latLngToContainerPoint([m.lat, m.lng])
+            const effect: Effect = {
+              id: m.id + Date.now(),
+              x: pt.x, y: pt.y,
+              label: m.name,
+              color,
+              points: m.rarity === 'legendary' ? 1000 : m.rarity === 'epic' ? 300 : m.rarity === 'rare' ? 150 : 50,
+            }
+            setEffects(prev => [...prev, effect])
+            setTimeout(() => setEffects(prev => prev.filter(e => e.id !== effect.id)), 3500)
+          } catch {}
+        } else if (m.discovered) {
+          prevMonuments.current.add(m.id)
+        }
+
         if (ex) {
-          ex.setStyle({ fillColor: m.discovered ? color : 'transparent', fillOpacity: m.discovered ? 0.9 : 0, color: m.discovered ? color : 'transparent', weight: m.discovered ? 2 : 0 })
+          ex.setStyle({
+            fillColor: m.discovered ? color : 'transparent',
+            fillOpacity: m.discovered ? 0.95 : 0,
+            color: m.discovered ? color : 'transparent',
+            weight: m.discovered ? 2.5 : 0,
+          })
         } else {
           const mk = L.circleMarker([m.lat, m.lng], {
-            radius: m.rarity === 'legendary' ? 10 : m.rarity === 'epic' ? 8 : 6,
-            fillColor: m.discovered ? color : 'transparent', fillOpacity: m.discovered ? 0.9 : 0,
-            color: m.discovered ? color : 'transparent', weight: m.discovered ? 2 : 0,
+            radius: m.rarity === 'legendary' ? 11 : m.rarity === 'epic' ? 9 : 7,
+            fillColor: m.discovered ? color : 'transparent',
+            fillOpacity: m.discovered ? 0.95 : 0,
+            color: m.discovered ? color : 'transparent',
+            weight: m.discovered ? 2.5 : 0,
           }).addTo(mapRef.current)
-          mk.bindPopup(`<div style="background:#070f1a;border:1px solid ${color}60;color:#fff;padding:10px;border-radius:8px;min-width:130px;font-family:monospace;"><div style="font-size:18px;text-align:center">${m.icon||'📍'}</div><div style="font-size:9px;color:${color};letter-spacing:0.15em;text-transform:uppercase">${m.rarity}</div><div style="font-size:13px;font-weight:bold">${m.discovered ? m.name : '???'}</div>${m.discovered&&m.discoveredAt?`<div style="font-size:9px;color:#fff3;margin-top:4px">${new Date(m.discoveredAt).toLocaleDateString()}</div>`:''}</div>`, { className: 'custom-popup' })
+          mk.bindPopup(`
+            <div style="background:rgba(5,12,24,0.97);border:1px solid ${color}70;color:#fff;padding:12px 16px;border-radius:10px;min-width:140px;font-family:monospace;box-shadow:0 0 24px ${color}30;">
+              <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon||'📍'}</div>
+              <div style="font-size:9px;color:${color};letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px">${m.rarity}</div>
+              <div style="font-size:13px;font-weight:bold">${m.discovered ? m.name : '???'}</div>
+              ${m.discovered&&m.discoveredAt?`<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:6px">${new Date(m.discoveredAt).toLocaleDateString()}</div>`:''}
+            </div>
+          `, { className: 'custom-popup' })
           markersRef.current.set(m.id, mk)
         }
       })
@@ -144,6 +200,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
     <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
       <canvas ref={fogCanvas} className="absolute inset-0 pointer-events-none" style={{ zIndex: 500 }} />
+      <DiscoveryEffect effects={effects} />
     </div>
   )
 }
