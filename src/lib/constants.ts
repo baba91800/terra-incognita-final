@@ -18,6 +18,14 @@ export const RARITY_LABELS: Record<Rarity, string> = {
   common: 'COMMON', rare: 'RARE', epic: 'EPIC', legendary: 'LEGENDARY'
 }
 
+export const LANGS = [
+  { code: 'fr', label: 'Français',  flag: '🇫🇷' },
+  { code: 'en', label: 'English',   flag: '🇬🇧' },
+  { code: 'es', label: 'Español',   flag: '🇪🇸' },
+  { code: 'de', label: 'Deutsch',   flag: '🇩🇪' },
+  { code: 'pt', label: 'Português', flag: '🇵🇹' },
+]
+
 export const LEVEL_TITLES = [
   'Novice','Wanderer','Scout','Explorer','Pathfinder',
   'Ranger','Cartographer','Adventurer','Voyager','Discoverer',

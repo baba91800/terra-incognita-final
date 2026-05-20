@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Badge, Monument, CountryDiscovery, DailyObjective, DiscoveryLog, ExplorationPath } from '../types/game'
-import { RARITY_COLORS, RARITY_LABELS } from '../lib/constants'
+import { RARITY_COLORS, RARITY_LABELS, LANGS } from '../lib/constants'
+import { type Lang, useT } from '../lib/i18n'
 import MiniMap from './MiniMap'
 
 type Panel = 'none'|'badges'|'monuments'|'countries'|'objectives'|'log'|'stats'
@@ -12,12 +13,15 @@ interface Props {
   objectives:DailyObjective[]; log:DiscoveryLog[]; path:ExplorationPath[]
   tiles:Set<string>; playerLat:number; playerLng:number
   gpsActive:boolean; onStartGPS:()=>void; onStopGPS:()=>void; onReset:()=>void
+  lang: Lang; onChangeLang: (l: Lang) => void
 }
 
 export default function HUD(p:Props) {
   const [panel,setPanel]=useState<Panel>('none')
   const [installEvt,setInstallEvt]=useState<any>(null)
+  const [showLang,setShowLang]=useState(false)
   const tp=(x:Panel)=>setPanel(v=>v===x?'none':x)
+  const t=useT(p.lang)
   const earnedB=p.badges.filter(b=>b.earned)
   const discM=p.monuments.filter(m=>m.discovered)
   const todayDone=p.objectives.filter(o=>o.completed).length
@@ -35,12 +39,12 @@ export default function HUD(p:Props) {
   }
 
   const NAV_BTNS = [
-    { id:'badges'     as Panel, icon:'🏅', label:'Badges',     count:earnedB.length },
-    { id:'monuments'  as Panel, icon:'🏛️', label:'Sites',      count:discM.length },
-    { id:'countries'  as Panel, icon:'🌍', label:'Pays',        count:p.countries.length },
-    { id:'objectives' as Panel, icon:'🎯', label:'Objectifs',   count:todayDone },
-    { id:'log'        as Panel, icon:'📜', label:'Journal',     count:null },
-    { id:'stats'      as Panel, icon:'📊', label:'Stats',       count:null },
+    { id:'badges'     as Panel, icon:'🏅', label:t.badges,     count:earnedB.length },
+    { id:'monuments'  as Panel, icon:'🏛️', label:t.sites,      count:discM.length },
+    { id:'countries'  as Panel, icon:'🌍', label:t.countries,  count:p.countries.length },
+    { id:'objectives' as Panel, icon:'🎯', label:t.objectives, count:todayDone },
+    { id:'log'        as Panel, icon:'📜', label:t.log,        count:null },
+    { id:'stats'      as Panel, icon:'📊', label:t.stats,      count:null },
   ]
 
   return (
@@ -111,15 +115,38 @@ export default function HUD(p:Props) {
               style={p.gpsActive?{background:'rgba(34,197,94,0.15)',borderColor:'rgba(34,197,94,0.5)',color:'#4ade80',boxShadow:'0 0 12px rgba(34,197,94,0.2)'}:{}}
             >
               <span>{p.gpsActive?'📡':'📍'}</span>
-              <span style={{fontSize:11}}>{p.gpsActive?'GPS actif':'GPS'}</span>
+              <span style={{fontSize:11}}>{p.gpsActive?t.gpsOn:t.gps}</span>
             </button>
 
             {/* Install */}
             {installEvt && (
               <button className="hud-btn active" onClick={install} style={{fontSize:11}}>
-                <span>📲</span><span>Installer</span>
+                <span>📲</span><span>{t.install}</span>
               </button>
             )}
+
+            {/* Language selector */}
+            <div style={{position:'relative'}}>
+              <button className="hud-btn" onClick={()=>setShowLang(v=>!v)} style={{fontSize:11,padding:'6px 10px'}}>
+                <span>🌐</span>
+                <span>{p.lang.toUpperCase()}</span>
+              </button>
+              {showLang && (
+                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'rgba(5,12,24,0.97)',border:'1px solid rgba(0,245,212,0.2)',borderRadius:10,overflow:'hidden',zIndex:800,minWidth:140,boxShadow:'0 8px 32px rgba(0,0,0,0.6)'}}>
+                  {[{code:'fr',label:'Français',flag:'🇫🇷'},{code:'en',label:'English',flag:'🇬🇧'},{code:'es',label:'Español',flag:'🇪🇸'},{code:'de',label:'Deutsch',flag:'🇩🇪'},{code:'pt',label:'Português',flag:'🇵🇹'}].map(l=>(
+                    <button key={l.code} onClick={()=>{p.onChangeLang(l.code as Lang);setShowLang(false)}} style={{
+                      display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 14px',
+                      background:p.lang===l.code?'rgba(0,245,212,0.12)':'transparent',
+                      border:'none',color:'#fff',cursor:'pointer',fontSize:12,
+                      borderBottom:'1px solid rgba(255,255,255,0.04)',
+                    }}>
+                      <span>{l.flag}</span><span>{l.label}</span>
+                      {p.lang===l.code&&<span style={{marginLeft:'auto',color:'#00f5d4',fontSize:10}}>✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Nav buttons — 2 columns */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5}}>
@@ -146,7 +173,7 @@ export default function HUD(p:Props) {
       {/* ── PANELS ── */}
 
       {panel==='badges'&&(
-        <Panel title={`Badges — ${earnedB.length}/${p.badges.length}`} left onClose={()=>setPanel('none')}>
+        <Panel title={`${t.badgesTitle} — ${earnedB.length}/${p.badges.length}`} left onClose={()=>setPanel('none')}>
           {p.badges.map(b=>(
             <div key={b.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:`1px solid ${b.earned?'rgba(0,245,212,0.25)':'rgba(255,255,255,0.05)'}`,background:b.earned?'rgba(0,245,212,0.05)':'transparent',opacity:b.earned?1:0.4,transition:'all 0.2s'}}>
               <span style={{fontSize:20}}>{b.icon}</span>
@@ -162,7 +189,7 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='objectives'&&(
-        <Panel title="Objectifs du jour" left onClose={()=>setPanel('none')}>
+        <Panel title={t.objectivesTitle} left onClose={()=>setPanel('none')}>
           {p.objectives.map(o=>{
             const pct=Math.min(100,o.target>0?o.current/o.target*100:0)
             return (
@@ -185,8 +212,8 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='log'&&(
-        <Panel title="Journal des découvertes" left onClose={()=>setPanel('none')}>
-          {p.log.length===0&&<Empty text="Aucune découverte pour l'instant" />}
+        <Panel title={t.logTitle} left onClose={()=>setPanel('none')}>
+          {p.log.length===0&&<Empty text={t.noDiscoveries} />}
           {p.log.map(e=>(
             <div key={e.id} style={{display:'flex',gap:10,alignItems:'flex-start',paddingBottom:8,borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
               <span style={{fontSize:15,flexShrink:0,marginTop:1}}>{e.icon}</span>
@@ -204,12 +231,12 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='monuments'&&(
-        <Panel title={`Sites — ${discM.length}/${p.monuments.length}`} onClose={()=>setPanel('none')}>
+        <Panel title={`${t.sitesTitle} — ${discM.length}/${p.monuments.length}`} onClose={()=>setPanel('none')}>
           {p.monuments.map(m=>(
             <div key={m.id} style={{display:'flex',gap:10,alignItems:'center',padding:'8px 10px',borderRadius:8,border:`1px solid ${m.discovered?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.04)'}`,background:m.discovered?'rgba(255,255,255,0.03)':'transparent'}}>
               <span style={{fontSize:18}}>{m.discovered?(m.icon||'📍'):'❓'}</span>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:11,fontWeight:'bold',color:m.discovered?'#fff':'rgba(255,255,255,0.2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.discovered?m.name:'??? Lieu inconnu'}</div>
+                <div style={{fontSize:11,fontWeight:'bold',color:m.discovered?'#fff':'rgba(255,255,255,0.2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.discovered?m.name:t.unknownSite}</div>
                 <div style={{fontSize:9,marginTop:2,color:RARITY_COLORS[m.rarity]}}>{RARITY_LABELS[m.rarity]}</div>
               </div>
               {m.discovered&&<span style={{color:'#22c55e',fontSize:12}}>✓</span>}
@@ -219,8 +246,8 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='countries'&&(
-        <Panel title={`Pays — ${p.countries.length} découverts`} onClose={()=>setPanel('none')}>
-          {p.countries.length===0&&<Empty text="Visite un nouveau pays pour débloquer un bonus" />}
+        <Panel title={`${t.countriesTitle} — ${p.countries.length}`} onClose={()=>setPanel('none')}>
+          {p.countries.length===0&&<Empty text={t.noCountries} />}
           {[...p.countries].sort((a,b)=>b.points-a.points).map(c=>(
             <div key={c.code} style={{display:'flex',gap:12,alignItems:'center',padding:'8px 10px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.03)'}}>
               <span style={{fontSize:22}}>{c.flag}</span>
@@ -234,16 +261,16 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='stats'&&(
-        <Panel title="Statistiques" onClose={()=>setPanel('none')}>
+        <Panel title={t.statsTitle} onClose={()=>setPanel('none')}>
           {[
-            ['⚡','XP Total',p.xp.toLocaleString()],
-            ['🎖️','Niveau',`${p.level} — ${p.levelTitle}`],
-            ['🗺️','Tuiles',p.totalTiles.toLocaleString()],
-            ['👟','Distance',`${(p.totalDist/1000).toFixed(2)} km`],
-            ['🏛️','Sites',`${discM.length}/${p.monuments.length}`],
-            ['🌍','Pays',p.countries.length.toString()],
-            ['🏅','Badges',`${earnedB.length}/${p.badges.length}`],
-            ['🎯','Objectifs',p.objectives.filter(o=>o.completed).length.toString()],
+            ['⚡',`XP ${t.total}`,p.xp.toLocaleString()],
+            ['🎖️',t.level,`${p.level} — ${p.levelTitle}`],
+            ['🗺️','Tiles',p.totalTiles.toLocaleString()],
+            ['👟',t.distance,`${(p.totalDist/1000).toFixed(2)} km`],
+            ['🏛️',t.sites,`${discM.length}/${p.monuments.length}`],
+            ['🌍',t.countries,p.countries.length.toString()],
+            ['🏅',t.badges,`${earnedB.length}/${p.badges.length}`],
+            ['🎯',t.objectives,p.objectives.filter(o=>o.completed).length.toString()],
           ].map(([icon,label,value])=>(
             <div key={label as string} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
               <div style={{display:'flex',gap:10,alignItems:'center'}}>
@@ -264,29 +291,20 @@ export default function HUD(p:Props) {
       {/* ── GPS CTA ── */}
       <div style={{position:'absolute',bottom:16,left:'50%',transform:'translateX(-50%)',zIndex:600,pointerEvents:'auto'}}>
         {!p.gpsActive ? (
-          <button onClick={p.onStartGPS} style={{
-            display:'flex',alignItems:'center',gap:14,cursor:'pointer',
-            background:'rgba(5,12,24,0.94)',border:'1px solid rgba(0,245,212,0.25)',
-            borderRadius:14,padding:'12px 22px',boxShadow:'0 0 30px rgba(0,0,0,0.5)',
-            transition:'all 0.2s',
-          }}
+          <button onClick={p.onStartGPS} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',background:'rgba(5,12,24,0.94)',border:'1px solid rgba(0,245,212,0.25)',borderRadius:14,padding:'12px 22px',boxShadow:'0 0 30px rgba(0,0,0,0.5)',transition:'all 0.2s'}}
             onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(0,245,212,0.5)'}
             onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(0,245,212,0.25)'}
           >
             <span style={{fontSize:28}}>📍</span>
             <div style={{textAlign:'left'}}>
-              <div style={{fontSize:13,fontWeight:'bold',color:'#00f5d4',letterSpacing:'0.05em'}}>Activer le GPS</div>
-              <div style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginTop:2}}>Marche pour explorer le monde</div>
+              <div style={{fontSize:13,fontWeight:'bold',color:'#00f5d4',letterSpacing:'0.05em'}}>{t.activateGPS}</div>
+              <div style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginTop:2}}>{t.activateGPSDesc}</div>
             </div>
           </button>
         ) : (
-          <div style={{
-            display:'flex',alignItems:'center',gap:10,
-            background:'rgba(5,12,24,0.94)',border:'1px solid rgba(34,197,94,0.3)',
-            borderRadius:12,padding:'8px 16px',boxShadow:'0 0 20px rgba(34,197,94,0.15)',
-          }}>
+          <div style={{display:'flex',alignItems:'center',gap:10,background:'rgba(5,12,24,0.94)',border:'1px solid rgba(34,197,94,0.3)',borderRadius:12,padding:'8px 16px',boxShadow:'0 0 20px rgba(34,197,94,0.15)'}}>
             <div style={{width:8,height:8,borderRadius:'50%',background:'#4ade80',boxShadow:'0 0 8px #4ade80'}} className="animate-pulse" />
-            <span style={{fontSize:11,color:'#4ade80',fontFamily:'monospace',letterSpacing:'0.05em'}}>GPS actif — explore le monde</span>
+            <span style={{fontSize:11,color:'#4ade80',fontFamily:'monospace',letterSpacing:'0.05em'}}>{t.gpsActive}</span>
             <button onClick={p.onStopGPS} style={{fontSize:10,color:'rgba(239,68,68,0.4)',background:'none',border:'none',cursor:'pointer',marginLeft:4,padding:'2px 6px'}}>✕</button>
           </div>
         )}
