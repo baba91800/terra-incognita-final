@@ -5,8 +5,10 @@ import HUD from './components/HUD'
 import Toast from './components/Toast'
 import Onboarding from './components/Onboarding'
 import ScaleBar from './components/ScaleBar'
+import NavLine from './components/NavLine'
 import { clearAll } from './lib/storage'
-import { loadLang, saveLang, type Lang } from './lib/i18n'
+import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
+import type { Monument } from './types/game'
 
 const ONBOARD_KEY = 'ti2_onboarded'
 
@@ -15,13 +17,13 @@ export default function App() {
   const mapRef = useRef<any>(null)
   const [showOnboard, setShowOnboard] = useState(false)
   const [lang, setLang] = useState<Lang>('fr')
+  const [navTarget, setNavTarget] = useState<Monument | null>(null)
+  const [showArrivedMsg, setShowArrivedMsg] = useState(false)
+  const t = useT(lang)
 
   useEffect(() => {
-    if (!localStorage.getItem(ONBOARD_KEY)) {
-      setShowOnboard(true)
-    } else {
-      setLang(loadLang())
-    }
+    if (!localStorage.getItem(ONBOARD_KEY)) setShowOnboard(true)
+    else setLang(loadLang())
   }, [])
 
   const finishOnboard = (selectedLang: Lang) => {
@@ -32,10 +34,16 @@ export default function App() {
   }
 
   const handleReset = () => {
-    if (!confirm(lang === 'fr' ? 'Réinitialiser toute la progression ? Impossible d\'annuler.' : 'Reset all progress? This cannot be undone.')) return
+    if (!confirm(t.resetConfirm)) return
     clearAll()
     localStorage.removeItem(ONBOARD_KEY)
     window.location.reload()
+  }
+
+  const handleArrived = () => {
+    setNavTarget(null)
+    setShowArrivedMsg(true)
+    setTimeout(() => setShowArrivedMsg(false), 3000)
   }
 
   if (!engine.initialized) {
@@ -43,9 +51,7 @@ export default function App() {
       <div style={{width:'100vw',height:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'radial-gradient(ellipse at 50% 40%, rgba(0,30,50,0.98) 0%, #020508 100%)',gap:20}}>
         <img src="/logo.png" alt="Terra Incognita" className="logo-glow float" style={{width:90,height:90,borderRadius:'50%',objectFit:'cover',border:'2px solid rgba(0,245,212,0.35)'}} />
         <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
-          <div style={{color:'#00f5d4',fontFamily:'monospace',fontSize:13,letterSpacing:'0.25em',textTransform:'uppercase'}} className="animate-pulse">
-            {lang === 'fr' ? 'Chargement...' : 'Loading...'}
-          </div>
+          <div style={{color:'#00f5d4',fontFamily:'monospace',fontSize:13,letterSpacing:'0.25em',textTransform:'uppercase'}} className="animate-pulse">{t.loading}</div>
           <div style={{color:'rgba(255,255,255,0.15)',fontSize:10,letterSpacing:'0.15em',textTransform:'uppercase'}}>Terra Incognita</div>
         </div>
         <div style={{width:120,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2,overflow:'hidden'}}>
@@ -61,7 +67,20 @@ export default function App() {
         playerLat={engine.playerLat} playerLng={engine.playerLng}
         tiles={engine.tiles} monuments={engine.monuments}
         onMapReady={m => { mapRef.current = m }}
+        onMonumentClick={m => setNavTarget(m)}
       />
+
+      {/* Navigation line */}
+      <NavLine
+        mapRef={mapRef as any}
+        target={navTarget}
+        playerLat={engine.playerLat}
+        playerLng={engine.playerLng}
+        onCancel={() => setNavTarget(null)}
+        onArrived={handleArrived}
+        t={t}
+      />
+
       <HUD
         score={engine.score} xp={engine.xp} level={engine.level}
         xpIntoLevel={engine.xpIntoLevel} xpForNext={engine.xpForNext} levelTitle={engine.levelTitle}
@@ -70,14 +89,42 @@ export default function App() {
         objectives={engine.objectives} log={engine.log} path={engine.path}
         tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
         gpsActive={engine.gpsActive} onStartGPS={engine.startGPS} onStopGPS={engine.stopGPS}
-        onReset={handleReset} lang={lang} onChangeLang={(l) => { setLang(l); saveLang(l) }}
+        onReset={handleReset} lang={lang} onChangeLang={l => { setLang(l); saveLang(l) }}
+        t={t}
       />
+
       <Toast notifications={engine.notifications} lang={lang} />
       <ScaleBar mapRef={mapRef as any} />
-      <div style={{
-        position:'absolute',inset:0,pointerEvents:'none',zIndex:550,
-        background:'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.018) 2px,rgba(0,0,0,0.018) 4px)',
-      }} />
+
+      {/* Arrived message */}
+      {showArrivedMsg && (
+        <div style={{
+          position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)',
+          zIndex:800, pointerEvents:'none',
+          background:'rgba(5,12,24,0.97)', border:'1px solid rgba(34,197,94,0.5)',
+          borderRadius:16, padding:'20px 32px', textAlign:'center',
+          boxShadow:'0 0 40px rgba(34,197,94,0.3)',
+          animation:'toastIn 0.4s ease-out',
+        }}>
+          <div style={{fontSize:36,marginBottom:8}}>🎯</div>
+          <div style={{fontSize:18,fontWeight:'bold',color:'#4ade80',fontFamily:'monospace'}}>{t.arrived}</div>
+        </div>
+      )}
+
+      {/* Hint when no nav */}
+      {!navTarget && engine.gpsActive && (
+        <div style={{
+          position:'absolute', bottom:16, right:60,
+          zIndex:600, pointerEvents:'none',
+          fontSize:9, color:'rgba(255,255,255,0.2)',
+          fontFamily:'monospace', letterSpacing:'0.08em',
+          textShadow:'0 1px 4px rgba(0,0,0,0.8)',
+        }}>{t.tapHaloHint}</div>
+      )}
+
+      {/* Scanlines */}
+      <div style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:550,background:'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.018) 2px,rgba(0,0,0,0.018) 4px)'}} />
+
       {showOnboard && <Onboarding onDone={finishOnboard} />}
     </div>
   )

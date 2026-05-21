@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Badge, Monument, CountryDiscovery, DailyObjective, DiscoveryLog, ExplorationPath } from '../types/game'
 import { RARITY_COLORS, RARITY_LABELS, LANGS } from '../lib/constants'
-import { type Lang, useT } from '../lib/i18n'
+import { type Lang, useT, type Translations } from '../lib/i18n'
 import MiniMap from './MiniMap'
 
 type Panel = 'none'|'badges'|'monuments'|'countries'|'objectives'|'log'|'stats'
@@ -14,6 +14,7 @@ interface Props {
   tiles:Set<string>; playerLat:number; playerLng:number
   gpsActive:boolean; onStartGPS:()=>void; onStopGPS:()=>void; onReset:()=>void
   lang: Lang; onChangeLang: (l: Lang) => void
+  t: Translations
 }
 
 export default function HUD(p:Props) {
@@ -21,7 +22,7 @@ export default function HUD(p:Props) {
   const [installEvt,setInstallEvt]=useState<any>(null)
   const [showLang,setShowLang]=useState(false)
   const tp=(x:Panel)=>setPanel(v=>v===x?'none':x)
-  const t=useT(p.lang)
+  const t=p.t
   const earnedB=p.badges.filter(b=>b.earned)
   const discM=p.monuments.filter(m=>m.discovered)
   const todayDone=p.objectives.filter(o=>o.completed).length

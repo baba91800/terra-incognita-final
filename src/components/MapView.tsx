@@ -4,6 +4,7 @@ import { RARITY_COLORS, TILE_SIZE } from '../lib/constants'
 import DiscoveryEffect, { type Effect } from './DiscoveryEffect'
 
 interface Props {
+  onMonumentClick?: (m: Monument) => void
   playerLat: number; playerLng: number
   tiles: Set<string>; monuments: Monument[]
   onMapReady: (map: any) => void
@@ -11,7 +12,7 @@ interface Props {
 
 const MPL = 111320
 
-export default function MapView({ playerLat, playerLng, tiles, monuments, onMapReady }: Props) {
+export default function MapView({ playerLat, playerLng, tiles, monuments, onMapReady, onMonumentClick }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const playerMarker = useRef<any>(null)
@@ -127,6 +128,20 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
       playerMarker.current = L.circleMarker([playerLat, playerLng], {
         radius: 9, fillColor: '#00f5d4', fillOpacity: 1, color: '#fff', weight: 2.5
       }).addTo(map)
+      map.on('click', (e: any) => {
+        if (!onMonumentClick) return
+        const clickLat = e.latlng.lat
+        const clickLng = e.latlng.lng
+        // Find nearest undiscovered monument within click radius
+        let nearest: Monument | null = null
+        let nearestDist = Infinity
+        monuments.forEach(m => {
+          if (m.discovered) return
+          const d = Math.sqrt(Math.pow(clickLat - m.lat, 2) + Math.pow(clickLng - m.lng, 2))
+          if (d < nearestDist && d < 0.001) { nearest = m; nearestDist = d }
+        })
+        if (nearest) onMonumentClick(nearest)
+      })
       mapRef.current = map
       onMapReady(map)
     })
@@ -204,3 +219,5 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
     </div>
   )
 }
+
+export { }
