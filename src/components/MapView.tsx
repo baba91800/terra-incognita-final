@@ -168,12 +168,12 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
 
   // Player marker + direction arrow
   useEffect(() => {
-    if (!mapReady) return
+    if (!mapRef.current) return
     import('leaflet').then(({ default: L }) => {
       const map = mapRef.current!
+      if (!map) return
       if (playerMarker.current) {
         playerMarker.current.setLatLng([playerLat, playerLng])
-        // Update icon with heading
         if (heading !== null) {
           const icon = L.divIcon({
             html: `<div style="width:24px;height:24px;position:relative;transform:rotate(${heading}deg)">
@@ -194,7 +194,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       }
       map.panTo([playerLat, playerLng], { animate: true, duration: 0.3 })
     })
-  }, [playerLat, playerLng, heading, mapReady])
+  }, [playerLat, playerLng, heading])
 
   // Monument markers + discovery effects
   useEffect(() => {

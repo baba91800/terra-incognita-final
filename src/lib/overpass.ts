@@ -114,7 +114,7 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
 out center;`
 
   try {
-    const res = await fetch('https://overpass-api.de/api/interpreter', {
+    const res = await fetch('https://overpass.kumi.systems/api/interpreter', {
       method: 'POST', body: q,
       headers: { 'Content-Type': 'text/plain' }
     })
