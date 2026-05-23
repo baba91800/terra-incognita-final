@@ -1,24 +1,32 @@
 import { useRef, useState, useEffect } from 'react'
-import { useGameEngine } from './hooks/useGameEngine'
+import { useGameEngine, useHeading } from './hooks/useGameEngine'
 import MapView from './components/MapView'
 import HUD from './components/HUD'
 import Toast from './components/Toast'
 import Onboarding from './components/Onboarding'
 import ScaleBar from './components/ScaleBar'
 import NavLine from './components/NavLine'
-import { clearAll } from './lib/storage'
+import Compass from './components/Compass'
+import ProximityAlert from './components/ProximityAlert'
+import ProfileScreen from './components/ProfileScreen'
+import MarkerEditor from './components/MarkerEditor'
+import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
-import type { Monument } from './types/game'
+import type { Monument, PersonalMarker } from './types/game'
 
 const ONBOARD_KEY = 'ti2_onboarded'
 
 export default function App() {
   const engine = useGameEngine()
+  const { heading } = useHeading()
   const mapRef = useRef<any>(null)
   const [showOnboard, setShowOnboard] = useState(false)
   const [lang, setLang] = useState<Lang>('fr')
   const [navTarget, setNavTarget] = useState<Monument | null>(null)
   const [showArrivedMsg, setShowArrivedMsg] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
+  const [personalMarkers, setPersonalMarkers] = useState<PersonalMarker[]>(() => loadMarkers())
+  const [markerEditor, setMarkerEditor] = useState<{ lat: number; lng: number; existing?: PersonalMarker } | null>(null)
   const t = useT(lang)
 
   useEffect(() => {
@@ -46,6 +54,20 @@ export default function App() {
     setTimeout(() => setShowArrivedMsg(false), 3000)
   }
 
+  const handleSaveMarker = (m: PersonalMarker) => {
+    const updated = personalMarkers.find(x => x.id === m.id)
+      ? personalMarkers.map(x => x.id === m.id ? m : x)
+      : [...personalMarkers, m]
+    setPersonalMarkers(updated)
+    saveMarkers(updated)
+  }
+
+  const handleDeleteMarker = (id: string) => {
+    const updated = personalMarkers.filter(m => m.id !== id)
+    setPersonalMarkers(updated)
+    saveMarkers(updated)
+  }
+
   if (!engine.initialized) {
     return (
       <div style={{width:'100vw',height:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'radial-gradient(ellipse at 50% 40%, rgba(0,30,50,0.98) 0%, #020508 100%)',gap:20}}>
@@ -63,24 +85,27 @@ export default function App() {
 
   return (
     <div style={{position:'relative',width:'100vw',height:'100vh',overflow:'hidden',background:'#030810'}}>
+      {/* Map */}
       <MapView
         playerLat={engine.playerLat} playerLng={engine.playerLng}
         tiles={engine.tiles} monuments={engine.monuments}
+        personalMarkers={personalMarkers}
+        heading={heading}
         onMapReady={m => { mapRef.current = m }}
-        onMonumentClick={m => setNavTarget(m)}
+        onMonumentClick={m => !m.discovered && setNavTarget(m)}
+        onLongPress={(lat, lng) => setMarkerEditor({ lat, lng })}
+        onMarkerClick={m => setMarkerEditor({ lat: m.lat, lng: m.lng, existing: m })}
       />
 
-      {/* Navigation line */}
+      {/* Navigation */}
       <NavLine
-        mapRef={mapRef as any}
-        target={navTarget}
-        playerLat={engine.playerLat}
-        playerLng={engine.playerLng}
+        mapRef={mapRef as any} target={navTarget}
+        playerLat={engine.playerLat} playerLng={engine.playerLng}
         onCancel={() => setNavTarget(null)}
-        onArrived={handleArrived}
-        t={t}
+        onArrived={handleArrived} t={t}
       />
 
+      {/* HUD */}
       <HUD
         score={engine.score} xp={engine.xp} level={engine.level}
         xpIntoLevel={engine.xpIntoLevel} xpForNext={engine.xpForNext} levelTitle={engine.levelTitle}
@@ -90,11 +115,24 @@ export default function App() {
         tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
         gpsActive={engine.gpsActive} onStartGPS={engine.startGPS} onStopGPS={engine.stopGPS}
         onReset={handleReset} lang={lang} onChangeLang={l => { setLang(l); saveLang(l) }}
-        t={t}
+        t={t} onOpenProfile={() => setShowProfile(true)}
       />
 
+      {/* Toasts */}
       <Toast notifications={engine.notifications} lang={lang} />
+
+      {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
+
+      {/* Compass */}
+      <Compass heading={heading} />
+
+      {/* Proximity alert */}
+      <ProximityAlert
+        monuments={engine.monuments}
+        playerLat={engine.playerLat} playerLng={engine.playerLng}
+        t={t} onNavigate={m => setNavTarget(m)}
+      />
 
       {/* Arrived message */}
       {showArrivedMsg && (
@@ -111,21 +149,41 @@ export default function App() {
         </div>
       )}
 
-      {/* Hint when no nav */}
+      {/* Hint */}
       {!navTarget && engine.gpsActive && (
-        <div style={{
-          position:'absolute', bottom:16, right:60,
-          zIndex:600, pointerEvents:'none',
-          fontSize:9, color:'rgba(255,255,255,0.2)',
-          fontFamily:'monospace', letterSpacing:'0.08em',
-          textShadow:'0 1px 4px rgba(0,0,0,0.8)',
-        }}>{t.tapHaloHint}</div>
+        <div style={{position:'absolute',bottom:16,right:60,zIndex:600,pointerEvents:'none',fontSize:9,color:'rgba(255,255,255,0.15)',fontFamily:'monospace',letterSpacing:'0.08em',textShadow:'0 1px 4px rgba(0,0,0,0.8)'}}>
+          {t.tapHaloHint}
+        </div>
       )}
 
       {/* Scanlines */}
       <div style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:550,background:'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.018) 2px,rgba(0,0,0,0.018) 4px)'}} />
 
+      {/* Profile screen */}
+      {showProfile && (
+        <ProfileScreen
+          onClose={() => setShowProfile(false)}
+          score={engine.score} xp={engine.xp} level={engine.level} levelTitle={engine.levelTitle}
+          totalTiles={engine.totalTiles} totalDist={engine.totalDist}
+          badges={engine.badges} monuments={engine.monuments} countries={engine.countries}
+          tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
+          t={t}
+        />
+      )}
+
+      {/* Onboarding */}
       {showOnboard && <Onboarding onDone={finishOnboard} />}
+
+      {/* Marker editor */}
+      {markerEditor && (
+        <MarkerEditor
+          lat={markerEditor.lat} lng={markerEditor.lng}
+          existing={markerEditor.existing}
+          onSave={handleSaveMarker}
+          onDelete={handleDeleteMarker}
+          onClose={() => setMarkerEditor(null)}
+        />
+      )}
     </div>
   )
 }

@@ -14,7 +14,7 @@ interface Props {
   tiles:Set<string>; playerLat:number; playerLng:number
   gpsActive:boolean; onStartGPS:()=>void; onStopGPS:()=>void; onReset:()=>void
   lang: Lang; onChangeLang: (l: Lang) => void
-  t: Translations
+  t: Translations; onOpenProfile: () => void
 }
 
 export default function HUD(p:Props) {
@@ -117,6 +117,11 @@ export default function HUD(p:Props) {
             >
               <span>{p.gpsActive?'📡':'📍'}</span>
               <span style={{fontSize:11}}>{p.gpsActive?t.gpsOn:t.gps}</span>
+            </button>
+
+            {/* Profile */}
+            <button className="hud-btn" onClick={p.onOpenProfile} style={{fontSize:11}}>
+              <span>👤</span><span>Profil</span>
             </button>
 
             {/* Install */}

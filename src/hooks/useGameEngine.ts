@@ -230,3 +230,29 @@ export function useGameEngine() {
     startGPS,stopGPS,
   }
 }
+
+// Export heading tracking - added separately
+export function useHeading() {
+  const [heading, setHeading] = useState<number | null>(null)
+  const prevPos = useRef<{ lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    // Try device orientation first
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      const alpha = (e as any).webkitCompassHeading ?? e.alpha
+      if (alpha !== null) setHeading(Math.round(alpha))
+    }
+
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientationabsolute', handleOrientation as any, true)
+      window.addEventListener('deviceorientation', handleOrientation as any, true)
+    }
+
+    return () => {
+      window.removeEventListener('deviceorientationabsolute', handleOrientation as any, true)
+      window.removeEventListener('deviceorientation', handleOrientation as any, true)
+    }
+  }, [])
+
+  return { heading }
+}

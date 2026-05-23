@@ -46,3 +46,8 @@ export const loadLog=():DiscoveryLog[]=>{const v=g(K.LOG);return v?JSON.parse(v)
 export const savePath=(p:ExplorationPath[])=>s(K.PATH,JSON.stringify(p.slice(-500)))
 export const loadPath=():ExplorationPath[]=>{const v=g(K.PATH);return v?JSON.parse(v):[]}
 export const clearAll=()=>Object.values(K).forEach(r)
+
+import type { PersonalMarker } from '../types/game'
+const MK = 'ti2_markers'
+export const saveMarkers = (m: PersonalMarker[]) => s(MK, JSON.stringify(m))
+export const loadMarkers = (): PersonalMarker[] => { const v = g(MK); return v ? JSON.parse(v) : [] }

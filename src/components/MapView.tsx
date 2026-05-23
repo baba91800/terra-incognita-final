@@ -1,22 +1,27 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
-import type { Monument } from '../types/game'
+import type { Monument, PersonalMarker } from '../types/game'
 import { RARITY_COLORS, TILE_SIZE } from '../lib/constants'
 import DiscoveryEffect, { type Effect } from './DiscoveryEffect'
 
 interface Props {
   onMonumentClick?: (m: Monument) => void
+  onLongPress?: (lat: number, lng: number) => void
+  onMarkerClick?: (m: PersonalMarker) => void
   playerLat: number; playerLng: number
   tiles: Set<string>; monuments: Monument[]
+  personalMarkers: PersonalMarker[]
+  heading: number | null
   onMapReady: (map: any) => void
 }
 
 const MPL = 111320
 
-export default function MapView({ playerLat, playerLng, tiles, monuments, onMapReady, onMonumentClick }: Props) {
+export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const playerMarker = useRef<any>(null)
   const fogCanvas = useRef<HTMLCanvasElement>(null)
+  const personalMarkersRef = useRef<Map<string, any>>(new Map())
   const markersRef = useRef<Map<string, any>>(new Map())
   const animRef = useRef<number>(0)
   const timeRef = useRef<number>(0)
@@ -125,8 +130,11 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
       }).addTo(map)
       L.control.zoom({ position: 'bottomright' }).addTo(map)
       L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
-      playerMarker.current = L.circleMarker([playerLat, playerLng], {
-        radius: 9, fillColor: '#00f5d4', fillOpacity: 1, color: '#fff', weight: 2.5
+      playerMarker.current = L.marker([playerLat, playerLng], {
+        icon: L.divIcon({
+          html: `<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 10px rgba(0,245,212,0.8)"></div>`,
+          className: '', iconSize: [18, 18], iconAnchor: [9, 9],
+        })
       }).addTo(map)
       map.on('click', (e: any) => {
         if (!onMonumentClick) return
@@ -142,18 +150,51 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
         })
         if (nearest) onMonumentClick(nearest)
       })
+      // Long press detection
+      let pressTimer: ReturnType<typeof setTimeout> | null = null
+      map.on('mousedown touchstart', (e: any) => {
+        pressTimer = setTimeout(() => {
+          const latlng = e.latlng || map.mouseEventToLatLng(e.originalEvent)
+          if (latlng && onLongPress) onLongPress(latlng.lat, latlng.lng)
+        }, 600)
+      })
+      map.on('mouseup touchend mousemove', () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null } })
+
       mapRef.current = map
       onMapReady(map)
     })
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
   }, []) // eslint-disable-line
 
-  // Player movement
+  // Player marker + direction arrow
   useEffect(() => {
-    if (!mapRef.current || !playerMarker.current) return
-    playerMarker.current.setLatLng([playerLat, playerLng])
-    mapRef.current.panTo([playerLat, playerLng], { animate: true, duration: 0.4 })
-  }, [playerLat, playerLng])
+    if (!mapReady) return
+    import('leaflet').then(({ default: L }) => {
+      const map = mapRef.current!
+      if (playerMarker.current) {
+        playerMarker.current.setLatLng([playerLat, playerLng])
+        // Update icon with heading
+        if (heading !== null) {
+          const icon = L.divIcon({
+            html: `<div style="width:24px;height:24px;position:relative;transform:rotate(${heading}deg)">
+              <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#00f5d4;border:2px solid white;box-shadow:0 0 8px rgba(0,245,212,0.8)"></div>
+              <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid #00f5d4"></div>
+            </div>`,
+            className: '', iconSize: [24, 24], iconAnchor: [12, 12],
+          })
+          playerMarker.current.setIcon(icon)
+        }
+      } else {
+        playerMarker.current = L.marker([playerLat, playerLng], {
+          icon: L.divIcon({
+            html: `<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 10px rgba(0,245,212,0.8)"></div>`,
+            className: '', iconSize: [18, 18], iconAnchor: [9, 9],
+          })
+        }).addTo(map)
+      }
+      map.panTo([playerLat, playerLng], { animate: true, duration: 0.3 })
+    })
+  }, [playerLat, playerLng, heading, mapReady])
 
   // Monument markers + discovery effects
   useEffect(() => {
@@ -210,6 +251,49 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, onMapR
       })
     })
   }, [monuments])
+
+  // Personal markers
+  useEffect(() => {
+    if (!mapRef.current) return
+    import('leaflet').then(({ default: L }) => {
+      const map = mapRef.current!
+
+      // Remove old markers not in list
+      personalMarkersRef.current.forEach((mk, id) => {
+        if (!personalMarkers.find(m => m.id === id)) {
+          mk.remove()
+          personalMarkersRef.current.delete(id)
+        }
+      })
+
+      // Add/update markers
+      personalMarkers.forEach(m => {
+        const existing = personalMarkersRef.current.get(m.id)
+        if (existing) {
+          existing.setLatLng([m.lat, m.lng])
+          return
+        }
+        const mk = L.marker([m.lat, m.lng], {
+          icon: L.divIcon({
+            html: `<div style="width:36px;height:36px;border-radius:50%;background:rgba(5,12,24,0.95);border:2px solid rgba(255,200,50,0.7);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 12px rgba(255,200,50,0.4);cursor:pointer">${m.icon}</div>`,
+            className: '', iconSize: [36, 36], iconAnchor: [18, 18],
+          })
+        }).addTo(map)
+
+        mk.on('click', () => onMarkerClick && onMarkerClick(m))
+        mk.bindPopup(`
+          <div style="background:rgba(5,12,24,0.97);border:1px solid rgba(255,200,50,0.4);color:#fff;padding:10px 14px;border-radius:10px;min-width:130px;font-family:monospace;">
+            <div style="font-size:20px;text-align:center;margin-bottom:5px">${m.icon}</div>
+            <div style="font-size:13px;font-weight:bold;margin-bottom:3px">${m.name}</div>
+            ${m.note ? `<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:4px">${m.note}</div>` : ''}
+            <div style="font-size:8px;color:rgba(255,255,255,0.2)">${new Date(m.createdAt).toLocaleDateString()}</div>
+          </div>
+        `, { className: 'custom-popup' })
+
+        personalMarkersRef.current.set(m.id, mk)
+      })
+    })
+  }, [personalMarkers])
 
   return (
     <div className="relative w-full h-full">

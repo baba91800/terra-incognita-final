@@ -109,12 +109,13 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
   const distance = dist(playerLat, playerLng, target.lat, target.lng)
   const distLabel = distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)} m`
   const color = RARITY_COLORS[target.rarity]
+  const rarityLabel = { common: t.common, rare: t.rare, epic: t.epic, legendary: t.legendary }[target.rarity]
 
   return (
     <>
       <canvas ref={canvasRef} style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:510}} />
 
-      {/* Navigation HUD */}
+      {/* Navigation HUD — mystery mode, no name revealed */}
       <div style={{
         position:'absolute', bottom:80, left:'50%', transform:'translateX(-50%)',
         zIndex:650, pointerEvents:'auto',
@@ -123,21 +124,21 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
         boxShadow:`0 0 30px ${color}25, 0 8px 32px rgba(0,0,0,0.6)`,
         display:'flex', alignItems:'center', gap:14, minWidth:260,
       }}>
-        {/* Icon */}
+        {/* Mystery icon */}
         <div style={{
           width:40, height:40, borderRadius:10,
-          background:`${color}20`, border:`1px solid ${color}50`,
+          background:`${color}15`, border:`1px solid ${color}40`,
           display:'flex', alignItems:'center', justifyContent:'center', fontSize:20,
           flexShrink:0,
         }}>
-          {target.icon || '📍'}
+          ❓
         </div>
 
-        {/* Info */}
+        {/* Info — rarity only, no name */}
         <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:9, color:`${color}`, letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:3}}>{t.navigateTo}</div>
-          <div style={{fontSize:13, fontWeight:'bold', color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{target.name}</div>
-          <div style={{display:'flex', alignItems:'center', gap:8, marginTop:4}}>
+          <div style={{fontSize:9, color:color, letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:3}}>{rarityLabel}</div>
+          <div style={{fontSize:12, color:'rgba(255,255,255,0.4)', fontStyle:'italic', marginBottom:4}}>??? {t.unknownSite}</div>
+          <div style={{display:'flex', alignItems:'center', gap:8}}>
             <span style={{fontSize:11, color:'rgba(255,255,255,0.4)'}}>{t.distanceTo}</span>
             <span style={{fontSize:13, fontWeight:'bold', color:color, fontFamily:'monospace'}}>{distLabel}</span>
           </div>
