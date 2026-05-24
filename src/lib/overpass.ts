@@ -59,6 +59,8 @@ export const CATEGORY_COLORS: Record<string, string> = {
   // Default
   attraction: '#00f5d4', place: '#00f5d4', viewpoint: '#00f5d4',
 }
+
+function classify(tags: Record<string, string>): { rarity: Rarity; type: string; icon: string } {
   if (tags.natural === 'volcano')                          return { rarity: 'legendary', type: 'volcano',    icon: '🌋' }
   if (tags.natural === 'glacier')                          return { rarity: 'legendary', type: 'glacier',    icon: '🧊' }
   if (tags.historic === 'palace')                          return { rarity: 'legendary', type: 'palace',     icon: '🏯' }
