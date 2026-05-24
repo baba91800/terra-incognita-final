@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { Monument } from '../types/game'
 import { RARITY_COLORS } from '../lib/constants'
+import { CATEGORY_COLORS } from '../lib/overpass'
 import { dist } from '../lib/geo'
 import type { Translations } from '../lib/i18n'
 
@@ -108,7 +109,7 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
 
   const distance = dist(playerLat, playerLng, target.lat, target.lng)
   const distLabel = distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)} m`
-  const color = RARITY_COLORS[target.rarity]
+  const color = CATEGORY_COLORS[target.type] || RARITY_COLORS[target.rarity]
   const rarityLabel = { common: t.common, rare: t.rare, epic: t.epic, legendary: t.legendary }[target.rarity]
 
   return (

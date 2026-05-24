@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import type { Monument, PersonalMarker } from '../types/game'
 import { RARITY_COLORS, TILE_SIZE } from '../lib/constants'
+import { CATEGORY_COLORS } from '../lib/overpass'
 import DiscoveryEffect, { type Effect } from './DiscoveryEffect'
 
 interface Props {
@@ -53,7 +54,8 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       if (m.discovered) return
       try {
         const pt = map.latLngToContainerPoint([m.lat, m.lng])
-        const color = RARITY_COLORS[m.rarity]
+        // Category color for halo, rarity only affects size
+        const color = CATEGORY_COLORS[m.type] || (m.rarity === 'legendary' ? '#a855f7' : RARITY_COLORS[m.rarity])
 
         // Pulsing outer glow
         const baseR = m.rarity === 'legendary' ? 85 : m.rarity === 'epic' ? 65 : m.rarity === 'rare' ? 48 : 32
@@ -172,25 +174,28 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     import('leaflet').then(({ default: L }) => {
       const map = mapRef.current!
       if (!map) return
-      if (playerMarker.current) {
-        playerMarker.current.setLatLng([playerLat, playerLng])
-        if (heading !== null) {
-          const icon = L.divIcon({
-            html: `<div style="width:24px;height:24px;position:relative;transform:rotate(${heading}deg)">
-              <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#00f5d4;border:2px solid white;box-shadow:0 0 8px rgba(0,245,212,0.8)"></div>
-              <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid #00f5d4"></div>
+
+      const makeIcon = (h: number | null) => {
+        if (h !== null) {
+          return L.divIcon({
+            html: `<div style="width:24px;height:24px;position:relative;transform:rotate(${h}deg);transform-origin:center">
+              <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#00f5d4;border:2px solid white;box-shadow:0 0 6px rgba(0,245,212,0.6)"></div>
+              <div style="position:absolute;left:50%;top:1px;transform:translateX(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid #00f5d4"></div>
             </div>`,
             className: '', iconSize: [24, 24], iconAnchor: [12, 12],
           })
-          playerMarker.current.setIcon(icon)
         }
+        return L.divIcon({
+          html: `<div style="width:16px;height:16px;border-radius:50%;background:#00f5d4;border:2px solid white;box-shadow:0 0 8px rgba(0,245,212,0.7)"></div>`,
+          className: '', iconSize: [16, 16], iconAnchor: [8, 8],
+        })
+      }
+
+      if (playerMarker.current) {
+        playerMarker.current.setLatLng([playerLat, playerLng])
+        playerMarker.current.setIcon(makeIcon(heading))
       } else {
-        playerMarker.current = L.marker([playerLat, playerLng], {
-          icon: L.divIcon({
-            html: `<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 10px rgba(0,245,212,0.8)"></div>`,
-            className: '', iconSize: [18, 18], iconAnchor: [9, 9],
-          })
-        }).addTo(map)
+        playerMarker.current = L.marker([playerLat, playerLng], { icon: makeIcon(heading) }).addTo(map)
       }
       map.panTo([playerLat, playerLng], { animate: true, duration: 0.3 })
     })

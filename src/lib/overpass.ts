@@ -39,7 +39,26 @@ function zoneKey(lat: number, lng: number) {
 }
 
 // ── Classification OSM → rareté ───────────────────────────────
-function classify(tags: Record<string, string>): { rarity: Rarity; type: string; icon: string } {
+// Category → color mapping (independent of rarity)
+export const CATEGORY_COLORS: Record<string, string> = {
+  // Nature — green
+  volcano: '#22c55e', glacier: '#22c55e', peak: '#22c55e', cave: '#22c55e',
+  waterfall: '#22c55e', hot_spring: '#22c55e', park: '#22c55e', reserve: '#22c55e',
+  spring: '#22c55e', tree: '#22c55e', cliff: '#22c55e', gorge: '#22c55e',
+  arch: '#22c55e', cape: '#22c55e', rock: '#22c55e', beach: '#22c55e',
+  // History — gold
+  palace: '#f59e0b', heritage: '#f59e0b', castle: '#f59e0b', fort: '#f59e0b',
+  ruins: '#f59e0b', monument: '#f59e0b', memorial: '#f59e0b', megalith: '#f59e0b',
+  tower: '#f59e0b', roman: '#f59e0b', statue: '#f59e0b', cemetery: '#f59e0b',
+  // Culture — blue
+  museum: '#3b82f6', cathedral: '#3b82f6', theatre: '#3b82f6', library: '#3b82f6',
+  artwork: '#3b82f6', fountain: '#3b82f6', garden: '#3b82f6', worship: '#3b82f6',
+  // Unusual — orange
+  lighthouse: '#f97316', windmill: '#f97316', watermill: '#f97316', mine: '#f97316',
+  bunker: '#f97316', station: '#f97316', bridge: '#f97316', tunnel: '#f97316',
+  // Default
+  attraction: '#00f5d4', place: '#00f5d4', viewpoint: '#00f5d4',
+}
   if (tags.natural === 'volcano')                          return { rarity: 'legendary', type: 'volcano',    icon: '🌋' }
   if (tags.natural === 'glacier')                          return { rarity: 'legendary', type: 'glacier',    icon: '🧊' }
   if (tags.historic === 'palace')                          return { rarity: 'legendary', type: 'palace',     icon: '🏯' }

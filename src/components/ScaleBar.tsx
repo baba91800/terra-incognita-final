@@ -39,7 +39,7 @@ export default function ScaleBar({ mapRef }: Props) {
 
   return (
     <div style={{
-      position: 'absolute', bottom: 90, right: 56,
+      position: 'absolute', bottom: 20, right: 70,
       zIndex: 600, pointerEvents: 'none',
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
     }}>

@@ -60,7 +60,7 @@ export default function HUD(p:Props) {
               <div style={{fontSize:9,letterSpacing:'0.18em',color:'rgba(0,245,212,0.5)',textTransform:'uppercase',marginBottom:3}}>Explorer Points</div>
               <div style={{fontSize:26,fontWeight:'bold',color:'#00f5d4',fontFamily:'monospace',lineHeight:1}}>{p.score.toLocaleString()}</div>
               <div style={{display:'flex',gap:14,marginTop:8}}>
-                {[['Tiles',p.totalTiles.toLocaleString()],['Zone',p.explorationPercent+'%'],['km',(p.totalDist/1000).toFixed(2)]].map(([l,v])=>(
+                {[['m²',(p.totalTiles*100).toLocaleString()],['Zone',p.explorationPercent+'%'],['km',(p.totalDist/1000).toFixed(2)]].map(([l,v])=>(
                   <div key={l as string}>
                     <div style={{fontSize:8,color:'rgba(255,255,255,0.2)',textTransform:'uppercase',letterSpacing:'0.1em'}}>{l}</div>
                     <div style={{fontSize:12,fontFamily:'monospace',color:'rgba(255,255,255,0.65)'}}>{v}</div>

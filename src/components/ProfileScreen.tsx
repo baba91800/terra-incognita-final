@@ -16,7 +16,23 @@ interface Props {
 const AVATAR_KEY = 'ti2_avatar'
 const PSEUDO_KEY = 'ti2_pseudo'
 
-const AVATARS = ['🧭','🗺️','🏔️','🌋','⛰️','🏝️','🌍','🚀','🦅','🐺','🦁','🐉','⚔️','🔭','🌠']
+const AVATARS = [
+  { icon: '🧭', label: 'Explorateur' },
+  { icon: '🏔️', label: 'Montagne' },
+  { icon: '🌋', label: 'Volcan' },
+  { icon: '🏝️', label: 'Île' },
+  { icon: '🌍', label: 'Monde' },
+  { icon: '🚀', label: 'Aventure' },
+  { icon: '🦅', label: 'Aigle' },
+  { icon: '🐺', label: 'Loup' },
+  { icon: '🦁', label: 'Lion' },
+  { icon: '🐉', label: 'Dragon' },
+  { icon: '⚔️', label: 'Guerrier' },
+  { icon: '🔭', label: 'Curieux' },
+  { icon: '🌠', label: 'Étoile' },
+  { icon: '🗺️', label: 'Carte' },
+  { icon: '💎', label: 'Diamant' },
+]
 
 export default function ProfileScreen({ onClose, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, tiles, playerLat, playerLng, t }: Props) {
   const [pseudo, setPseudo] = useState(() => localStorage.getItem(PSEUDO_KEY) || 'Explorer')
@@ -100,14 +116,18 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
               }}>{avatar}</div>
 
               {/* Avatar picker */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', maxWidth: 280 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', maxWidth: 300 }}>
                 {AVATARS.map(a => (
-                  <button key={a} onClick={() => saveAvatar(a)} style={{
-                    width: 36, height: 36, borderRadius: 8, fontSize: 20,
-                    background: avatar === a ? 'rgba(0,245,212,0.2)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${avatar === a ? 'rgba(0,245,212,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                    cursor: 'pointer',
-                  }}>{a}</button>
+                  <button key={a.icon} onClick={() => saveAvatar(a.icon)} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                    width: 52, padding: '6px 4px', borderRadius: 8, fontSize: 22,
+                    background: avatar === a.icon ? 'rgba(0,245,212,0.2)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${avatar === a.icon ? 'rgba(0,245,212,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                    cursor: 'pointer', transition: 'all 0.15s',
+                  }}>
+                    {a.icon}
+                    <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>{a.label}</span>
+                  </button>
                 ))}
               </div>
 
@@ -154,7 +174,7 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
               {[
                 { icon: '⚡', label: 'XP Total', value: xp.toLocaleString() },
-                { icon: '🗺️', label: t.statTiles, value: totalTiles.toLocaleString() },
+                { icon: '📐', label: 'Surface explorée', value: `${(totalTiles * 100).toLocaleString()} m²` },
                 { icon: '👟', label: t.statDist, value: `${(totalDist / 1000).toFixed(2)} km` },
                 { icon: '🏛️', label: t.statSites, value: `${discMonuments.length}` },
                 { icon: '🌍', label: t.statCountries, value: countries.length.toString() },

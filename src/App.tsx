@@ -123,8 +123,7 @@ export default function App() {
 
       {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
-
-      {/* Compass */}
+      {/* Compass - bottom right above scale */}
       <Compass heading={heading} />
 
       {/* Proximity alert */}
