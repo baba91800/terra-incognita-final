@@ -11,6 +11,8 @@ import ProximityAlert from './components/ProximityAlert'
 import ProfileScreen from './components/ProfileScreen'
 import MarkerEditor from './components/MarkerEditor'
 import TerritoryBar from './components/TerritoryBar'
+import CityBoundary from './components/CityBoundary'
+import RecenterButton from './components/RecenterButton'
 import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
 import type { Monument, PersonalMarker } from './types/game'
@@ -117,7 +119,7 @@ export default function App() {
         gpsActive={engine.gpsActive} onStartGPS={engine.startGPS} onStopGPS={engine.stopGPS}
         onOpenProfile={() => setShowProfile(true)}
         lang={lang} onChangeLang={l => { setLang(l); saveLang(l) }}
-        t={t} onOpenProfile={() => setShowProfile(true)}
+        t={t}
       />
 
       {/* Toasts */}
@@ -127,6 +129,8 @@ export default function App() {
       <ScaleBar mapRef={mapRef as any} />
       <Compass heading={heading} />
       <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} />
+      <CityBoundary mapRef={mapRef as any} boundary={engine.territory.cityBoundary} />
+      <RecenterButton mapRef={mapRef as any} playerLat={engine.playerLat} playerLng={engine.playerLng} onRecenter={() => {}} />
 
       {/* Proximity alert */}
       <ProximityAlert

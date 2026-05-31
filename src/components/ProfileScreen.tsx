@@ -3,6 +3,7 @@ import type { Badge, Monument, CountryDiscovery } from '../types/game'
 import { RARITY_COLORS, LEVEL_TITLES } from '../lib/constants'
 import { estimateCityPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
+import BadgeTooltip from './BadgeTooltip'
 import type { Translations } from '../lib/i18n'
 
 interface Props {
@@ -127,9 +128,7 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
             <div style={{ marginBottom:16 }}>
               <div style={{ fontSize:9, letterSpacing:'0.15em', color:'rgba(0,245,212,0.5)', textTransform:'uppercase', marginBottom:10 }}>Badges — {earnedBadges.length}/{badges.length}</div>
               <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
-                {badges.map(b => (
-                  <div key={b.id} title={b.name + ' — ' + b.description} style={{ width:44, height:44, borderRadius:10, background: b.earned?'rgba(0,245,212,0.1)':'rgba(255,255,255,0.03)', border:`1px solid ${b.earned?'rgba(0,245,212,0.3)':'rgba(255,255,255,0.06)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, opacity:b.earned?1:0.2, cursor:'default' }}>{b.icon}</div>
-                ))}
+                {badges.map(b => <BadgeTooltip key={b.id} badge={b} />)}
               </div>
             </div>
 
