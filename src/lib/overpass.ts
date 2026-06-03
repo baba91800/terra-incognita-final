@@ -1,4 +1,5 @@
-import type { Monument, Rarity } from '../types/game'
+import type { Monument } from '../types/game'
+import type { Rarity } from '../types/game'
 
 // ── Category colors ───────────────────────────────────────────
 export const CATEGORY_COLORS: Record<string, string> = {
@@ -16,22 +17,17 @@ export const CATEGORY_COLORS: Record<string, string> = {
   attraction: '#00f5d4', place: '#00f5d4', viewpoint: '#00f5d4',
 }
 
-// ── FIX #7 — Plusieurs serveurs Overpass en fallback ──────────
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-]
-
 // ── Classification ────────────────────────────────────────────
 function classify(tags: Record<string, string>): { rarity: Rarity; type: string; icon: string } | null {
+  // LEGENDARY
   if (tags.natural === 'volcano')           return { rarity: 'legendary', type: 'volcano',    icon: '🌋' }
   if (tags.natural === 'glacier')           return { rarity: 'legendary', type: 'glacier',    icon: '🧊' }
   if (tags.historic === 'palace')           return { rarity: 'legendary', type: 'palace',     icon: '🏯' }
   if (tags['heritage:operator'] === 'UNESCO') return { rarity: 'legendary', type: 'heritage', icon: '🏛️' }
-  if (tags.natural === 'peak' && parseInt(tags.ele || '0') > 3000) return { rarity: 'legendary', type: 'peak', icon: '⛰️' }
+  if (tags.natural === 'peak' && parseInt(tags.ele||'0') > 3000) return { rarity: 'legendary', type: 'peak', icon: '⛰️' }
   if (tags.man_made === 'lighthouse' && tags.tourism === 'attraction') return { rarity: 'legendary', type: 'lighthouse', icon: '🗼' }
 
+  // EPIC
   if (tags.natural === 'cave_entrance')     return { rarity: 'epic', type: 'cave',       icon: '🕳️' }
   if (tags.waterway === 'waterfall' || tags.natural === 'waterfall') return { rarity: 'epic', type: 'waterfall', icon: '💧' }
   if (tags.natural === 'hot_spring')        return { rarity: 'epic', type: 'hot_spring', icon: '♨️' }
@@ -47,6 +43,7 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
   if (tags.historic === 'megalith' || tags.historic === 'dolmen' || tags.historic === 'menhir') return { rarity: 'epic', type: 'megalith', icon: '🗿' }
   if (tags.natural === 'cape')              return { rarity: 'epic', type: 'cape',       icon: '🏔️' }
 
+  // RARE
   if (tags.tourism === 'viewpoint')         return { rarity: 'rare', type: 'viewpoint',  icon: '👁️' }
   if (tags.tourism === 'museum')            return { rarity: 'rare', type: 'museum',     icon: '🏛️' }
   if (tags.historic === 'monument')         return { rarity: 'rare', type: 'monument',   icon: '🗿' }
@@ -63,16 +60,20 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
   if (tags.historic === 'memorial' && tags.tourism) return { rarity: 'rare', type: 'memorial', icon: '🪦' }
   if (tags.natural === 'rock' && tags.name) return { rarity: 'rare', type: 'rock',      icon: '🪨' }
 
+  // COMMON — seulement les lieux vraiment notables
+  // On filtre strictement : doit avoir tourism=attraction ET un nom connu
   if (tags.tourism === 'artwork' && tags.name && tags.wikidata) return { rarity: 'common', type: 'artwork', icon: '🎨' }
   if (tags.amenity === 'fountain' && tags.tourism === 'attraction' && tags.wikidata) return { rarity: 'common', type: 'fountain', icon: '⛲' }
   if (tags.leisure === 'garden' && tags.tourism === 'attraction' && tags.wikidata) return { rarity: 'common', type: 'garden', icon: '🌷' }
 
+  // Rejeter tout le reste pour éviter la saturation
   return null
 }
 
 // ── Cache persistant ──────────────────────────────────────────
 const CACHE_KEY = 'ti2_overpass_cache'
 const CACHE_VERSION = 3
+
 interface CacheEntry { monuments: Monument[]; timestamp: number }
 
 function loadCache(): Record<string, CacheEntry> {
@@ -90,8 +91,8 @@ function saveCache(cache: Record<string, CacheEntry>) {
     const keys = Object.keys(cache)
     if (keys.length > 200) {
       keys.sort((a, b) => cache[a].timestamp - cache[b].timestamp)
-        .slice(0, keys.length - 200)
-        .forEach(k => delete cache[k])
+          .slice(0, keys.length - 200)
+          .forEach(k => delete cache[k])
     }
     localStorage.setItem(CACHE_KEY, JSON.stringify({ version: CACHE_VERSION, data: cache }))
   } catch {}
@@ -100,47 +101,21 @@ function saveCache(cache: Record<string, CacheEntry>) {
 const memCache = new Set<string>()
 function zoneKey(lat: number, lng: number) { return `${Math.floor(lat / 0.03)},${Math.floor(lng / 0.03)}` }
 
-// FIX #16 — verrou async par zone pour éviter les appels parallèles
-const pendingFetches = new Set<string>()
-
-// FIX #7 — fetch avec fallback sur plusieurs endpoints
-async function fetchWithFallback(query: string): Promise<any> {
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        body: query,
-        headers: { 'Content-Type': 'text/plain' },
-        signal: AbortSignal.timeout(15000), // 15s timeout par endpoint
-      })
-      if (res.ok) return await res.json()
-    } catch {
-      // Ce endpoint a échoué, on essaie le suivant
-    }
-  }
-  return null // Tous les endpoints ont échoué
-}
-
-// ── Fetch principal ───────────────────────────────────────────
+// ── Fetch ─────────────────────────────────────────────────────
 export async function fetchMonuments(lat: number, lng: number, existingIds: Set<string>): Promise<Monument[]> {
   const key = zoneKey(lat, lng)
-
   if (memCache.has(key)) return []
-
-  // FIX #16 — pas de fetch parallèle pour la même zone
-  if (pendingFetches.has(key)) return []
-  pendingFetches.add(key)
   memCache.add(key)
 
-  try {
-    const cache = loadCache()
-    const cached = cache[key]
-    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000
-    if (cached && Date.now() - cached.timestamp < ONE_WEEK) {
-      return cached.monuments.filter(m => !existingIds.has(m.id))
-    }
+  const cache = loadCache()
+  const cached = cache[key]
+  const ONE_WEEK = 7 * 24 * 60 * 60 * 1000
+  if (cached && Date.now() - cached.timestamp < ONE_WEEK) {
+    return cached.monuments.filter(m => !existingIds.has(m.id))
+  }
 
-    const q = `[out:json][timeout:20];
+  // Query — only named, notable places
+  const q = `[out:json][timeout:20];
 (
   node["tourism"~"attraction|viewpoint|museum|artwork"]["name"](around:3000,${lat},${lng});
   node["historic"~"castle|monument|palace|fort|ruins|megalith|dolmen|menhir|mine|tower|cemetery"]["name"](around:3000,${lat},${lng});
@@ -153,10 +128,15 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
 );
 out center;`
 
-    const data = await fetchWithFallback(q)
-    if (!data) return []
-
+  try {
+    const res = await fetch('https://overpass.kumi.systems/api/interpreter', {
+      method: 'POST', body: q,
+      headers: { 'Content-Type': 'text/plain' }
+    })
+    if (!res.ok) return []
+    const data = await res.json()
     const results: Monument[] = []
+
     for (const el of data.elements) {
       if (!el.tags?.name) continue
       const id = `osm_${el.type}_${el.id}`
@@ -164,11 +144,14 @@ out center;`
       const elLat = el.lat || el.center?.lat
       const elLng = el.lon || el.center?.lon
       if (!elLat || !elLng) continue
+
       const classified = classify(el.tags)
-      if (!classified) continue
+      if (!classified) continue // Skip unclassified — reduces clutter
+
       results.push({ id, name: el.tags.name, lat: elLat, lng: elLng, ...classified, discovered: false })
     }
 
+    // Limit to 20 most interesting per zone (prioritize by rarity)
     const rarityOrder = { legendary: 0, epic: 1, rare: 2, common: 3 }
     const limited = results
       .sort((a, b) => rarityOrder[a.rarity] - rarityOrder[b.rarity])
@@ -178,7 +161,5 @@ out center;`
     saveCache(cache)
 
     return limited.filter(m => !existingIds.has(m.id))
-  } finally {
-    pendingFetches.delete(key) // Toujours libérer le verrou
-  }
+  } catch { return [] }
 }

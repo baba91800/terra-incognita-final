@@ -1,22 +1,11 @@
-# Dépendances
 node_modules/
-
-# Build Vite
 dist/
 dist-ssr/
-
-# Fichiers système Mac
 .DS_Store
-
-# Variables d'environnement (mots de passe, clés API)
 .env
 .env.local
 .env.production
-
-# Logs
 *.log
 npm-debug.log*
-
-# Éditeurs
 .vscode/
 .idea/
