@@ -25,6 +25,10 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const personalMarkersRef = useRef<Map<string, any>>(new Map())
   const markersRef = useRef<Map<string, any>>(new Map())
   const animRef = useRef<number>(0)
+<<<<<<< HEAD
+=======
+  const timeRef = useRef<number>(0)
+>>>>>>> parent of 08ae0c7 (update)
   const [effects, setEffects] = useState<Effect[]>([])
   const prevMonuments = useRef<Set<string>>(new Set())
 
