@@ -11,8 +11,6 @@ import ProximityAlert from './components/ProximityAlert'
 import ProfileScreen from './components/ProfileScreen'
 import MarkerEditor from './components/MarkerEditor'
 import TerritoryBar from './components/TerritoryBar'
-import CityBoundary from './components/CityBoundary'
-import RecenterButton from './components/RecenterButton'
 import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
 import type { Monument, PersonalMarker } from './types/game'
@@ -44,6 +42,7 @@ export default function App() {
     setShowOnboard(false)
   }
 
+  // FIX #4 — handleReset maintenant accessible via ProfileScreen
   const handleReset = () => {
     if (!confirm(t.resetConfirm)) return
     clearAll()
@@ -73,21 +72,21 @@ export default function App() {
 
   if (!engine.initialized) {
     return (
-      <div style={{width:'100vw',height:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'radial-gradient(ellipse at 50% 40%, rgba(0,30,50,0.98) 0%, #020508 100%)',gap:20}}>
-        <img src="/logo.png" alt="Terra Incognita" className="logo-glow float" style={{width:90,height:90,borderRadius:'50%',objectFit:'cover',border:'2px solid rgba(0,245,212,0.35)'}} />
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
-          <div style={{color:'#00f5d4',fontFamily:'monospace',fontSize:13,letterSpacing:'0.25em',textTransform:'uppercase'}} className="animate-pulse">{t.loading}</div>
-          <div style={{color:'rgba(255,255,255,0.15)',fontSize:10,letterSpacing:'0.15em',textTransform:'uppercase'}}>Terra Incognita</div>
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(ellipse at 50% 40%, rgba(0,30,50,0.98) 0%, #020508 100%)', gap: 20 }}>
+        <img src="/logo.png" alt="Terra Incognita" className="logo-glow float" style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,245,212,0.35)' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <div style={{ color: '#00f5d4', fontFamily: 'monospace', fontSize: 13, letterSpacing: '0.25em', textTransform: 'uppercase' }} className="animate-pulse">{t.loading}</div>
+          <div style={{ color: 'rgba(255,255,255,0.15)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Terra Incognita</div>
         </div>
-        <div style={{width:120,height:3,background:'rgba(255,255,255,0.06)',borderRadius:2,overflow:'hidden'}}>
-          <div className="animate-pulse" style={{width:'60%',height:'100%',background:'linear-gradient(90deg,#00b4a0,#00f5d4)',borderRadius:2}} />
+        <div style={{ width: 120, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+          <div className="animate-pulse" style={{ width: '60%', height: '100%', background: 'linear-gradient(90deg,#00b4a0,#00f5d4)', borderRadius: 2 }} />
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{position:'relative',width:'100vw',height:'100vh',overflow:'hidden',background:'#030810'}}>
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#030810' }}>
       {/* Map */}
       <MapView
         playerLat={engine.playerLat} playerLng={engine.playerLng}
@@ -108,7 +107,7 @@ export default function App() {
         onArrived={handleArrived} t={t}
       />
 
-      {/* HUD */}
+      {/* HUD — FIX #5 : onOpenProfile passé une seule fois */}
       <HUD
         score={engine.score} xp={engine.xp} level={engine.level}
         xpIntoLevel={engine.xpIntoLevel} xpForNext={engine.xpForNext} levelTitle={engine.levelTitle}
@@ -129,8 +128,6 @@ export default function App() {
       <ScaleBar mapRef={mapRef as any} />
       <Compass heading={heading} />
       <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} />
-      <CityBoundary mapRef={mapRef as any} boundary={engine.territory.cityBoundary} />
-      <RecenterButton mapRef={mapRef as any} playerLat={engine.playerLat} playerLng={engine.playerLng} onRecenter={() => {}} />
 
       {/* Proximity alert */}
       <ProximityAlert
@@ -142,32 +139,33 @@ export default function App() {
       {/* Arrived message */}
       {showArrivedMsg && (
         <div style={{
-          position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)',
-          zIndex:800, pointerEvents:'none',
-          background:'rgba(5,12,24,0.97)', border:'1px solid rgba(34,197,94,0.5)',
-          borderRadius:16, padding:'20px 32px', textAlign:'center',
-          boxShadow:'0 0 40px rgba(34,197,94,0.3)',
-          animation:'toastIn 0.4s ease-out',
+          position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)',
+          zIndex: 800, pointerEvents: 'none',
+          background: 'rgba(5,12,24,0.97)', border: '1px solid rgba(34,197,94,0.5)',
+          borderRadius: 16, padding: '20px 32px', textAlign: 'center',
+          boxShadow: '0 0 40px rgba(34,197,94,0.3)',
+          animation: 'toastIn 0.4s ease-out',
         }}>
-          <div style={{fontSize:36,marginBottom:8}}>🎯</div>
-          <div style={{fontSize:18,fontWeight:'bold',color:'#4ade80',fontFamily:'monospace'}}>{t.arrived}</div>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>🎯</div>
+          <div style={{ fontSize: 18, fontWeight: 'bold', color: '#4ade80', fontFamily: 'monospace' }}>{t.arrived}</div>
         </div>
       )}
 
       {/* Hint */}
       {!navTarget && engine.gpsActive && (
-        <div style={{position:'absolute',bottom:16,right:60,zIndex:600,pointerEvents:'none',fontSize:9,color:'rgba(255,255,255,0.15)',fontFamily:'monospace',letterSpacing:'0.08em',textShadow:'0 1px 4px rgba(0,0,0,0.8)'}}>
+        <div style={{ position: 'absolute', bottom: 16, right: 60, zIndex: 600, pointerEvents: 'none', fontSize: 9, color: 'rgba(255,255,255,0.15)', fontFamily: 'monospace', letterSpacing: '0.08em', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
           {t.tapHaloHint}
         </div>
       )}
 
       {/* Scanlines */}
-      <div style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:550,background:'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.018) 2px,rgba(0,0,0,0.018) 4px)'}} />
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 550, background: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.018) 2px,rgba(0,0,0,0.018) 4px)' }} />
 
-      {/* Profile screen */}
+      {/* Profile screen — FIX #4 : onReset branché */}
       {showProfile && (
         <ProfileScreen
           onClose={() => setShowProfile(false)}
+          onReset={handleReset}
           score={engine.score} xp={engine.xp} level={engine.level} levelTitle={engine.levelTitle}
           totalTiles={engine.totalTiles} totalDist={engine.totalDist}
           badges={engine.badges} monuments={engine.monuments} countries={engine.countries}

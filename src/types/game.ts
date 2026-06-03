@@ -28,13 +28,7 @@ export interface Notification {
   id: string; type: string; title: string; subtitle?: string
   points: number; rarity?: Rarity; icon?: string
 }
-
 export interface PersonalMarker {
-  id: string
-  name: string
-  note?: string
-  icon: string
-  lat: number
-  lng: number
-  createdAt: string
+  id: string; name: string; note?: string
+  icon: string; lat: number; lng: number; createdAt: string
 }

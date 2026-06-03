@@ -25,10 +25,17 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const personalMarkersRef = useRef<Map<string, any>>(new Map())
   const markersRef = useRef<Map<string, any>>(new Map())
   const animRef = useRef<number>(0)
-  const timeRef = useRef<number>(0)
-  const isFollowing = useRef(true)
   const [effects, setEffects] = useState<Effect[]>([])
   const prevMonuments = useRef<Set<string>>(new Set())
+
+  // FIX #12 — monuments gardés en ref pour éviter la closure stale dans les listeners Leaflet
+  const monumentsRef = useRef<Monument[]>(monuments)
+  const onMonumentClickRef = useRef(onMonumentClick)
+  const onLongPressRef = useRef(onLongPress)
+
+  useEffect(() => { monumentsRef.current = monuments }, [monuments])
+  useEffect(() => { onMonumentClickRef.current = onMonumentClick }, [onMonumentClick])
+  useEffect(() => { onLongPressRef.current = onLongPress }, [onLongPress])
 
   const drawFog = useCallback((time: number = 0) => {
     const map = mapRef.current
@@ -43,34 +50,29 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     off.width = canvas.width; off.height = canvas.height
     const octx = off.getContext('2d', { alpha: true })!
 
-    // Fog base
     octx.fillStyle = 'rgb(2,5,15)'
     octx.fillRect(0, 0, off.width, off.height)
 
-    // Pulsing halos for undiscovered monuments
     octx.globalCompositeOperation = 'source-over'
-    const pulse = Math.sin(time * 0.002) * 0.5 + 0.5 // 0 to 1
+    const pulse = Math.sin(time * 0.002) * 0.5 + 0.5
 
-    monuments.forEach(m => {
+    // FIX #12 — utilise la ref pour avoir les monuments à jour
+    monumentsRef.current.forEach(m => {
       if (m.discovered) return
       try {
         const pt = map.latLngToContainerPoint([m.lat, m.lng])
-        // Category color for halo, rarity only affects size
         const color = CATEGORY_COLORS[m.type] || (m.rarity === 'legendary' ? '#a855f7' : RARITY_COLORS[m.rarity])
-
-        // Pulsing outer glow
         const baseR = m.rarity === 'legendary' ? 85 : m.rarity === 'epic' ? 65 : m.rarity === 'rare' ? 48 : 32
         const outerR = baseR + pulse * (m.rarity === 'legendary' ? 20 : m.rarity === 'epic' ? 15 : 10)
         const baseAlpha = m.rarity === 'legendary' ? 0.4 : m.rarity === 'epic' ? 0.35 : m.rarity === 'rare' ? 0.3 : 0.25
         const alpha = baseAlpha + pulse * 0.15
 
         const og = octx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, outerR)
-        og.addColorStop(0, color + Math.round(alpha * 255).toString(16).padStart(2,'0'))
-        og.addColorStop(0.5, color + Math.round(alpha * 0.5 * 255).toString(16).padStart(2,'0'))
+        og.addColorStop(0, color + Math.round(alpha * 255).toString(16).padStart(2, '0'))
+        og.addColorStop(0.5, color + Math.round(alpha * 0.5 * 255).toString(16).padStart(2, '0'))
         og.addColorStop(1, color + '00')
         octx.fillStyle = og; octx.beginPath(); octx.arc(pt.x, pt.y, outerR, 0, Math.PI * 2); octx.fill()
 
-        // Bright pulsing core
         const innerR = (m.rarity === 'legendary' ? 14 : m.rarity === 'epic' ? 10 : m.rarity === 'rare' ? 8 : 5) + pulse * 3
         const ig = octx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, innerR)
         ig.addColorStop(0, color + 'ff'); ig.addColorStop(0.6, color + 'aa'); ig.addColorStop(1, color + '00')
@@ -78,7 +80,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       } catch {}
     })
 
-    // Cut holes — discovered tiles
     octx.globalCompositeOperation = 'destination-out'
     const bounds = map.getBounds()
     const zoom = map.getZoom()
@@ -105,14 +106,13 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.drawImage(off, 0, 0)
-  }, [tiles, playerLat, monuments])
+  }, [tiles, playerLat])  // monuments retiré des deps — on utilise la ref
 
-  // Animation loop for pulsing halos
+  // Animation RAF
   useEffect(() => {
     let running = true
     const loop = (t: number) => {
       if (!running) return
-      timeRef.current = t
       drawFog(t)
       animRef.current = requestAnimationFrame(loop)
     }
@@ -120,10 +120,14 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     return () => { running = false; cancelAnimationFrame(animRef.current) }
   }, [drawFog])
 
-  // Init map
+  // Init Leaflet — FIX #11 : cleanup complet des markers au démontage
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
+    let destroyed = false
+
     import('leaflet').then(({ default: L }) => {
+      if (destroyed || !containerRef.current) return
+
       const map = L.map(containerRef.current!, {
         center: [playerLat, playerLng], zoom: 17,
         zoomControl: false, attributionControl: false,
@@ -133,53 +137,66 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       }).addTo(map)
       L.control.zoom({ position: 'bottomright' }).addTo(map)
       L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
+
       playerMarker.current = L.marker([playerLat, playerLng], {
         icon: L.divIcon({
           html: `<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 10px rgba(0,245,212,0.8)"></div>`,
           className: '', iconSize: [18, 18], iconAnchor: [9, 9],
         })
       }).addTo(map)
+
+      // FIX #12 — utilise les refs pour avoir les données à jour au moment du clic
       map.on('click', (e: any) => {
-        if (!onMonumentClick) return
+        if (!onMonumentClickRef.current) return
         const clickLat = e.latlng.lat
         const clickLng = e.latlng.lng
-        // Find nearest undiscovered monument within click radius
         let nearest: Monument | null = null
         let nearestDist = Infinity
-        monuments.forEach(m => {
+        monumentsRef.current.forEach(m => {
           if (m.discovered) return
           const d = Math.sqrt(Math.pow(clickLat - m.lat, 2) + Math.pow(clickLng - m.lng, 2))
           if (d < nearestDist && d < 0.001) { nearest = m; nearestDist = d }
         })
-        if (nearest) onMonumentClick(nearest)
+        if (nearest) onMonumentClickRef.current(nearest)
       })
-      // Long press detection
+
       let pressTimer: ReturnType<typeof setTimeout> | null = null
       map.on('mousedown touchstart', (e: any) => {
         pressTimer = setTimeout(() => {
           const latlng = e.latlng || map.mouseEventToLatLng(e.originalEvent)
-          if (latlng && onLongPress) onLongPress(latlng.lat, latlng.lng)
+          if (latlng && onLongPressRef.current) onLongPressRef.current(latlng.lat, latlng.lng)
         }, 600)
       })
       map.on('mouseup touchend mousemove', () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null } })
 
-      map.on('drag move', () => {
-        // Force fog redraw during drag
-        cancelAnimationFrame(animRef.current)
-        animRef.current = requestAnimationFrame(() => drawFog(timeRef.current))
-      })
-      map.on('dragstart', () => { isFollowing.current = false })
       mapRef.current = map
       onMapReady(map)
     })
-    return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
-  }, []) // eslint-disable-line
 
-  // Player marker + direction arrow
+    // FIX #11 — cleanup complet : map + tous les markers
+    return () => {
+      destroyed = true
+      if (mapRef.current) {
+        // Supprimer tous les markers personnels
+        personalMarkersRef.current.forEach(mk => { try { mk.remove() } catch {} })
+        personalMarkersRef.current.clear()
+        // Supprimer tous les markers de monuments
+        markersRef.current.forEach(mk => { try { mk.remove() } catch {} })
+        markersRef.current.clear()
+        // Supprimer le marker joueur
+        if (playerMarker.current) { try { playerMarker.current.remove() } catch {} }
+        playerMarker.current = null
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Player marker + direction
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({ default: L }) => {
-      const map = mapRef.current!
+      const map = mapRef.current
       if (!map) return
 
       const makeIcon = (h: number | null) => {
@@ -216,7 +233,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         const color = RARITY_COLORS[m.rarity]
         const ex = markersRef.current.get(m.id)
 
-        // Check if just discovered → trigger effect
         if (m.discovered && !prevMonuments.current.has(m.id)) {
           prevMonuments.current.add(m.id)
           try {
@@ -252,10 +268,10 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
           }).addTo(mapRef.current)
           mk.bindPopup(`
             <div style="background:rgba(5,12,24,0.97);border:1px solid ${color}70;color:#fff;padding:12px 16px;border-radius:10px;min-width:140px;font-family:monospace;box-shadow:0 0 24px ${color}30;">
-              <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon||'📍'}</div>
+              <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon || '📍'}</div>
               <div style="font-size:9px;color:${color};letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px">${m.rarity}</div>
               <div style="font-size:13px;font-weight:bold">${m.discovered ? m.name : '???'}</div>
-              ${m.discovered&&m.discoveredAt?`<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:6px">${new Date(m.discoveredAt).toLocaleDateString()}</div>`:''}
+              ${m.discovered && m.discoveredAt ? `<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:6px">${new Date(m.discoveredAt).toLocaleDateString()}</div>` : ''}
             </div>
           `, { className: 'custom-popup' })
           markersRef.current.set(m.id, mk)
@@ -264,13 +280,12 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     })
   }, [monuments])
 
-  // Personal markers
+  // Personal markers — FIX #11 inclus dans le cleanup global de l'init
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({ default: L }) => {
       const map = mapRef.current!
 
-      // Remove old markers not in list
       personalMarkersRef.current.forEach((mk, id) => {
         if (!personalMarkers.find(m => m.id === id)) {
           mk.remove()
@@ -278,20 +293,15 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         }
       })
 
-      // Add/update markers
       personalMarkers.forEach(m => {
         const existing = personalMarkersRef.current.get(m.id)
-        if (existing) {
-          existing.setLatLng([m.lat, m.lng])
-          return
-        }
+        if (existing) { existing.setLatLng([m.lat, m.lng]); return }
         const mk = L.marker([m.lat, m.lng], {
           icon: L.divIcon({
             html: `<div style="width:36px;height:36px;border-radius:50%;background:rgba(5,12,24,0.95);border:2px solid rgba(255,200,50,0.7);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 12px rgba(255,200,50,0.4);cursor:pointer">${m.icon}</div>`,
             className: '', iconSize: [36, 36], iconAnchor: [18, 18],
           })
         }).addTo(map)
-
         mk.on('click', () => onMarkerClick && onMarkerClick(m))
         mk.bindPopup(`
           <div style="background:rgba(5,12,24,0.97);border:1px solid rgba(255,200,50,0.4);color:#fff;padding:10px 14px;border-radius:10px;min-width:130px;font-family:monospace;">
@@ -301,11 +311,10 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
             <div style="font-size:8px;color:rgba(255,255,255,0.2)">${new Date(m.createdAt).toLocaleDateString()}</div>
           </div>
         `, { className: 'custom-popup' })
-
         personalMarkersRef.current.set(m.id, mk)
       })
     })
-  }, [personalMarkers])
+  }, [personalMarkers, onMarkerClick])
 
   return (
     <div className="relative w-full h-full">
