@@ -26,6 +26,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const markersRef = useRef<Map<string, any>>(new Map())
   const animRef = useRef<number>(0)
   const timeRef = useRef<number>(0)
+  const isFollowing = useRef(true)
   const [effects, setEffects] = useState<Effect[]>([])
   const prevMonuments = useRef<Set<string>>(new Set())
 
@@ -162,6 +163,12 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       })
       map.on('mouseup touchend mousemove', () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null } })
 
+      map.on('drag move', () => {
+        // Force fog redraw during drag
+        cancelAnimationFrame(animRef.current)
+        animRef.current = requestAnimationFrame(() => drawFog(timeRef.current))
+      })
+      map.on('dragstart', () => { isFollowing.current = false })
       mapRef.current = map
       onMapReady(map)
     })
