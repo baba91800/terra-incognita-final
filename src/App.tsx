@@ -117,7 +117,7 @@ export default function App() {
         gpsActive={engine.gpsActive} onStartGPS={engine.startGPS} onStopGPS={engine.stopGPS}
         onOpenProfile={() => setShowProfile(true)}
         lang={lang} onChangeLang={l => { setLang(l); saveLang(l) }}
-        t={t} onOpenProfile={() => setShowProfile(true)}
+        t={t}
       />
 
       {/* Toasts */}
