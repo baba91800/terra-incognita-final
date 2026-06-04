@@ -1,14 +1,12 @@
-import { useEffect, useState, useRef } from 'react'
-
 interface Props {
   heading: number | null
 }
 
 export default function Compass({ heading }: Props) {
-  if (heading === null) return null
-
+  // Affiche la boussole même sans gyroscope — heading null = Nord fixe
+  const h = heading ?? 0
   const dirs = ['N','NE','E','SE','S','SO','O','NO']
-  const dir = dirs[Math.round(heading / 45) % 8]
+  const dir = dirs[Math.round(h / 45) % 8]
 
   return (
     <div style={{
@@ -23,10 +21,11 @@ export default function Compass({ heading }: Props) {
         boxShadow: '0 0 12px rgba(0,0,0,0.5)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         position: 'relative', overflow: 'hidden',
+        opacity: heading === null ? 0.4 : 1,
       }}>
         {['N','E','S','O'].map((d, i) => {
           const angle = i * 90
-          const rad = (angle - heading) * Math.PI / 180
+          const rad = (angle - h) * Math.PI / 180
           const r = 17
           const x = 26 + Math.sin(rad) * r
           const y = 26 - Math.cos(rad) * r
@@ -43,7 +42,7 @@ export default function Compass({ heading }: Props) {
         })}
         <div style={{
           position: 'absolute', left: '50%', top: '50%',
-          transform: `translate(-50%, -50%) rotate(${-heading}deg)`,
+          transform: `translate(-50%, -50%) rotate(${-h}deg)`,
           width: 2, height: 26,
           transformOrigin: 'center center',
         }}>
@@ -52,7 +51,9 @@ export default function Compass({ heading }: Props) {
         </div>
         <div style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)', width:4, height:4, borderRadius:'50%', background:'#00f5d4' }} />
       </div>
-      <div style={{ position:'absolute', bottom:-14, left:'50%', transform:'translateX(-50%)', fontSize:8, fontFamily:'monospace', color:'rgba(0,245,212,0.6)', letterSpacing:'0.1em' }}>{dir}</div>
+      <div style={{ position:'absolute', bottom:-14, left:'50%', transform:'translateX(-50%)', fontSize:8, fontFamily:'monospace', color:'rgba(0,245,212,0.6)', letterSpacing:'0.1em' }}>
+        {heading === null ? '—' : dir}
+      </div>
     </div>
   )
 }

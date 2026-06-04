@@ -7,12 +7,16 @@ import type { Translations } from '../lib/i18n'
 import GlobeView from './GlobeView'
 import { exportData, importData } from '../lib/exportImport'
 import MonumentStats from './MonumentStats'
+import AvatarEditor, { loadAvatarPhoto } from './AvatarEditor'
+import ShareCard from './ShareCard'
+import ActivityGraph from './ActivityGraph'
 
 interface Props {
   onClose: () => void
   score: number; xp: number; level: number; levelTitle: string
   totalTiles: number; totalDist: number
   badges: Badge[]; monuments: Monument[]; countries: CountryDiscovery[]
+  log: Array<{ timestamp: string; points?: number }>
   tiles: Set<string>; playerLat: number; playerLng: number
   territory: TerritoryData
   t: Translations
@@ -40,6 +44,9 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
   const [showGlobe, setShowGlobe] = useState(false)
   const [importMsg, setImportMsg] = useState<{ok:boolean;text:string}|null>(null)
   const importRef = useRef<HTMLInputElement>(null)
+  const [avatarPhoto, setAvatarPhoto] = useState<string|undefined>(() => loadAvatarPhoto())
+  const [showAvatarEditor, setShowAvatarEditor] = useState(false)
+  const [showShare, setShowShare] = useState(false)
   const [showBoundary, setShowBoundary] = useState(false)
 
   const earnedBadges = badges.filter(b => b.earned)
@@ -84,7 +91,10 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
           {tab === 'profile' && (
             <>
               <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, marginBottom:20 }}>
-                <div style={{ width:80, height:80, borderRadius:'50%', background:'rgba(0,245,212,0.1)', border:'2px solid rgba(0,245,212,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:40, boxShadow:'0 0 24px rgba(0,245,212,0.2)' }}>{avatar}</div>
+                <div onClick={() => setShowAvatarEditor(true)} style={{ width:80, height:80, borderRadius:'50%', background:'rgba(0,245,212,0.1)', border:'2px solid rgba(0,245,212,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:40, boxShadow:'0 0 24px rgba(0,245,212,0.2)', cursor:'pointer', overflow:'hidden' }}>
+                {avatarPhoto ? <img src={avatarPhoto} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="avatar" /> : avatar}
+              </div>
+              <div style={{fontSize:8,color:'rgba(0,245,212,0.4)',letterSpacing:'0.1em',textTransform:'uppercase',cursor:'pointer'}} onClick={()=>setShowAvatarEditor(true)}>Modifier</div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:5, justifyContent:'center', maxWidth:300 }}>
                   {AVATARS.map(a => (
                     <button key={a.icon} onClick={()=>saveAvatar(a.icon)} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2, width:50, padding:'5px 3px', borderRadius:8, fontSize:20, background: avatar===a.icon ? 'rgba(0,245,212,0.2)' : 'rgba(255,255,255,0.04)', border:`1px solid ${avatar===a.icon ? 'rgba(0,245,212,0.5)' : 'rgba(255,255,255,0.08)'}`, cursor:'pointer' }}>
@@ -229,6 +239,22 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
         />
       )}
 
+      {showAvatarEditor && (
+        <AvatarEditor
+          currentAvatar={avatar} currentPhoto={avatarPhoto}
+          onAvatarChange={(a, p) => { setAvatar(a); setAvatarPhoto(p) }}
+          onClose={() => setShowAvatarEditor(false)}
+        />
+      )}
+      {showShare && (
+        <ShareCard
+          tiles={tiles} playerLat={playerLat} playerLng={playerLng}
+          score={score} level={level} levelTitle={levelTitle}
+          totalDist={totalDist} monuments={monuments}
+          pseudo={pseudo} avatar={avatar} avatarPhoto={avatarPhoto}
+          onClose={() => setShowShare(false)}
+        />
+      )}
       {showGlobe && (
         <GlobeView
           playerLat={playerLat} playerLng={playerLng}
