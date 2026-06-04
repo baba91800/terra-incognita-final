@@ -206,12 +206,13 @@ export function useGameEngine() {
     if(pathR.current.length%10===0) savePath(pathR.current)
   },[])
 
-  const move=useCallback((lat:number,lng:number,newLat:number,newLng:number)=>{
+  const move=useCallback((lat:number,lng:number,newLat:number,newLng:number,updateHeading?:(lat:number,lng:number)=>void)=>{
     const d=dist(lat,lng,newLat,newLng)
     distR.current+=d; setTotalDist(distR.current); saveDist(distR.current); updateObj('distance',d)
     latR.current=newLat; lngR.current=newLng
     setPlayerLat(newLat); setPlayerLng(newLng); savePlayer(newLat,newLng)
     trackPath(newLat,newLng)
+    if(updateHeading) updateHeading(newLat,newLng)
     const updated=revealAt(newLat,newLng,monR.current)
     monR.current=updated; detectCountry(newLat,newLng); fetchNearby(newLat,newLng)
     // Update territory every ~100m
@@ -268,28 +269,5 @@ export function useGameEngine() {
   }
 }
 
-// Export heading tracking - added separately
-export function useHeading() {
-  const [heading, setHeading] = useState<number | null>(null)
-  const prevPos = useRef<{ lat: number; lng: number } | null>(null)
-
-  useEffect(() => {
-    // Try device orientation first
-    const handleOrientation = (e: DeviceOrientationEvent) => {
-      const alpha = (e as any).webkitCompassHeading ?? e.alpha
-      if (alpha !== null) setHeading(Math.round(alpha))
-    }
-
-    if (window.DeviceOrientationEvent) {
-      window.addEventListener('deviceorientationabsolute', handleOrientation as any, true)
-      window.addEventListener('deviceorientation', handleOrientation as any, true)
-    }
-
-    return () => {
-      window.removeEventListener('deviceorientationabsolute', handleOrientation as any, true)
-      window.removeEventListener('deviceorientation', handleOrientation as any, true)
-    }
-  }, [])
-
-  return { heading }
-}
+// Export heading — utilise useHeading depuis useHeading.ts
+export { useHeading } from './useHeading'

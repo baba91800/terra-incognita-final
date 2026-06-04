@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
-import { useGameEngine, useHeading } from './hooks/useGameEngine'
+import { useGameEngine } from './hooks/useGameEngine'
+import { useHeading } from './hooks/useHeading'
 import MapView from './components/MapView'
 import HUD from './components/HUD'
 import Toast from './components/Toast'
@@ -19,7 +20,7 @@ const ONBOARD_KEY = 'ti2_onboarded'
 
 export default function App() {
   const engine = useGameEngine()
-  const { heading } = useHeading()
+  const { heading, updateGPSHeading } = useHeading()
   const mapRef = useRef<any>(null)
   const [showOnboard, setShowOnboard] = useState(false)
   const [lang, setLang] = useState<Lang>('fr')
