@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { Badge, Monument, CountryDiscovery } from '../types/game'
 import { RARITY_COLORS, LEVEL_TITLES } from '../lib/constants'
 import { estimateCityPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
 import type { Translations } from '../lib/i18n'
 import GlobeView from './GlobeView'
+import { exportData, importData } from '../lib/exportImport'
+import MonumentStats from './MonumentStats'
 
 interface Props {
   onClose: () => void
@@ -34,8 +36,10 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
   const [pseudo, setPseudo] = useState(() => localStorage.getItem(PSEUDO_KEY) || 'Explorer')
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '🧭')
   const [editing, setEditing] = useState(false)
-  const [tab, setTab] = useState<'profile'|'territory'>('profile')
+  const [tab, setTab] = useState<'profile'|'territory'|'stats'>('profile')
   const [showGlobe, setShowGlobe] = useState(false)
+  const [importMsg, setImportMsg] = useState<{ok:boolean;text:string}|null>(null)
+  const importRef = useRef<HTMLInputElement>(null)
   const [showBoundary, setShowBoundary] = useState(false)
 
   const earnedBadges = badges.filter(b => b.earned)
@@ -43,6 +47,12 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
   const streak = parseInt(localStorage.getItem('ti2_streak') || '0')
 
   const savePseudo = (v: string) => { const c = v.slice(0,20); setPseudo(c); localStorage.setItem(PSEUDO_KEY, c) }
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const result = await importData(file)
+    setImportMsg({ ok: result.success, text: result.message })
+    if (result.success) setTimeout(() => window.location.reload(), 1500)
+  }
   const saveAvatar = (a: string) => { setAvatar(a); localStorage.setItem(AVATAR_KEY, a) }
 
   const cityPct = estimateCityPercent(totalTiles)
@@ -57,13 +67,13 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderBottom:'1px solid rgba(0,245,212,0.1)' }}>
           <div style={{ fontSize:11, letterSpacing:'0.2em', color:'rgba(0,245,212,0.6)', textTransform:'uppercase' }}>Profil</div>
           <div style={{ display:'flex', gap:8 }}>
-            {(['profile','territory'] as const).map(tab_ => (
+            {(['profile','territory','stats'] as const).map(tab_ => (
               <button key={tab_} onClick={()=>setTab(tab_)} style={{
                 padding:'5px 14px', borderRadius:6, fontSize:11, cursor:'pointer',
                 background: tab===tab_ ? 'rgba(0,245,212,0.2)' : 'transparent',
                 border: `1px solid ${tab===tab_ ? 'rgba(0,245,212,0.5)' : 'rgba(255,255,255,0.1)'}`,
                 color: tab===tab_ ? '#00f5d4' : 'rgba(255,255,255,0.4)',
-              }}>{tab_==='profile' ? 'Profil' : 'Territoire'}</button>
+              }}>{tab_==='profile' ? 'Profil' : tab_==='territory' ? 'Territoire' : 'Stats'}</button>
             ))}
           </div>
           <button onClick={onClose} style={{ width:32, height:32, borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -199,6 +209,14 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
               </div>
             </>
           )}
+        {tab === 'stats' && (
+          <>
+            <div style={{fontSize:9,letterSpacing:'0.15em',color:'rgba(0,245,212,0.5)',textTransform:'uppercase',marginBottom:16}}>
+              Sites découverts
+            </div>
+            <MonumentStats monuments={monuments} />
+          </>
+        )}
         </div>
       </div>
 
