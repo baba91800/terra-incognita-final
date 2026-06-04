@@ -323,12 +323,13 @@ function Panel({title,children,left,onClose}:{title:string;children:React.ReactN
   return (
     <div style={{
       position:'absolute',top:180,[left?'left':'right']:12,
-      zIndex:600,width:280,
+      zIndex:750,width:280,
       background:'rgba(5,12,24,0.94)',
       border:'1px solid rgba(0,245,212,0.14)',
       borderRadius:14,padding:'12px 14px',
       backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',
       maxHeight:'58vh',overflowY:'auto',pointerEvents:'auto',
+      touchAction:'pan-y',
       boxShadow:'0 8px 40px rgba(0,0,0,0.6)',
     }}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
