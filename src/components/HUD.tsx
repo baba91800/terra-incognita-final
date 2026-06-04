@@ -186,7 +186,7 @@ export default function HUD(p:Props) {
       {panel==='badges'&&(
         <Panel title={`${t.badgesTitle} — ${earnedB.length}/${p.badges.length}`} left onClose={()=>setPanel('none')}>
           {p.badges.map(b=>(
-            <div key={b.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:`1px solid ${b.earned?'rgba(0,245,212,0.25)':'rgba(255,255,255,0.05)'}`,background:b.earned?'rgba(0,245,212,0.05)':'transparent',opacity:b.earned?1:0.4,cursor:'default',userSelect:'none'}}>
+            <div key={b.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:`1px solid ${b.earned?'rgba(0,245,212,0.25)':'rgba(255,255,255,0.05)'}`,background:b.earned?'rgba(0,245,212,0.05)':'transparent',opacity:b.earned?1:0.4,cursor:'pointer',WebkitTapHighlightColor:'transparent'}}>
               <span style={{fontSize:20,flexShrink:0}}>{b.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:'bold',color:b.earned?'#fff':'rgba(255,255,255,0.3)'}}>{b.name}</div>
@@ -294,27 +294,7 @@ export default function HUD(p:Props) {
         </Panel>
       )}
 
-      {/* ── GPS CTA ── */}
-      <div style={{position:'absolute',bottom:16,left:'50%',transform:'translateX(-50%)',zIndex:600,pointerEvents:'auto'}}>
-        {!p.gpsActive ? (
-          <button onClick={p.onStartGPS} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',background:'rgba(5,12,24,0.94)',border:'1px solid rgba(0,245,212,0.25)',borderRadius:14,padding:'12px 22px',boxShadow:'0 0 30px rgba(0,0,0,0.5)',transition:'all 0.2s'}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(0,245,212,0.5)'}
-            onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(0,245,212,0.25)'}
-          >
-            <span style={{fontSize:28}}>📍</span>
-            <div style={{textAlign:'left'}}>
-              <div style={{fontSize:13,fontWeight:'bold',color:'#00f5d4',letterSpacing:'0.05em'}}>{t.activateGPS}</div>
-              <div style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginTop:2}}>{t.activateGPSDesc}</div>
-            </div>
-          </button>
-        ) : (
-          <div style={{display:'flex',alignItems:'center',gap:10,background:'rgba(5,12,24,0.94)',border:'1px solid rgba(34,197,94,0.3)',borderRadius:12,padding:'8px 16px',boxShadow:'0 0 20px rgba(34,197,94,0.15)'}}>
-            <div style={{width:8,height:8,borderRadius:'50%',background:'#4ade80',boxShadow:'0 0 8px #4ade80'}} className="animate-pulse" />
-            <span style={{fontSize:11,color:'#4ade80',fontFamily:'monospace',letterSpacing:'0.05em'}}>{t.gpsActive}</span>
-            <button onClick={p.onStopGPS} style={{fontSize:10,color:'rgba(239,68,68,0.4)',background:'none',border:'none',cursor:'pointer',marginLeft:4,padding:'2px 6px'}}>✕</button>
-          </div>
-        )}
-      </div>
+
     </>
   )
 }
@@ -329,7 +309,8 @@ function Panel({title,children,left,onClose}:{title:string;children:React.ReactN
       borderRadius:14,padding:'12px 14px',
       backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',
       maxHeight:'58vh',overflowY:'auto',pointerEvents:'auto',
-      touchAction:'pan-y',
+      touchAction:'auto',
+      WebkitOverflowScrolling:'touch',
       boxShadow:'0 8px 40px rgba(0,0,0,0.6)',
     }}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>

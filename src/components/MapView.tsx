@@ -312,7 +312,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         <button
           onClick={recenter}
           style={{
-            position:'absolute',bottom:140,right:12,zIndex:600,
+            position:'absolute',bottom:200,right:12,zIndex:600,
             width:44,height:44,borderRadius:10,
             background:'rgba(5,12,24,0.94)',
             border:'1px solid rgba(0,245,212,0.3)',
