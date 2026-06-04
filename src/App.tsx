@@ -125,7 +125,7 @@ export default function App() {
 
       {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
-      <Compass heading={heading} />
+      <Compass heading={heading} playerLat={engine.playerLat} playerLng={engine.playerLng} />
       <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} />
 
       {/* Proximity alert */}
@@ -167,6 +167,7 @@ export default function App() {
           score={engine.score} xp={engine.xp} level={engine.level} levelTitle={engine.levelTitle}
           totalTiles={engine.totalTiles} totalDist={engine.totalDist}
           badges={engine.badges} monuments={engine.monuments} countries={engine.countries}
+          log={engine.log}
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
           territory={engine.territory}
           t={t}

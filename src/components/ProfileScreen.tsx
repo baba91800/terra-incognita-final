@@ -4,7 +4,6 @@ import { RARITY_COLORS, LEVEL_TITLES } from '../lib/constants'
 import { estimateCityPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
 import type { Translations } from '../lib/i18n'
-import GlobeView from './GlobeView'
 import { exportData, importData } from '../lib/exportImport'
 import MonumentStats from './MonumentStats'
 import AvatarEditor, { loadAvatarPhoto } from './AvatarEditor'
@@ -41,13 +40,11 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '🧭')
   const [editing, setEditing] = useState(false)
   const [tab, setTab] = useState<'profile'|'territory'|'stats'>('profile')
-  const [showGlobe, setShowGlobe] = useState(false)
   const [importMsg, setImportMsg] = useState<{ok:boolean;text:string}|null>(null)
   const importRef = useRef<HTMLInputElement>(null)
   const [avatarPhoto, setAvatarPhoto] = useState<string|undefined>(() => loadAvatarPhoto())
   const [showAvatarEditor, setShowAvatarEditor] = useState(false)
   const [showShare, setShowShare] = useState(false)
-  const [showBoundary, setShowBoundary] = useState(false)
 
   const earnedBadges = badges.filter(b => b.earned)
   const discMonuments = monuments.filter(m => m.discovered)
@@ -166,26 +163,6 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
           {tab === 'territory' && (
             <>
               <div style={{ fontSize:9, letterSpacing:'0.15em', color:'rgba(0,245,212,0.5)', textTransform:'uppercase', marginBottom:16 }}>Territoire exploré</div>
-
-              {/* Bouton Globe 3D */}
-              <button onClick={() => setShowGlobe(true)} style={{
-                width:'100%', padding:'14px', borderRadius:12, cursor:'pointer', marginBottom:20,
-                background:'rgba(0,245,212,0.08)', border:'1px solid rgba(0,245,212,0.2)',
-                color:'#00f5d4', fontFamily:'monospace', fontSize:13,
-                display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-              }}>
-                <span style={{ fontSize:24 }}>🌍</span> Vue Globe 3D
-              </button>
-
-              {/* Bouton Frontières ville */}
-              <button onClick={() => setShowBoundary(true)} style={{
-                width:'100%', padding:'14px', borderRadius:12, cursor:'pointer', marginBottom:20,
-                background:'rgba(59,130,246,0.08)', border:'1px solid rgba(59,130,246,0.2)',
-                color:'#3b82f6', fontFamily:'monospace', fontSize:13,
-                display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-              }}>
-                <span style={{ fontSize:24 }}>🏙️</span> Frontières de ma ville
-              </button>
 
               {[
                 { icon:'🏙️', label:'Ville',       name: territory.city,       pct: cityPct,    color:'#00f5d4' },

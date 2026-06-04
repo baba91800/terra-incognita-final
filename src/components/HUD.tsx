@@ -186,14 +186,14 @@ export default function HUD(p:Props) {
       {panel==='badges'&&(
         <Panel title={`${t.badgesTitle} — ${earnedB.length}/${p.badges.length}`} left onClose={()=>setPanel('none')}>
           {p.badges.map(b=>(
-            <div key={b.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:`1px solid ${b.earned?'rgba(0,245,212,0.25)':'rgba(255,255,255,0.05)'}`,background:b.earned?'rgba(0,245,212,0.05)':'transparent',opacity:b.earned?1:0.4,transition:'all 0.2s'}}>
-              <span style={{fontSize:20}}>{b.icon}</span>
+            <div key={b.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:`1px solid ${b.earned?'rgba(0,245,212,0.25)':'rgba(255,255,255,0.05)'}`,background:b.earned?'rgba(0,245,212,0.05)':'transparent',opacity:b.earned?1:0.4,cursor:'default',userSelect:'none'}}>
+              <span style={{fontSize:20,flexShrink:0}}>{b.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:'bold',color:b.earned?'#fff':'rgba(255,255,255,0.3)'}}>{b.name}</div>
-                <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',marginTop:1}}>{b.description}</div>
+                <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',marginTop:1,lineHeight:1.4}}>{b.description}</div>
                 {b.earnedAt&&<div style={{fontSize:8,color:'rgba(0,245,212,0.5)',marginTop:2}}>{new Date(b.earnedAt).toLocaleDateString()}</div>}
               </div>
-              {!b.earned&&<span style={{fontSize:12,opacity:0.3}}>🔒</span>}
+              <span style={{fontSize:12,flexShrink:0,opacity:b.earned?1:0.3}}>{b.earned?'✓':'🔒'}</span>
             </div>
           ))}
         </Panel>
