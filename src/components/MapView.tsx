@@ -50,6 +50,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const personalMarkersRef = useRef<Map<string,any>>(new Map())
   const markersRef = useRef<Map<string,any>>(new Map())
   const cityPolygonRef = useRef<any>(null)
+  const cityPolygonPoints = useRef<[number,number][]>([])
   const animRef = useRef<number>(0)
   const [effects, setEffects] = useState<Effect[]>([])
   const prevMonuments = useRef<Set<string>>(new Set())
@@ -175,26 +176,13 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     return () => { if (mapRef.current){mapRef.current.remove();mapRef.current=null} }
   },[]) // eslint-disable-line
 
-  // Contour de la ville
+  // Contour de la ville — stocké dans ref, dessiné sur le fog canvas
   useEffect(() => {
-    if (!mapRef.current) return
     const key=`${playerLat.toFixed(2)},${playerLng.toFixed(2)}`
     if (key===lastCityKey.current) return
     lastCityKey.current=key
-    import('leaflet').then(async ({default:L}) => {
-      const map=mapRef.current; if (!map) return
-      const polygon = await fetchCityPolygon(playerLat,playerLng)
-      if (!polygon||!mapRef.current) return
-      if (cityPolygonRef.current){cityPolygonRef.current.remove();cityPolygonRef.current=null}
-      if (!map.getPane('cityPane')) {
-        map.createPane('cityPane')
-        map.getPane('cityPane')!.style.zIndex='501'
-        map.getPane('cityPane')!.style.pointerEvents='none'
-      }
-      cityPolygonRef.current = L.polygon(polygon,{
-        color:'#00f5d4',weight:2,opacity:0.5,
-        fill:false,dashArray:'6,8',pane:'cityPane',
-      }).addTo(map)
+    fetchCityPolygon(playerLat, playerLng).then(polygon => {
+      if (polygon) cityPolygonPoints.current = polygon
     })
   },[playerLat,playerLng])
 
