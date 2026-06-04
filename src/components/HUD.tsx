@@ -18,6 +18,7 @@ interface Props {
 
 export default function HUD(p:Props) {
   const [panel,setPanel]=useState<Panel>('none')
+  const [selectedBadge,setSelectedBadge]=useState<typeof p.badges[0]|null>(null)
   const [installEvt,setInstallEvt]=useState<any>(null)
   const [showLang,setShowLang]=useState(false)
   const tp=(x:Panel)=>setPanel(v=>v===x?'none':x)
@@ -186,14 +187,13 @@ export default function HUD(p:Props) {
       {panel==='badges'&&(
         <Panel title={`${t.badgesTitle} — ${earnedB.length}/${p.badges.length}`} left onClose={()=>setPanel('none')}>
           {p.badges.map(b=>(
-            <div key={b.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:`1px solid ${b.earned?'rgba(0,245,212,0.25)':'rgba(255,255,255,0.05)'}`,background:b.earned?'rgba(0,245,212,0.05)':'transparent',opacity:b.earned?1:0.4,cursor:'pointer',WebkitTapHighlightColor:'transparent'}}>
-              <span style={{fontSize:20,flexShrink:0}}>{b.icon}</span>
+            <div key={b.id} onClick={()=>setSelectedBadge(b)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px',borderRadius:8,border:`1px solid ${b.earned?'rgba(0,245,212,0.25)':'rgba(255,255,255,0.05)'}`,background:b.earned?'rgba(0,245,212,0.08)':'rgba(255,255,255,0.02)',opacity:b.earned?1:0.5,cursor:'pointer',WebkitTapHighlightColor:'rgba(0,245,212,0.1)',transition:'all 0.15s',userSelect:'none'}}>
+              <span style={{fontSize:24,flexShrink:0}}>{b.icon}</span>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:12,fontWeight:'bold',color:b.earned?'#fff':'rgba(255,255,255,0.3)'}}>{b.name}</div>
-                <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',marginTop:1,lineHeight:1.4}}>{b.description}</div>
-                {b.earnedAt&&<div style={{fontSize:8,color:'rgba(0,245,212,0.5)',marginTop:2}}>{new Date(b.earnedAt).toLocaleDateString()}</div>}
+                <div style={{fontSize:12,fontWeight:'bold',color:b.earned?'#fff':'rgba(255,255,255,0.4)'}}>{b.name}</div>
+                <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',marginTop:2,lineHeight:1.4}}>{b.description}</div>
               </div>
-              <span style={{fontSize:12,flexShrink:0,opacity:b.earned?1:0.3}}>{b.earned?'✓':'🔒'}</span>
+              <span style={{fontSize:14,flexShrink:0}}>{b.earned?'✅':'🔒'}</span>
             </div>
           ))}
         </Panel>
@@ -296,6 +296,34 @@ export default function HUD(p:Props) {
 
 
     </>
+  )
+  {/* ── BADGE DETAIL ── */}
+  {selectedBadge && (
+    <div
+      onClick={()=>setSelectedBadge(null)}
+      style={{position:'fixed',inset:0,zIndex:900,background:'rgba(2,5,15,0.85)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}
+    >
+      <div style={{background:'rgba(5,12,24,0.98)',border:`1px solid ${selectedBadge.earned?'rgba(0,245,212,0.3)':'rgba(255,255,255,0.1)'}`,borderRadius:20,padding:28,maxWidth:300,width:'100%',textAlign:'center',boxShadow:'0 20px 60px rgba(0,0,0,0.8)',animation:'toastIn 0.3s ease-out'}}>
+        <div style={{fontSize:64,marginBottom:12}}>{selectedBadge.icon}</div>
+        <div style={{fontSize:18,fontWeight:'bold',color:selectedBadge.earned?'#fff':'rgba(255,255,255,0.4)',marginBottom:8,fontFamily:'monospace'}}>{selectedBadge.name}</div>
+        <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.6,marginBottom:16}}>{selectedBadge.description}</div>
+        {selectedBadge.earned
+          ? <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(0,245,212,0.1)',border:'1px solid rgba(0,245,212,0.3)',borderRadius:20,padding:'6px 16px'}}>
+              <span style={{fontSize:16}}>✅</span>
+              <span style={{fontSize:12,color:'#00f5d4',fontFamily:'monospace'}}>
+                {selectedBadge.earnedAt ? `Obtenu le ${new Date(selectedBadge.earnedAt).toLocaleDateString('fr-FR')}` : 'Badge obtenu'}
+              </span>
+            </div>
+          : <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:20,padding:'6px 16px'}}>
+              <span style={{fontSize:16}}>🔒</span>
+              <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',fontFamily:'monospace'}}>Non obtenu</span>
+            </div>
+        }
+        <div style={{marginTop:16,fontSize:10,color:'rgba(255,255,255,0.2)'}}>Appuie pour fermer</div>
+      </div>
+    </div>
+  )}
+  </>
   )
 }
 
