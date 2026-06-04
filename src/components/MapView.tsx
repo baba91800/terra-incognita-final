@@ -17,6 +17,38 @@ interface Props {
 
 const MPL = 111320
 
+// Fetch le polygone OSM de la ville actuelle
+async function fetchCityPolygon(lat: number, lng: number): Promise<[number, number][] | null> {
+  try {
+    const nomRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=12`,
+      { headers: { 'User-Agent': 'TerraIncognita/0.1', 'Accept-Language': 'fr' } }
+    )
+    const nomData = await nomRes.json()
+    const osmType = nomData.osm_type
+    const osmId = nomData.osm_id
+    if (!osmId) return null
+
+    const typeChar = osmType === 'relation' ? 'rel' : osmType === 'way' ? 'way' : 'node'
+    const query = `[out:json][timeout:15];${typeChar}(${osmId});out geom;`
+    const ovRes = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST', body: query,
+      headers: { 'Content-Type': 'text/plain' }
+    })
+    const ovData = await ovRes.json()
+    if (!ovData.elements?.length) return null
+    const el = ovData.elements[0]
+    let polygon: [number, number][] = []
+    if (el.geometry) {
+      polygon = el.geometry.map((pt: any) => [pt.lat, pt.lon] as [number, number])
+    } else if (el.members) {
+      const outer = el.members.find((m: any) => m.role === 'outer' && m.geometry)
+      if (outer) polygon = outer.geometry.map((pt: any) => [pt.lat, pt.lon] as [number, number])
+    }
+    return polygon.length > 3 ? polygon : null
+  } catch { return null }
+}
+
 export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
@@ -24,10 +56,12 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const fogCanvas = useRef<HTMLCanvasElement>(null)
   const personalMarkersRef = useRef<Map<string, any>>(new Map())
   const markersRef = useRef<Map<string, any>>(new Map())
+  const cityPolygonRef = useRef<any>(null)
   const animRef = useRef<number>(0)
   const timeRef = useRef<number>(0)
   const [effects, setEffects] = useState<Effect[]>([])
   const prevMonuments = useRef<Set<string>>(new Set())
+  const lastCityKey = useRef('')
 
   const drawFog = useCallback((time: number = 0) => {
     const map = mapRef.current
@@ -42,34 +76,26 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     off.width = canvas.width; off.height = canvas.height
     const octx = off.getContext('2d', { alpha: true })!
 
-    // Fog base
     octx.fillStyle = 'rgb(2,5,15)'
     octx.fillRect(0, 0, off.width, off.height)
 
-    // Pulsing halos for undiscovered monuments
     octx.globalCompositeOperation = 'source-over'
-    const pulse = Math.sin(time * 0.002) * 0.5 + 0.5 // 0 to 1
+    const pulse = Math.sin(time * 0.002) * 0.5 + 0.5
 
     monuments.forEach(m => {
       if (m.discovered) return
       try {
         const pt = map.latLngToContainerPoint([m.lat, m.lng])
-        // Category color for halo, rarity only affects size
         const color = CATEGORY_COLORS[m.type] || (m.rarity === 'legendary' ? '#a855f7' : RARITY_COLORS[m.rarity])
-
-        // Pulsing outer glow
         const baseR = m.rarity === 'legendary' ? 85 : m.rarity === 'epic' ? 65 : m.rarity === 'rare' ? 48 : 32
         const outerR = baseR + pulse * (m.rarity === 'legendary' ? 20 : m.rarity === 'epic' ? 15 : 10)
         const baseAlpha = m.rarity === 'legendary' ? 0.4 : m.rarity === 'epic' ? 0.35 : m.rarity === 'rare' ? 0.3 : 0.25
         const alpha = baseAlpha + pulse * 0.15
-
         const og = octx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, outerR)
         og.addColorStop(0, color + Math.round(alpha * 255).toString(16).padStart(2,'0'))
         og.addColorStop(0.5, color + Math.round(alpha * 0.5 * 255).toString(16).padStart(2,'0'))
         og.addColorStop(1, color + '00')
         octx.fillStyle = og; octx.beginPath(); octx.arc(pt.x, pt.y, outerR, 0, Math.PI * 2); octx.fill()
-
-        // Bright pulsing core
         const innerR = (m.rarity === 'legendary' ? 14 : m.rarity === 'epic' ? 10 : m.rarity === 'rare' ? 8 : 5) + pulse * 3
         const ig = octx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, innerR)
         ig.addColorStop(0, color + 'ff'); ig.addColorStop(0.6, color + 'aa'); ig.addColorStop(1, color + '00')
@@ -77,7 +103,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       } catch {}
     })
 
-    // Cut holes — discovered tiles
     octx.globalCompositeOperation = 'destination-out'
     const bounds = map.getBounds()
     const zoom = map.getZoom()
@@ -106,7 +131,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     ctx.drawImage(off, 0, 0)
   }, [tiles, playerLat, monuments])
 
-  // Animation loop for pulsing halos
   useEffect(() => {
     let running = true
     const loop = (t: number) => {
@@ -142,7 +166,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         if (!onMonumentClick) return
         const clickLat = e.latlng.lat
         const clickLng = e.latlng.lng
-        // Find nearest undiscovered monument within click radius
         let nearest: Monument | null = null
         let nearestDist = Infinity
         monuments.forEach(m => {
@@ -152,7 +175,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         })
         if (nearest) onMonumentClick(nearest)
       })
-      // Long press detection
       let pressTimer: ReturnType<typeof setTimeout> | null = null
       map.on('mousedown touchstart', (e: any) => {
         pressTimer = setTimeout(() => {
@@ -161,20 +183,67 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         }, 600)
       })
       map.on('mouseup touchend mousemove', () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null } })
-
       mapRef.current = map
       onMapReady(map)
     })
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
   }, []) // eslint-disable-line
 
-  // Player marker + direction arrow
+  // ── Contour de la ville ──────────────────────────────────────
+  useEffect(() => {
+    if (!mapRef.current) return
+    const key = `${playerLat.toFixed(2)},${playerLng.toFixed(2)}`
+    if (key === lastCityKey.current) return
+    lastCityKey.current = key
+
+    import('leaflet').then(async ({ default: L }) => {
+      const map = mapRef.current
+      if (!map) return
+
+      const polygon = await fetchCityPolygon(playerLat, playerLng)
+      if (!polygon || !mapRef.current) return
+
+      // Supprimer l'ancien contour
+      if (cityPolygonRef.current) {
+        cityPolygonRef.current.remove()
+        cityPolygonRef.current = null
+      }
+
+      // Tracer le nouveau contour — au-dessus du fog (zIndex 501)
+      const poly = L.polygon(polygon, {
+        color: '#00f5d4',
+        weight: 2,
+        opacity: 0.5,
+        fill: false,
+        dashArray: '6, 8',
+      })
+
+      // Pane dédié au-dessus du fog canvas (zIndex 500)
+      if (!map.getPane('cityPane')) {
+        map.createPane('cityPane')
+        map.getPane('cityPane')!.style.zIndex = '501'
+        map.getPane('cityPane')!.style.pointerEvents = 'none'
+      }
+
+      const poly2 = L.polygon(polygon, {
+        color: '#00f5d4',
+        weight: 2,
+        opacity: 0.5,
+        fill: false,
+        dashArray: '6, 8',
+        pane: 'cityPane',
+      }).addTo(map)
+
+      cityPolygonRef.current = poly2
+    })
+  }, [playerLat, playerLng])
+
+  // Player marker
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({ default: L }) => {
       const map = mapRef.current!
       if (!map) return
-
       const makeIcon = (h: number | null) => {
         if (h !== null) {
           return L.divIcon({
@@ -190,7 +259,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
           className: '', iconSize: [16, 16], iconAnchor: [8, 8],
         })
       }
-
       if (playerMarker.current) {
         playerMarker.current.setLatLng([playerLat, playerLng])
         playerMarker.current.setIcon(makeIcon(heading))
@@ -201,24 +269,19 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     })
   }, [playerLat, playerLng, heading])
 
-  // Monument markers + discovery effects
+  // Monument markers
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({ default: L }) => {
       monuments.forEach(m => {
         const color = RARITY_COLORS[m.rarity]
         const ex = markersRef.current.get(m.id)
-
-        // Check if just discovered → trigger effect
         if (m.discovered && !prevMonuments.current.has(m.id)) {
           prevMonuments.current.add(m.id)
           try {
             const pt = mapRef.current.latLngToContainerPoint([m.lat, m.lng])
             const effect: Effect = {
-              id: m.id + Date.now(),
-              x: pt.x, y: pt.y,
-              label: m.name,
-              color,
+              id: m.id + Date.now(), x: pt.x, y: pt.y, label: m.name, color,
               points: m.rarity === 'legendary' ? 1000 : m.rarity === 'epic' ? 300 : m.rarity === 'rare' ? 150 : 50,
             }
             setEffects(prev => [...prev, effect])
@@ -227,7 +290,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         } else if (m.discovered) {
           prevMonuments.current.add(m.id)
         }
-
         if (ex) {
           ex.setStyle({
             fillColor: m.discovered ? color : 'transparent',
@@ -262,29 +324,18 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     if (!mapRef.current) return
     import('leaflet').then(({ default: L }) => {
       const map = mapRef.current!
-
-      // Remove old markers not in list
       personalMarkersRef.current.forEach((mk, id) => {
-        if (!personalMarkers.find(m => m.id === id)) {
-          mk.remove()
-          personalMarkersRef.current.delete(id)
-        }
+        if (!personalMarkers.find(m => m.id === id)) { mk.remove(); personalMarkersRef.current.delete(id) }
       })
-
-      // Add/update markers
       personalMarkers.forEach(m => {
         const existing = personalMarkersRef.current.get(m.id)
-        if (existing) {
-          existing.setLatLng([m.lat, m.lng])
-          return
-        }
+        if (existing) { existing.setLatLng([m.lat, m.lng]); return }
         const mk = L.marker([m.lat, m.lng], {
           icon: L.divIcon({
             html: `<div style="width:36px;height:36px;border-radius:50%;background:rgba(5,12,24,0.95);border:2px solid rgba(255,200,50,0.7);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 12px rgba(255,200,50,0.4);cursor:pointer">${m.icon}</div>`,
             className: '', iconSize: [36, 36], iconAnchor: [18, 18],
           })
         }).addTo(map)
-
         mk.on('click', () => onMarkerClick && onMarkerClick(m))
         mk.bindPopup(`
           <div style="background:rgba(5,12,24,0.97);border:1px solid rgba(255,200,50,0.4);color:#fff;padding:10px 14px;border-radius:10px;min-width:130px;font-family:monospace;">
@@ -294,7 +345,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
             <div style="font-size:8px;color:rgba(255,255,255,0.2)">${new Date(m.createdAt).toLocaleDateString()}</div>
           </div>
         `, { className: 'custom-popup' })
-
         personalMarkersRef.current.set(m.id, mk)
       })
     })
