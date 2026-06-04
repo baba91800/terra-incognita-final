@@ -93,7 +93,6 @@ export default function HUD(p:Props) {
                 }} />
               </div>
             </div>
-          </div>
 
             {/* STREAK */}
             {streak > 0 && (
