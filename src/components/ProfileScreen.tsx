@@ -36,6 +36,7 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
   const [editing, setEditing] = useState(false)
   const [tab, setTab] = useState<'profile'|'territory'>('profile')
   const [showGlobe, setShowGlobe] = useState(false)
+  const [showBoundary, setShowBoundary] = useState(false)
 
   const earnedBadges = badges.filter(b => b.earned)
   const discMonuments = monuments.filter(m => m.discovered)
@@ -156,6 +157,16 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
                 <span style={{ fontSize:24 }}>🌍</span> Vue Globe 3D
               </button>
 
+              {/* Bouton Frontières ville */}
+              <button onClick={() => setShowBoundary(true)} style={{
+                width:'100%', padding:'14px', borderRadius:12, cursor:'pointer', marginBottom:20,
+                background:'rgba(59,130,246,0.08)', border:'1px solid rgba(59,130,246,0.2)',
+                color:'#3b82f6', fontFamily:'monospace', fontSize:13,
+                display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+              }}>
+                <span style={{ fontSize:24 }}>🏙️</span> Frontières de ma ville
+              </button>
+
               {[
                 { icon:'🏙️', label:'Ville',       name: territory.city,       pct: cityPct,    color:'#00f5d4' },
                 { icon:'🗺️', label:'Département', name: territory.department, pct: deptPct,    color:'#3b82f6' },
@@ -192,6 +203,14 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
       </div>
 
       {/* Globe 3D */}
+      {showBoundary && (
+        <CityBoundary
+          playerLat={playerLat} playerLng={playerLng}
+          tiles={tiles} cityName={territory.city}
+          onClose={() => setShowBoundary(false)}
+        />
+      )}
+
       {showGlobe && (
         <GlobeView
           playerLat={playerLat} playerLng={playerLng}
