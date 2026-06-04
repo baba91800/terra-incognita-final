@@ -294,36 +294,28 @@ export default function HUD(p:Props) {
         </Panel>
       )}
 
-
+      {/* Badge detail */}
+      {selectedBadge && (
+        <div onClick={()=>setSelectedBadge(null)} style={{position:'fixed',inset:0,zIndex:900,background:'rgba(2,5,15,0.88)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+          <div style={{background:'rgba(5,12,24,0.98)',border:`1px solid ${selectedBadge.earned?'rgba(0,245,212,0.35)':'rgba(255,255,255,0.1)'}`,borderRadius:24,padding:32,maxWidth:300,width:'100%',textAlign:'center',boxShadow:'0 20px 60px rgba(0,0,0,0.8)',animation:'toastIn 0.3s ease-out'}}>
+            <div style={{fontSize:72,marginBottom:16}}>{selectedBadge.icon}</div>
+            <div style={{fontSize:20,fontWeight:'bold',color:selectedBadge.earned?'#fff':'rgba(255,255,255,0.35)',marginBottom:10,fontFamily:'monospace'}}>{selectedBadge.name}</div>
+            <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:20}}>{selectedBadge.description}</div>
+            {selectedBadge.earned
+              ? <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(0,245,212,0.1)',border:'1px solid rgba(0,245,212,0.3)',borderRadius:20,padding:'8px 18px'}}>
+                  <span>✅</span>
+                  <span style={{fontSize:12,color:'#00f5d4',fontFamily:'monospace'}}>{selectedBadge.earnedAt?`Obtenu le ${new Date(selectedBadge.earnedAt).toLocaleDateString('fr-FR')}`:'Badge obtenu !'}</span>
+                </div>
+              : <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:20,padding:'8px 18px'}}>
+                  <span>🔒</span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',fontFamily:'monospace'}}>Pas encore obtenu</span>
+                </div>
+            }
+            <div style={{marginTop:14,fontSize:10,color:'rgba(255,255,255,0.15)'}}>Appuie pour fermer</div>
+          </div>
+        </div>
+      )}
     </>
-  )
-  {/* ── BADGE DETAIL ── */}
-  {selectedBadge && (
-    <div
-      onClick={()=>setSelectedBadge(null)}
-      style={{position:'fixed',inset:0,zIndex:900,background:'rgba(2,5,15,0.85)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}
-    >
-      <div style={{background:'rgba(5,12,24,0.98)',border:`1px solid ${selectedBadge.earned?'rgba(0,245,212,0.3)':'rgba(255,255,255,0.1)'}`,borderRadius:20,padding:28,maxWidth:300,width:'100%',textAlign:'center',boxShadow:'0 20px 60px rgba(0,0,0,0.8)',animation:'toastIn 0.3s ease-out'}}>
-        <div style={{fontSize:64,marginBottom:12}}>{selectedBadge.icon}</div>
-        <div style={{fontSize:18,fontWeight:'bold',color:selectedBadge.earned?'#fff':'rgba(255,255,255,0.4)',marginBottom:8,fontFamily:'monospace'}}>{selectedBadge.name}</div>
-        <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.6,marginBottom:16}}>{selectedBadge.description}</div>
-        {selectedBadge.earned
-          ? <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(0,245,212,0.1)',border:'1px solid rgba(0,245,212,0.3)',borderRadius:20,padding:'6px 16px'}}>
-              <span style={{fontSize:16}}>✅</span>
-              <span style={{fontSize:12,color:'#00f5d4',fontFamily:'monospace'}}>
-                {selectedBadge.earnedAt ? `Obtenu le ${new Date(selectedBadge.earnedAt).toLocaleDateString('fr-FR')}` : 'Badge obtenu'}
-              </span>
-            </div>
-          : <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:20,padding:'6px 16px'}}>
-              <span style={{fontSize:16}}>🔒</span>
-              <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',fontFamily:'monospace'}}>Non obtenu</span>
-            </div>
-        }
-        <div style={{marginTop:16,fontSize:10,color:'rgba(255,255,255,0.2)'}}>Appuie pour fermer</div>
-      </div>
-    </div>
-  )}
-  </>
   )
 }
 
