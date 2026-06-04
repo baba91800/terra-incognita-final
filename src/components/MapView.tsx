@@ -296,7 +296,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
 
   const recenter = () => {
     if (!mapRef.current) return
-    mapRef.current.panTo([playerLat,playerLng],{animate:true,duration:0.5})
+    mapRef.current.setView([playerLat,playerLng], 17, {animate:true, duration:0.5})
     mapMovedRef.current = false
     setShowRecenter(false)
   }
