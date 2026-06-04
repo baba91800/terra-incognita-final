@@ -208,13 +208,6 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
       </div>
 
       {/* Globe 3D */}
-      {showBoundary && (
-        <CityBoundary
-          playerLat={playerLat} playerLng={playerLng}
-          tiles={tiles} cityName={territory.city}
-          onClose={() => setShowBoundary(false)}
-        />
-      )}
 
       {showAvatarEditor && (
         <AvatarEditor
@@ -230,13 +223,6 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
           totalDist={totalDist} monuments={monuments}
           pseudo={pseudo} avatar={avatar} avatarPhoto={avatarPhoto}
           onClose={() => setShowShare(false)}
-        />
-      )}
-      {showGlobe && (
-        <GlobeView
-          playerLat={playerLat} playerLng={playerLng}
-          tiles={tiles} countries={countries}
-          onClose={() => setShowGlobe(false)}
         />
       )}
     </>
