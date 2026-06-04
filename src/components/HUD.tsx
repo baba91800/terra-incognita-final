@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import type { Badge, Monument, CountryDiscovery, DailyObjective, DiscoveryLog, ExplorationPath } from '../types/game'
 import { RARITY_COLORS, RARITY_LABELS, LANGS } from '../lib/constants'
 import { type Lang, useT, type Translations } from '../lib/i18n'
-import MiniMap from './MiniMap'
 
 type Panel = 'none'|'badges'|'monuments'|'countries'|'objectives'|'log'|'stats'
 
@@ -282,11 +281,6 @@ export default function HUD(p:Props) {
           ))}
         </Panel>
       )}
-
-      {/* ── MINIMAP ── */}
-      <div style={{position:'absolute',bottom:16,left:12,zIndex:600,pointerEvents:'none'}}>
-        <MiniMap tiles={p.tiles} playerLat={p.playerLat} playerLng={p.playerLng} path={p.path} />
-      </div>
 
       {/* ── GPS CTA ── */}
       <div style={{position:'absolute',bottom:16,left:'50%',transform:'translateX(-50%)',zIndex:600,pointerEvents:'auto'}}>
