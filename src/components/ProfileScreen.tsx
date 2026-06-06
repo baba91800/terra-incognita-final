@@ -78,7 +78,7 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
                 background: tab===tab_ ? 'rgba(0,245,212,0.2)' : 'transparent',
                 border: `1px solid ${tab===tab_ ? 'rgba(0,245,212,0.5)' : 'rgba(255,255,255,0.1)'}`,
                 color: tab===tab_ ? '#00f5d4' : 'rgba(255,255,255,0.4)',
-              }}>{tab_==='profile' ? 'Profil' : tab_==='territory' ? 'Territoire' : 'Stats'}</button>
+              }}>{tab_==='profile' ? t.profile : tab_==='territory' ? t.territory : t.stats}</button>
             ))}
           </div>
           <button onClick={onClose} style={{ width:32, height:32, borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -229,7 +229,7 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
                   <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',fontFamily:'monospace'}}>Pas encore obtenu</span>
                 </div>
             }
-            <div style={{marginTop:14,fontSize:10,color:'rgba(255,255,255,0.15)'}}>Appuie pour fermer</div>
+            <div style={{marginTop:14,fontSize:10,color:'rgba(255,255,255,0.15)'}}>{t.closeBtn}</div>
           </div>
         </div>
       )}

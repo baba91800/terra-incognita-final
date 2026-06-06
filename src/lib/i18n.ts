@@ -9,39 +9,26 @@ export const LANGS: { code: Lang; label: string; flag: string }[] = [
 ]
 
 const base = {
-  // HUD top
   explorerPoints: '', tiles: '', zone: '', km: '',
   gpsOn: '', gps: '', install: '',
-  // Nav buttons
   badges: '', sites: '', countries: '', objectives: '', log: '', stats: '', reset: '',
-  // GPS CTA
   activateGPS: '', activateGPSDesc: '', gpsActiveLabel: '', stop: '',
-  // Panels titles
   badgesTitle: '', sitesTitle: '', countriesTitle: '', objectivesTitle: '',
   logTitle: '', statsTitle: '',
-  // Empty states
   noDiscoveries: '', noCountries: '',
-  // Content
   unknownSite: '', completed: '', level: '', distance: '', totalLabel: '',
   overview: '',
-  // Stats labels
   statXP: '', statLevel: '', statTiles: '', statDist: '', statSites: '',
   statCountries: '', statBadges: '', statObjectives: '',
-  // Reset
   resetConfirm: '',
-  // Toasts
   monumentDiscovered: '', badgeUnlocked: '', newCountry: '', levelUp: '', objectiveComplete: '',
-  // Loading
   loading: '',
-  // Onboarding
   chooseLanguage: '',
   onboardTitle1: '', onboardDesc1: '',
   onboardTitle2: '', onboardDesc2: '',
   onboardTitle3: '', onboardDesc3: '',
   next: '', start: '',
-  // Navigation
   navigateTo: '', distanceTo: '', cancelNav: '', arrived: '', tapToNavigate: '',
-  // Badge names & descriptions
   badge_b1_name: '', badge_b1_desc: '',
   badge_b2_name: '', badge_b2_desc: '',
   badge_b3_name: '', badge_b3_desc: '',
@@ -52,16 +39,20 @@ const base = {
   badge_b8_name: '', badge_b8_desc: '',
   badge_b9_name: '', badge_b9_desc: '',
   badge_b10_name:'', badge_b10_desc:'',
-  // Objective descriptions
   obj_tiles_50: '', obj_tiles_150: '', obj_tiles_300: '',
   obj_monument_1: '', obj_monument_3: '',
   obj_country_1: '',
   obj_score_500: '', obj_score_2000: '',
   obj_dist_500: '', obj_dist_1000: '',
-  // Rarity labels
   common: '', rare: '', epic: '', legendary: '',
-  // Misc
   xpLabel: '', levelLabel: '', foundAt: '', tapHaloHint: '',
+  // Nouveaux
+  profile: '', territory: '', streakActive: '',
+  badgeEarned: '', badgeNotEarned: '', closeBtn: '',
+  dataTitle: '', exportBtn: '', importBtn: '', shareBtn: '',
+  editAvatar: '', exploration: '',
+  unknownSiteNav: '', distanceLabel: '',
+  sitesDiscovered: '',
 }
 
 export type Translations = typeof base
@@ -70,12 +61,12 @@ const fr: Translations = {
   explorerPoints: 'Points Explorateur', tiles: 'Tuiles', zone: 'Zone', km: 'km',
   gpsOn: 'GPS actif', gps: 'GPS', install: 'Installer',
   badges: 'Badges', sites: 'Sites', countries: 'Pays', objectives: 'Objectifs', log: 'Journal', stats: 'Stats', reset: 'Réinitialiser',
-  activateGPS: 'Activer le GPS', activateGPSDesc: 'Marche pour explorer le monde', gpsActiveLabel: 'GPS actif — explore le monde', stop: 'Arrêter',
+  activateGPS: 'Activer le GPS', activateGPSDesc: 'Marche pour explorer le monde', gpsActiveLabel: 'GPS actif', stop: 'Arrêter',
   badgesTitle: 'Badges', sitesTitle: 'Sites', countriesTitle: 'Pays découverts',
   objectivesTitle: 'Objectifs du jour', logTitle: 'Journal des découvertes', statsTitle: 'Statistiques',
   noDiscoveries: 'Aucune découverte pour l\'instant',
   noCountries: 'Visite un nouveau pays pour débloquer un bonus',
-  unknownSite: '??? Lieu inconnu', completed: '✓ Complété', level: 'Niveau',
+  unknownSite: 'Lieu inconnu', completed: '✓ Complété', level: 'Niveau',
   distance: 'Distance', totalLabel: 'Total', overview: 'Aperçu',
   statXP: 'XP Total', statLevel: 'Niveau', statTiles: 'Surface explorée',
   statDist: 'Distance parcourue', statSites: 'Sites trouvés',
@@ -107,18 +98,24 @@ const fr: Translations = {
   obj_dist_500: 'Marcher 500 mètres', obj_dist_1000: 'Marcher 1 km',
   common: 'COMMUN', rare: 'RARE', epic: 'ÉPIQUE', legendary: 'LÉGENDAIRE',
   xpLabel: 'XP', levelLabel: 'Niv.', foundAt: 'Découvert le', tapHaloHint: 'Appuie sur un halo pour naviguer',
+  profile: 'Profil', territory: 'Territoire', streakActive: 'Série active',
+  badgeEarned: 'Badge obtenu !', badgeNotEarned: 'Pas encore obtenu', closeBtn: 'Fermer',
+  dataTitle: 'Données', exportBtn: 'Exporter', importBtn: 'Importer', shareBtn: 'Partager',
+  editAvatar: 'Modifier l\'avatar', exploration: 'Exploration',
+  unknownSiteNav: '??? Site inconnu', distanceLabel: 'Distance',
+  sitesDiscovered: 'Sites découverts',
 }
 
 const en: Translations = {
   explorerPoints: 'Explorer Points', tiles: 'Tiles', zone: 'Zone', km: 'km',
   gpsOn: 'GPS ON', gps: 'GPS', install: 'Install',
   badges: 'Badges', sites: 'Sites', countries: 'Countries', objectives: 'Objectives', log: 'Log', stats: 'Stats', reset: 'Reset',
-  activateGPS: 'Enable GPS', activateGPSDesc: 'Walk to explore the world', gpsActiveLabel: 'GPS active — explore the world', stop: 'Stop',
+  activateGPS: 'Enable GPS', activateGPSDesc: 'Walk to explore the world', gpsActiveLabel: 'GPS active', stop: 'Stop',
   badgesTitle: 'Badges', sitesTitle: 'Sites', countriesTitle: 'Countries discovered',
   objectivesTitle: 'Daily Objectives', logTitle: 'Discovery Log', statsTitle: 'Statistics',
   noDiscoveries: 'No discoveries yet',
   noCountries: 'Visit a new country to unlock a bonus',
-  unknownSite: '??? Unknown site', completed: '✓ Completed', level: 'Level',
+  unknownSite: 'Unknown site', completed: '✓ Completed', level: 'Level',
   distance: 'Distance', totalLabel: 'Total', overview: 'Overview',
   statXP: 'Total XP', statLevel: 'Level', statTiles: 'Area explored',
   statDist: 'Distance walked', statSites: 'Sites found',
@@ -150,18 +147,24 @@ const en: Translations = {
   obj_dist_500: 'Walk 500 meters', obj_dist_1000: 'Walk 1 km',
   common: 'COMMON', rare: 'RARE', epic: 'EPIC', legendary: 'LEGENDARY',
   xpLabel: 'XP', levelLabel: 'Lv.', foundAt: 'Discovered on', tapHaloHint: 'Tap a halo to navigate',
+  profile: 'Profile', territory: 'Territory', streakActive: 'Active streak',
+  badgeEarned: 'Badge earned!', badgeNotEarned: 'Not yet earned', closeBtn: 'Close',
+  dataTitle: 'Data', exportBtn: 'Export', importBtn: 'Import', shareBtn: 'Share',
+  editAvatar: 'Edit avatar', exploration: 'Exploration',
+  unknownSiteNav: '??? Unknown site', distanceLabel: 'Distance',
+  sitesDiscovered: 'Sites discovered',
 }
 
 const es: Translations = {
   explorerPoints: 'Puntos Explorador', tiles: 'Casillas', zone: 'Zona', km: 'km',
   gpsOn: 'GPS activo', gps: 'GPS', install: 'Instalar',
   badges: 'Insignias', sites: 'Lugares', countries: 'Países', objectives: 'Objetivos', log: 'Registro', stats: 'Stats', reset: 'Reiniciar',
-  activateGPS: 'Activar GPS', activateGPSDesc: 'Camina para explorar el mundo', gpsActiveLabel: 'GPS activo — explora el mundo', stop: 'Parar',
+  activateGPS: 'Activar GPS', activateGPSDesc: 'Camina para explorar el mundo', gpsActiveLabel: 'GPS activo', stop: 'Parar',
   badgesTitle: 'Insignias', sitesTitle: 'Lugares', countriesTitle: 'Países descubiertos',
   objectivesTitle: 'Objetivos del día', logTitle: 'Registro de descubrimientos', statsTitle: 'Estadísticas',
   noDiscoveries: 'Sin descubrimientos aún',
   noCountries: 'Visita un nuevo país para desbloquear un bonus',
-  unknownSite: '??? Lugar desconocido', completed: '✓ Completado', level: 'Nivel',
+  unknownSite: 'Lugar desconocido', completed: '✓ Completado', level: 'Nivel',
   distance: 'Distancia', totalLabel: 'Total', overview: 'Vista general',
   statXP: 'XP Total', statLevel: 'Nivel', statTiles: 'Área explorada',
   statDist: 'Distancia recorrida', statSites: 'Lugares encontrados',
@@ -193,18 +196,24 @@ const es: Translations = {
   obj_dist_500: 'Caminar 500 metros', obj_dist_1000: 'Caminar 1 km',
   common: 'COMÚN', rare: 'RARO', epic: 'ÉPICO', legendary: 'LEGENDARIO',
   xpLabel: 'XP', levelLabel: 'Niv.', foundAt: 'Descubierto el', tapHaloHint: 'Toca un halo para navegar',
+  profile: 'Perfil', territory: 'Territorio', streakActive: 'Racha activa',
+  badgeEarned: '¡Insignia obtenida!', badgeNotEarned: 'Aún no obtenida', closeBtn: 'Cerrar',
+  dataTitle: 'Datos', exportBtn: 'Exportar', importBtn: 'Importar', shareBtn: 'Compartir',
+  editAvatar: 'Editar avatar', exploration: 'Exploración',
+  unknownSiteNav: '??? Sitio desconocido', distanceLabel: 'Distancia',
+  sitesDiscovered: 'Lugares descubiertos',
 }
 
 const de: Translations = {
   explorerPoints: 'Erkunderpunkte', tiles: 'Kacheln', zone: 'Zone', km: 'km',
   gpsOn: 'GPS AN', gps: 'GPS', install: 'Installieren',
   badges: 'Abzeichen', sites: 'Orte', countries: 'Länder', objectives: 'Ziele', log: 'Journal', stats: 'Stats', reset: 'Zurücksetzen',
-  activateGPS: 'GPS aktivieren', activateGPSDesc: 'Laufe, um die Welt zu erkunden', gpsActiveLabel: 'GPS aktiv — erkunde die Welt', stop: 'Stop',
+  activateGPS: 'GPS aktivieren', activateGPSDesc: 'Laufe, um die Welt zu erkunden', gpsActiveLabel: 'GPS aktiv', stop: 'Stop',
   badgesTitle: 'Abzeichen', sitesTitle: 'Orte', countriesTitle: 'Entdeckte Länder',
   objectivesTitle: 'Tagesziele', logTitle: 'Entdeckungsjournal', statsTitle: 'Statistiken',
   noDiscoveries: 'Noch keine Entdeckungen',
   noCountries: 'Besuche ein neues Land für einen Bonus',
-  unknownSite: '??? Unbekannter Ort', completed: '✓ Abgeschlossen', level: 'Level',
+  unknownSite: 'Unbekannter Ort', completed: '✓ Abgeschlossen', level: 'Level',
   distance: 'Distanz', totalLabel: 'Gesamt', overview: 'Übersicht',
   statXP: 'Gesamt-XP', statLevel: 'Level', statTiles: 'Erkundete Fläche',
   statDist: 'Zurückgelegte Strecke', statSites: 'Gefundene Orte',
@@ -236,18 +245,24 @@ const de: Translations = {
   obj_dist_500: '500 Meter laufen', obj_dist_1000: '1 km laufen',
   common: 'GEWÖHNLICH', rare: 'SELTEN', epic: 'EPISCH', legendary: 'LEGENDÄR',
   xpLabel: 'XP', levelLabel: 'Lv.', foundAt: 'Entdeckt am', tapHaloHint: 'Tippe auf einen Halo zum Navigieren',
+  profile: 'Profil', territory: 'Gebiet', streakActive: 'Aktive Serie',
+  badgeEarned: 'Abzeichen verdient!', badgeNotEarned: 'Noch nicht verdient', closeBtn: 'Schließen',
+  dataTitle: 'Daten', exportBtn: 'Exportieren', importBtn: 'Importieren', shareBtn: 'Teilen',
+  editAvatar: 'Avatar bearbeiten', exploration: 'Erkundung',
+  unknownSiteNav: '??? Unbekannter Ort', distanceLabel: 'Entfernung',
+  sitesDiscovered: 'Entdeckte Orte',
 }
 
 const pt: Translations = {
   explorerPoints: 'Pontos Explorador', tiles: 'Células', zone: 'Zona', km: 'km',
   gpsOn: 'GPS ativo', gps: 'GPS', install: 'Instalar',
   badges: 'Emblemas', sites: 'Locais', countries: 'Países', objectives: 'Objetivos', log: 'Diário', stats: 'Stats', reset: 'Reiniciar',
-  activateGPS: 'Ativar GPS', activateGPSDesc: 'Caminhe para explorar o mundo', gpsActiveLabel: 'GPS ativo — explore o mundo', stop: 'Parar',
+  activateGPS: 'Ativar GPS', activateGPSDesc: 'Caminhe para explorar o mundo', gpsActiveLabel: 'GPS ativo', stop: 'Parar',
   badgesTitle: 'Emblemas', sitesTitle: 'Locais', countriesTitle: 'Países descobertos',
   objectivesTitle: 'Objetivos do dia', logTitle: 'Diário de descobertas', statsTitle: 'Estatísticas',
   noDiscoveries: 'Nenhuma descoberta ainda',
   noCountries: 'Visite um novo país para desbloquear um bônus',
-  unknownSite: '??? Local desconhecido', completed: '✓ Concluído', level: 'Nível',
+  unknownSite: 'Local desconhecido', completed: '✓ Concluído', level: 'Nível',
   distance: 'Distância', totalLabel: 'Total', overview: 'Visão geral',
   statXP: 'XP Total', statLevel: 'Nível', statTiles: 'Área explorada',
   statDist: 'Distância percorrida', statSites: 'Locais encontrados',
@@ -279,6 +294,12 @@ const pt: Translations = {
   obj_dist_500: 'Caminhar 500 metros', obj_dist_1000: 'Caminhar 1 km',
   common: 'COMUM', rare: 'RARO', epic: 'ÉPICO', legendary: 'LENDÁRIO',
   xpLabel: 'XP', levelLabel: 'Nv.', foundAt: 'Descoberto em', tapHaloHint: 'Toque em um halo para navegar',
+  profile: 'Perfil', territory: 'Território', streakActive: 'Série ativa',
+  badgeEarned: 'Emblema obtido!', badgeNotEarned: 'Ainda não obtido', closeBtn: 'Fechar',
+  dataTitle: 'Dados', exportBtn: 'Exportar', importBtn: 'Importar', shareBtn: 'Partilhar',
+  editAvatar: 'Editar avatar', exploration: 'Exploração',
+  unknownSiteNav: '??? Local desconhecido', distanceLabel: 'Distância',
+  sitesDiscovered: 'Locais descobertos',
 }
 
 export const T: Record<Lang, Translations> = { fr, en, es, de, pt }

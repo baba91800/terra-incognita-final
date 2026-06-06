@@ -166,7 +166,7 @@ export default function HUD(p:Props) {
       {/* ── PANELS ── */}
 
       {panel==='badges' && (
-        <Panel title={`Badges — ${earnedB.length}/${p.badges.length}`} left onClose={()=>setPanel('none')}>
+        <Panel title={`${t.badgesTitle} — ${earnedB.length}/${p.badges.length}`} left onClose={()=>setPanel('none')}>
           {p.badges.map(b=>(
             <button
               key={b.id}
@@ -236,7 +236,7 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='monuments' && (
-        <Panel title={`Sites — ${discM.length}/${p.monuments.length}`} onClose={()=>setPanel('none')}>
+        <Panel title={`${t.sitesTitle} — ${discM.length}/${p.monuments.length}`} onClose={()=>setPanel('none')}>
           {p.monuments.map(m=>(
             <div key={m.id} style={{display:'flex',gap:10,alignItems:'center',padding:'8px 10px',borderRadius:8,border:`1px solid ${m.discovered?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.04)'}`,background:m.discovered?'rgba(255,255,255,0.03)':'transparent'}}>
               <span style={{fontSize:18}}>{m.discovered?(m.icon||'📍'):'❓'}</span>
@@ -251,7 +251,7 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='countries' && (
-        <Panel title={`Pays — ${p.countries.length}`} onClose={()=>setPanel('none')}>
+        <Panel title={`${t.countriesTitle} — ${p.countries.length}`} onClose={()=>setPanel('none')}>
           {p.countries.length===0&&<Empty text={t.noCountries} />}
           {[...p.countries].sort((a,b)=>b.points-a.points).map(c=>(
             <div key={c.code} style={{display:'flex',gap:12,alignItems:'center',padding:'8px 10px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.03)'}}>
@@ -268,14 +268,14 @@ export default function HUD(p:Props) {
       {panel==='stats' && (
         <Panel title="Statistiques" onClose={()=>setPanel('none')}>
           {[
-            ['⚡','XP Total',p.xp.toLocaleString()],
-            ['🎖️','Niveau',`${p.level} — ${p.levelTitle}`],
-            ['🗺️','Tuiles',p.totalTiles.toLocaleString()],
-            ['👟','Distance',`${(p.totalDist/1000).toFixed(2)} km`],
-            ['🏛️','Sites',`${discM.length}/${p.monuments.length}`],
-            ['🌍','Pays',p.countries.length.toString()],
-            ['🏅','Badges',`${earnedB.length}/${p.badges.length}`],
-            ['🎯','Objectifs',p.objectives.filter(o=>o.completed).length.toString()],
+            ['⚡',t.statXP,p.xp.toLocaleString()],
+            ['🎖️',t.statLevel,`${p.level} — ${p.levelTitle}`],
+            ['🗺️',t.statTiles,p.totalTiles.toLocaleString()],
+            ['👟',t.statDist,`${(p.totalDist/1000).toFixed(2)} km`],
+            ['🏛️',t.statSites,`${discM.length}/${p.monuments.length}`],
+            ['🌍',t.statCountries,p.countries.length.toString()],
+            ['🏅',t.statBadges,`${earnedB.length}/${p.badges.length}`],
+            ['🎯',t.statObjectives,p.objectives.filter(o=>o.completed).length.toString()],
             ['🔥','Streak',`${streak} jour${streak>1?'s':''}`],
           ].map(([icon,label,value])=>(
             <div key={label as string} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
@@ -306,7 +306,7 @@ export default function HUD(p:Props) {
               ? <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(0,245,212,0.1)',border:'1px solid rgba(0,245,212,0.3)',borderRadius:20,padding:'8px 18px'}}>
                   <span>✅</span>
                   <span style={{fontSize:12,color:'#00f5d4',fontFamily:'monospace'}}>
-                    {selectedBadge.earnedAt ? `Obtenu le ${new Date(selectedBadge.earnedAt).toLocaleDateString('fr-FR')}` : 'Badge obtenu !'}
+                    {selectedBadge.earnedAt ? `${t.foundAt} ${new Date(selectedBadge.earnedAt).toLocaleDateString()}` : t.badgeEarned}
                   </span>
                 </div>
               : <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:20,padding:'8px 18px'}}>
