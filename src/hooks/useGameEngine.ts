@@ -38,6 +38,17 @@ export function useGameEngine() {
   const lastGeoKey=useRef(''); const geoTimer=useRef<ReturnType<typeof setTimeout>|null>(null)
   const lastFetchKey=useRef('')
 
+  // Feedback haptique et sonore
+  const hapticFeedback = useCallback((type: 'monument'|'badge'|'level'|'tile') => {
+    if (!navigator.vibrate) return
+    switch(type) {
+      case 'monument': navigator.vibrate([50, 30, 100]); break
+      case 'badge':    navigator.vibrate([100, 50, 100, 50, 200]); break
+      case 'level':    navigator.vibrate([200, 100, 200]); break
+      case 'tile':     navigator.vibrate(10); break
+    }
+  }, [])
+
   const notify=useCallback((n:Omit<Notification,'id'>)=>{
     const id=Date.now()+Math.random()+''
     setNotifications(p=>[...p.slice(-4),{...n,id}])
@@ -58,6 +69,7 @@ export function useGameEngine() {
       const title=LEVEL_TITLES[Math.min(lv-1,LEVEL_TITLES.length-1)]
       setLevelTitle(title)
       notify({type:'level',title:`Level ${lv}`,subtitle:title,points:0,icon:'🎖️'})
+      hapticFeedback('level')
       addLog({type:'level',title:`Level ${lv} — ${title}`,icon:'🎖️'})
     }
     setXP(xpR.current); setLevel(levelR.current)
@@ -167,6 +179,7 @@ export function useGameEngine() {
       if(c&&c.ok&&!b.earned){
         changed=true
         notify({type:'badge',title:b.name,subtitle:b.description,points:0,icon:b.icon})
+        hapticFeedback('badge')
         addLog({type:'badge',title:b.name,subtitle:b.description,icon:b.icon})
         return {...b,earned:true,earnedAt:new Date().toISOString()}
       }
@@ -192,6 +205,7 @@ export function useGameEngine() {
         scoreR.current+=pts; setScore(scoreR.current); saveScore(scoreR.current)
         applyXP(pts); updateObj('monuments',1); updateObj('score',pts)
         notify({type:'monument',title:m.name,subtitle:m.type,points:pts,rarity:m.rarity,icon:m.icon})
+        hapticFeedback(m.rarity==='legendary'||m.rarity==='epic'?'monument':'tile')
         addLog({type:'monument',title:m.name,subtitle:m.type,icon:m.icon||'📍',points:pts,rarity:m.rarity})
         return {...m,discovered:true,discoveredAt:new Date().toISOString()}
       }

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terra Incognita — Explore the World</title>
+  <meta name="description" content="Révèle le monde en marchant. Une carte interactive qui se dévoile à chaque pas." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cyan: #00f5d4;
+      --cyan-dim: rgba(0,245,212,0.15);
+      --bg: #030810;
+      --bg2: #060e1a;
+      --text: #ffffff;
+      --text-dim: rgba(255,255,255,0.45);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ── STARS ── */
+    .stars {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 45%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 55% 20%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 75% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 75%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 65% 85%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 55%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 85% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 5% 90%, rgba(255,255,255,0.5) 0%, transparent 100%);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px;
+      background: rgba(3,8,16,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,245,212,0.08);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; }
+    .nav-logo img { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(0,245,212,0.3); }
+    .nav-logo span { font-size: 14px; font-weight: 700; letter-spacing: 0.1em; color: var(--cyan); }
+    .nav-cta {
+      background: var(--cyan); color: #030810; border: none;
+      padding: 8px 20px; border-radius: 8px; font-size: 13px;
+      font-weight: 700; font-family: 'Space Mono', monospace;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-cta:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0,245,212,0.4); }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 100px 24px 60px;
+    }
+
+    .hero-glow {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%);
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(0,245,212,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-logo {
+      width: 110px; height: 110px; border-radius: 50%; object-fit: cover;
+      border: 2px solid rgba(0,245,212,0.4);
+      box-shadow: 0 0 60px rgba(0,245,212,0.3), 0 0 120px rgba(0,245,212,0.1);
+      margin-bottom: 32px;
+      animation: float 4s ease-in-out infinite, glow 3s ease-in-out infinite;
+    }
+
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    @keyframes glow {
+      0%,100%{box-shadow:0 0 40px rgba(0,245,212,0.3)}
+      50%{box-shadow:0 0 80px rgba(0,245,212,0.6),0 0 120px rgba(0,245,212,0.2)}
+    }
+
+    .hero-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; letter-spacing: 0.3em;
+      color: var(--cyan); text-transform: uppercase;
+      margin-bottom: 16px; opacity: 0.8;
+    }
+
+    h1 {
+      font-size: clamp(36px, 8vw, 72px);
+      font-weight: 800; line-height: 1.05;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #fff 0%, rgba(0,245,212,0.8) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(15px, 3vw, 20px);
+      color: var(--text-dim); max-width: 500px;
+      line-height: 1.6; margin-bottom: 48px;
+    }
+
+    .hero-buttons {
+      display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+      margin-bottom: 60px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00b4a0, #00f5d4);
+      color: #030810; border: none; padding: 14px 32px;
+      border-radius: 12px; font-size: 15px; font-weight: 700;
+      font-family: 'Space Mono', monospace; cursor: pointer;
+      text-decoration: none; display: inline-block;
+      transition: all 0.2s;
+      box-shadow: 0 0 30px rgba(0,245,212,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(0,245,212,0.5); }
+
+    .btn-secondary {
+      background: transparent; color: var(--cyan);
+      border: 1px solid rgba(0,245,212,0.3); padding: 14px 32px;
+      border-radius: 12px; font-size: 15px; font-weight: 700;
+      font-family: 'Space Mono', monospace; cursor: pointer;
+      text-decoration: none; display: inline-block;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(0,245,212,0.08); border-color: rgba(0,245,212,0.6); }
+
+    /* Stats hero */
+    .hero-stats {
+      display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat-val { font-size: 28px; font-weight: 800; color: var(--cyan); font-family: 'Space Mono', monospace; }
+    .hero-stat-label { font-size: 11px; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+
+    /* ── FEATURES ── */
+    .section { position: relative; z-index: 1; padding: 80px 24px; max-width: 1000px; margin: 0 auto; }
+    .section-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; letter-spacing: 0.3em; color: var(--cyan);
+      text-transform: uppercase; margin-bottom: 16px; opacity: 0.7;
+    }
+    .section-h2 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; margin-bottom: 48px; }
+
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .feature {
+      background: rgba(6,14,26,0.8); border: 1px solid rgba(0,245,212,0.1);
+      border-radius: 16px; padding: 28px;
+      transition: all 0.3s;
+    }
+    .feature:hover { border-color: rgba(0,245,212,0.3); transform: translateY(-4px); background: rgba(0,245,212,0.03); }
+    .feature-icon { font-size: 36px; margin-bottom: 16px; }
+    .feature h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .feature p { font-size: 14px; color: var(--text-dim); line-height: 1.6; }
+
+    /* ── INSTALL ── */
+    .install-section {
+      position: relative; z-index: 1;
+      background: linear-gradient(135deg, rgba(0,245,212,0.05) 0%, rgba(0,180,160,0.03) 100%);
+      border-top: 1px solid rgba(0,245,212,0.1);
+      border-bottom: 1px solid rgba(0,245,212,0.1);
+      padding: 80px 24px;
+    }
+    .install-inner { max-width: 800px; margin: 0 auto; }
+
+    .os-tabs { display: flex; gap: 10px; margin-bottom: 40px; }
+    .os-tab {
+      padding: 10px 24px; border-radius: 10px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.1); background: transparent;
+      color: var(--text-dim); font-family: 'Space Mono', monospace;
+      font-size: 13px; transition: all 0.2s;
+    }
+    .os-tab.active {
+      background: rgba(0,245,212,0.15); border-color: rgba(0,245,212,0.4);
+      color: var(--cyan);
+    }
+
+    .steps { display: none; }
+    .steps.active { display: flex; flex-direction: column; gap: 16px; }
+
+    .step {
+      display: flex; gap: 16px; align-items: flex-start;
+      background: rgba(6,14,26,0.6); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px; padding: 20px;
+    }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(0,245,212,0.15); border: 1px solid rgba(0,245,212,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700;
+      color: var(--cyan);
+    }
+    .step-content h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .step-content p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+    .step-content code {
+      background: rgba(0,245,212,0.1); border: 1px solid rgba(0,245,212,0.2);
+      border-radius: 6px; padding: 3px 8px; font-family: 'Space Mono', monospace;
+      font-size: 12px; color: var(--cyan);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 1;
+      text-align: center; padding: 40px 24px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    footer p { font-size: 12px; color: rgba(255,255,255,0.2); font-family: 'Space Mono', monospace; }
+
+    /* ── ANIM ENTRÉE ── */
+    .fade-in { opacity: 0; transform: translateY(20px); animation: fadeIn 0.8s ease-out forwards; }
+    .fade-in:nth-child(2) { animation-delay: 0.1s; }
+    .fade-in:nth-child(3) { animation-delay: 0.2s; }
+    .fade-in:nth-child(4) { animation-delay: 0.3s; }
+    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+
+    /* ── SCANLINES ── */
+    .scanlines {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.015) 2px, rgba(0,0,0,0.015) 4px);
+    }
+
+    @media (max-width: 600px) {
+      .hero-buttons { flex-direction: column; align-items: center; }
+      .os-tabs { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="stars"></div>
+<div class="scanlines"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <img src="/logo.png" alt="Terra Incognita" />
+    <span>TERRA INCOGNITA</span>
+  </div>
+  <a href="/app" class="nav-cta">Jouer →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <img src="/logo.png" alt="Terra Incognita" class="hero-logo fade-in" />
+  <div class="hero-tag fade-in">Explore · Découvre · Progresse</div>
+  <h1 class="fade-in">Le monde est<br/>ton terrain de jeu</h1>
+  <p class="hero-sub fade-in">
+    Chaque pas révèle la carte. Découvre des monuments cachés, débloque des badges, explore ta ville comme jamais.
+  </p>
+  <div class="hero-buttons fade-in">
+    <a href="/app" class="btn-primary">🚀 Commencer l'aventure</a>
+    <a href="#installer" class="btn-secondary">📲 Installer l'app</a>
+  </div>
+  <div class="hero-stats fade-in">
+    <div class="hero-stat">
+      <div class="hero-stat-val">34</div>
+      <div class="hero-stat-label">Badges à débloquer</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">∞</div>
+      <div class="hero-stat-label">Monuments à trouver</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">5</div>
+      <div class="hero-stat-label">Langues</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section">
+  <div class="section-title">Pourquoi Terra Incognita</div>
+  <h2 class="section-h2">Transforme tes promenades<br/>en aventures</h2>
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">🌫️</div>
+      <h3>Fog of War</h3>
+      <p>La carte est couverte d'un brouillard mystérieux. Marche pour le lever et révèle ton monde.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🏛️</div>
+      <h3>Monuments cachés</h3>
+      <p>Des halos colorés signalent des lieux secrets — châteaux, cascades, volcans, grottes... Approche-toi pour les découvrir.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🏅</div>
+      <h3>34 badges</h3>
+      <p>Débloque des badges en explorant, en marchant, en visitant des pays ou en jouant à des heures insolites.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🌍</div>
+      <h3>Pays à visiter</h3>
+      <p>Chaque nouveau pays découvert rapporte des points bonus — certains très rares valent jusqu'à 2000 XP !</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📐</div>
+      <h3>% d'exploration réel</h3>
+      <p>Suis ton pourcentage d'exploration de ta ville, ton département et ton pays avec les vraies données OSM.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔥</div>
+      <h3>Streak quotidien</h3>
+      <p>Explore chaque jour pour maintenir ta série. 7 jours de suite ? Badge Fidèle. 30 jours ? Badge Acharné !</p>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section class="install-section" id="installer">
+  <div class="install-inner">
+    <div class="section-title">Installation gratuite</div>
+    <h2 class="section-h2" style="margin-bottom:32px">Installe l'app en<br/>30 secondes</h2>
+
+    <div class="os-tabs">
+      <button class="os-tab active" onclick="showOS('android')">🤖 Android</button>
+      <button class="os-tab" onclick="showOS('ios')">🍎 iPhone / iPad</button>
+    </div>
+
+    <!-- Android -->
+    <div class="steps active" id="steps-android">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Ouvre Chrome</h4>
+          <p>Lance le navigateur Chrome sur ton téléphone Android et va sur <code>terra-incognita-final.vercel.app</code></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Bannière d'installation</h4>
+          <p>Chrome affiche automatiquement une bannière en bas "Ajouter à l'écran d'accueil". Appuie dessus.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Confirme</h4>
+          <p>Appuie sur "Installer" dans la popup. L'icône Terra Incognita apparaît sur ton écran d'accueil. C'est tout !</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>Lance l'app</h4>
+          <p>Appuie sur l'icône 🌍 sur ton écran d'accueil, active le GPS et commence à explorer !</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- iOS -->
+    <div class="steps" id="steps-ios">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Ouvre Safari</h4>
+          <p>Important : utilise Safari (pas Chrome). Va sur <code>terra-incognita-final.vercel.app</code></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Appuie sur Partager</h4>
+          <p>Appuie sur l'icône <strong>⬆️ Partager</strong> en bas de Safari (le carré avec une flèche vers le haut).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Sur l'écran d'accueil</h4>
+          <p>Fais défiler le menu et appuie sur <strong>"Sur l'écran d'accueil"</strong> (icône avec un +).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>Confirme et lance</h4>
+          <p>Appuie sur "Ajouter" en haut à droite. L'icône apparaît sur ton écran d'accueil. Lance l'app et explore !</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>Terra Incognita — Explore the World · Gratuit · Open Data OSM · Aucune pub</p>
+</footer>
+
+<script>
+  function showOS(os) {
+    document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'))
+    document.querySelectorAll('.steps').forEach(s => s.classList.remove('active'))
+    event.target.classList.add('active')
+    document.getElementById('steps-' + os).classList.add('active')
+  }
+
+  // Détecter l'OS et afficher le bon onglet par défaut
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+  if (isIOS) {
+    document.querySelectorAll('.os-tab')[1].click()
+  }
+
+  // Rediriger /app vers l'app React
+  // (géré par vercel.json)
+</script>
+
+</body>
+</html>

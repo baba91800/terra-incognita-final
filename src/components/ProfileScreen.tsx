@@ -9,6 +9,7 @@ import AvatarEditor, { loadAvatarPhoto } from './AvatarEditor'
 import ShareCard from './ShareCard'
 import ActivityGraph from './ActivityGraph'
 import MonumentStats from './MonumentStats'
+import BadgeProgress from './BadgeProgress'
 
 interface Props {
   onClose: () => void
@@ -146,6 +147,17 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: 12, marginBottom: 16 }}>
                 <ActivityGraph log={log} />
               </div>
+
+              {/* Badges proches */}
+              <BadgeProgress
+                badges={badges}
+                tiles={tiles}
+                totalDist={totalDist}
+                score={score}
+                monuments={monuments}
+                countries={countries}
+                streak={parseInt(localStorage.getItem('ti2_streak')||'0')}
+              />
 
               {/* Badges */}
               <div style={{ marginBottom: 16 }}>
