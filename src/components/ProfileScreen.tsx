@@ -18,7 +18,7 @@ interface Props {
   totalTiles: number; totalDist: number
   badges: Badge[]; monuments: Monument[]; countries: CountryDiscovery[]
   log: Array<{ timestamp: string; points?: number; type?: string }>
-  path: Array<{ lat: number; lng: number; timestamp: number }>
+  path?: Array<{ lat: number; lng: number; timestamp: number }>
   tiles: Set<string>; playerLat: number; playerLng: number
   territory: TerritoryData
   t: Translations
@@ -27,7 +27,7 @@ interface Props {
 const AVATAR_KEY = 'ti2_avatar'
 const PSEUDO_KEY = 'ti2_pseudo'
 
-export default function ProfileScreen({ onClose, onReset, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, log, territory, tiles, playerLat, playerLng, t }: Props) {
+export default function ProfileScreen({ onClose, onReset, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, log, path = [], territory, tiles, playerLat, playerLng, t }: Props) {
   const [pseudo, setPseudo] = useState(() => localStorage.getItem(PSEUDO_KEY) || 'Explorer')
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '🧭')
   const [avatarPhoto, setAvatarPhoto] = useState<string | undefined>(() => loadAvatarPhoto())
