@@ -192,18 +192,15 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     import('leaflet').then(({default:L}) => {
       const map=mapRef.current!; if (!map) return
       const makeIcon=(h:number|null) => {
-        if (h!==null) {
-          return L.divIcon({
-            html:`<div style="width:28px;height:28px;position:relative;transform:rotate(${h}deg);transform-origin:center">
-              <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 10px rgba(0,245,212,0.8)"></div>
-              <div style="position:absolute;left:50%;top:0px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:10px solid #00f5d4;filter:drop-shadow(0 0 3px rgba(0,245,212,0.8))"></div>
-            </div>`,
-            className:'',iconSize:[28,28],iconAnchor:[14,14],
-          })
-        }
+        // Toujours afficher avec flèche — h=null → pas de rotation (0°)
+        const deg = h ?? 0
+        const hasDir = h !== null
         return L.divIcon({
-          html:`<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 10px rgba(0,245,212,0.8)"></div>`,
-          className:'',iconSize:[18,18],iconAnchor:[9,9],
+          html:`<div style="width:32px;height:32px;position:relative;transform:rotate(${deg}deg);transform-origin:center">
+            <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 12px rgba(0,245,212,0.9)"></div>
+            <div style="position:absolute;left:50%;top:1px;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:12px solid ${hasDir?'#00f5d4':'rgba(0,245,212,0.4)'};filter:drop-shadow(0 0 4px rgba(0,245,212,0.8))"></div>
+          </div>`,
+          className:'',iconSize:[32,32],iconAnchor:[16,16],
         })
       }
       if (playerMarker.current) {
