@@ -1,12 +1,14 @@
 import { computeExplorationPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
+import type { Translations } from '../lib/i18n'
 
 interface Props {
   territory: TerritoryData
   totalTiles: number
+  t: Translations
 }
 
-export default function TerritoryBar({ territory, totalTiles }: Props) {
+export default function TerritoryBar({ territory, totalTiles, t }: Props) {
   if (!territory.city && !territory.department && !territory.country) return null
 
   // % ville — basé sur la vraie surface OSM si disponible
@@ -43,7 +45,7 @@ export default function TerritoryBar({ territory, totalTiles }: Props) {
         backdropFilter: 'blur(12px)',
       }}>
         <div style={{ fontSize: 8, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 6 }}>
-          Exploration
+          {t.exploration}
         </div>
         {rows.map(r => (
           <div key={r.label} style={{ marginBottom: 6 }}>

@@ -12,7 +12,6 @@ import ProfileScreen from './components/ProfileScreen'
 import MarkerEditor from './components/MarkerEditor'
 import TerritoryBar from './components/TerritoryBar'
 import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
-import { scheduleStreakReminder, hasNotificationPermission } from './lib/notifications'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
 import type { Monument, PersonalMarker } from './types/game'
 
@@ -34,7 +33,6 @@ export default function App() {
   useEffect(() => {
     if (!localStorage.getItem(ONBOARD_KEY)) setShowOnboard(true)
     else setLang(loadLang())
-    if (hasNotificationPermission()) scheduleStreakReminder()
   }, [])
 
   const finishOnboard = (selectedLang: Lang) => {
@@ -128,7 +126,7 @@ export default function App() {
       {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
       <Compass heading={heading} />
-      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} />
+      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} t={t} />
 
       {/* Proximity alert */}
       <ProximityAlert
