@@ -116,6 +116,31 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     })
     ctx.clearRect(0,0,canvas.width,canvas.height)
     ctx.drawImage(off,0,0)
+
+    // Contour ville PAR-DESSUS le fog
+    if (cityPolygonPoints.current.length > 2) {
+      try {
+        const pulse2 = Math.sin(time * 0.0015) * 0.25 + 0.65
+        ctx.save()
+        ctx.setLineDash([10, 7])
+        ctx.strokeStyle = `rgba(0,245,212,${pulse2})`
+        ctx.lineWidth = 2
+        ctx.shadowColor = '#00f5d4'
+        ctx.shadowBlur = 8
+        ctx.beginPath()
+        let first = true
+        cityPolygonPoints.current.forEach(([lat, lng]) => {
+          try {
+            const pt = map.latLngToContainerPoint([lat, lng])
+            if (first) { ctx.moveTo(pt.x, pt.y); first = false }
+            else ctx.lineTo(pt.x, pt.y)
+          } catch {}
+        })
+        ctx.closePath()
+        ctx.stroke()
+        ctx.restore()
+      } catch {}
+    }
   },[tiles,playerLat,monuments])
 
   useEffect(() => {
@@ -191,16 +216,10 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     if (!mapRef.current) return
     import('leaflet').then(({default:L}) => {
       const map=mapRef.current!; if (!map) return
-      const makeIcon=(h:number|null) => {
-        // Toujours afficher avec flèche — h=null → pas de rotation (0°)
-        const deg = h ?? 0
-        const hasDir = h !== null
+      const makeIcon=(_h:number|null) => {
         return L.divIcon({
-          html:`<div style="width:32px;height:32px;position:relative;transform:rotate(${deg}deg);transform-origin:center">
-            <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 12px rgba(0,245,212,0.9)"></div>
-            <div style="position:absolute;left:50%;top:1px;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:12px solid ${hasDir?'#00f5d4':'rgba(0,245,212,0.4)'};filter:drop-shadow(0 0 4px rgba(0,245,212,0.8))"></div>
-          </div>`,
-          className:'',iconSize:[32,32],iconAnchor:[16,16],
+          html:`<div style="width:16px;height:16px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 8px rgba(0,245,212,0.8)"></div>`,
+          className:'',iconSize:[16,16],iconAnchor:[8,8],
         })
       }
       if (playerMarker.current) {

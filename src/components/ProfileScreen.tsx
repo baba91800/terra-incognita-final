@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import type { Badge, Monument, CountryDiscovery } from '../types/game'
 import { RARITY_COLORS, LEVEL_TITLES } from '../lib/constants'
-import { estimateCityPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
+import { computeExplorationPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
 import type { Translations } from '../lib/i18n'
 import { exportData, importData } from '../lib/exportImport'
@@ -60,7 +60,7 @@ export default function ProfileScreen({ onClose, score, xp, level, levelTitle, t
   }
   const saveAvatar = (a: string) => { setAvatar(a); localStorage.setItem(AVATAR_KEY, a) }
 
-  const cityPct = estimateCityPercent(totalTiles)
+  const cityPct = computeExplorationPercent(totalTiles, territory.cityAreaKm2)
   const deptPct = estimateDeptPercent(totalTiles)
   const countryPct = estimateCountryPercent(totalTiles)
 
