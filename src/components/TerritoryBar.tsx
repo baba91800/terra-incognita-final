@@ -53,7 +53,7 @@ export default function TerritoryBar({ territory, totalTiles }: Props) {
                 <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 85 }}>{r.label}</span>
               </div>
               <span style={{ fontSize: 9, fontFamily: 'monospace', color: r.color, flexShrink: 0 }}>
-                {r.pct > 0 ? r.pct.toFixed(2) + '%' : `${(exploredM2/1000).toFixed(0)}k m²`}
+                {r.pct > 0 ? r.pct.toFixed(3) + '%' : `${exploredM2.toLocaleString()} m²`}
               </span>
             </div>
             <div style={{ height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 2, overflow: 'hidden' }}>

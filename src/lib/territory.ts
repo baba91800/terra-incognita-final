@@ -15,10 +15,27 @@ const TERRITORY_GRID = 0.002 // ~200m
 let lastFetchKey = ''
 let fetchTimer: ReturnType<typeof setTimeout> | null = null
 
+// Reset au démarrage pour forcer le recalcul si données incomplètes
+if (typeof localStorage !== 'undefined') {
+  const saved = localStorage.getItem('ti2_territory_data')
+  if (saved) {
+    const parsed = JSON.parse(saved || '{}')
+    if (parsed.city && !parsed.cityAreaKm2) {
+      localStorage.removeItem('ti2_territory_data')
+    }
+  }
+}
+
 export function loadTerritory(): TerritoryData {
   try {
     const raw = localStorage.getItem(TERRITORY_KEY)
-    return raw ? JSON.parse(raw) : { city: null, department: null, country: null, lastUpdated: '' }
+    if (!raw) return { city: null, department: null, country: null, lastUpdated: '' }
+    const parsed = JSON.parse(raw)
+    // Si cityAreaKm2 manque, on force un refetch en vidant lastUpdated
+    if (parsed.city && parsed.cityAreaKm2 === undefined) {
+      parsed.lastUpdated = ''
+    }
+    return parsed
   } catch { return { city: null, department: null, country: null, lastUpdated: '' } }
 }
 
