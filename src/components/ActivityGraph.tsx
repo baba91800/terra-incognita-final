@@ -2,114 +2,144 @@ import { useMemo, useState } from 'react'
 
 interface Props {
   log: Array<{ timestamp: string; points?: number; type?: string }>
+  path: Array<{ lat: number; lng: number; timestamp: number }>
 }
 
-const WEEKS = 15
+const WEEKS = 12
 const DAYS = 7
-const CELL = 13
+const CELL = 14
 const GAP = 3
 const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
 
+function distBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
 interface DayData {
   date: string
+  km: number
   xp: number
   discoveries: number
   isToday: boolean
-  dayLabel: string
-  monthLabel: string
+  label: string
 }
 
-export default function ActivityGraph({ log }: Props) {
+export default function ActivityGraph({ log, path }: Props) {
   const [selected, setSelected] = useState<DayData | null>(null)
 
-  const { grid, maxVal, totalActiveDays, totalXP } = useMemo(() => {
-    const dayMap = new Map<string, { xp: number; discoveries: number }>()
+  const { grid, maxKm, totalKm, totalActiveDays } = useMemo(() => {
+    // Calculer km par jour depuis le path
+    const kmByDay = new Map<string, number>()
+    for (let i = 1; i < path.length; i++) {
+      const prev = path[i-1]
+      const curr = path[i]
+      // Ignorer les sauts trop grands (GPS perdu)
+      const d = distBetween(prev.lat, prev.lng, curr.lat, curr.lng)
+      if (d > 500) continue // >500m entre deux points = saut GPS
+      const date = new Date(curr.timestamp).toISOString().split('T')[0]
+      kmByDay.set(date, (kmByDay.get(date) || 0) + d / 1000)
+    }
 
+    // XP et découvertes par jour depuis le log
+    const xpByDay = new Map<string, { xp: number; discoveries: number }>()
     log.forEach(e => {
       const d = e.timestamp.split('T')[0]
-      const existing = dayMap.get(d) || { xp: 0, discoveries: 0 }
-      existing.xp += e.points || 10
-      if (e.type === 'monument' || e.type === 'country' || e.type === 'badge') {
-        existing.discoveries++
-      }
-      dayMap.set(d, existing)
+      const existing = xpByDay.get(d) || { xp: 0, discoveries: 0 }
+      existing.xp += e.points || 0
+      if (['monument','country','badge'].includes(e.type || '')) existing.discoveries++
+      xpByDay.set(d, existing)
     })
 
     const today = new Date()
     const cells: DayData[] = []
-
     for (let i = WEEKS * DAYS - 1; i >= 0; i--) {
       const d = new Date(today)
       d.setDate(today.getDate() - i)
       const dateStr = d.toISOString().split('T')[0]
-      const data = dayMap.get(dateStr) || { xp: 0, discoveries: 0 }
+      const km = kmByDay.get(dateStr) || 0
+      const extra = xpByDay.get(dateStr) || { xp: 0, discoveries: 0 }
+      const dayIdx = d.getDay() === 0 ? 6 : d.getDay() - 1
       cells.push({
-        date: dateStr,
-        xp: data.xp,
-        discoveries: data.discoveries,
+        date: dateStr, km,
+        xp: extra.xp, discoveries: extra.discoveries,
         isToday: i === 0,
-        dayLabel: DAY_LABELS[d.getDay() === 0 ? 6 : d.getDay() - 1],
-        monthLabel: MONTHS[d.getMonth()],
+        label: DAY_LABELS[dayIdx],
       })
     }
 
-    const maxVal = Math.max(...cells.map(c => c.xp), 1)
-    const totalActiveDays = cells.filter(c => c.xp > 0).length
-    const totalXP = cells.reduce((s, c) => s + c.xp, 0)
+    const maxKm = Math.max(...cells.map(c => c.km), 0.1)
+    const totalKm = cells.reduce((s, c) => s + c.km, 0)
+    const totalActiveDays = cells.filter(c => c.km > 0).length
 
-    return { grid: cells, maxVal, totalActiveDays, totalXP }
-  }, [log])
+    return { grid: cells, maxKm, totalKm, totalActiveDays }
+  }, [log, path])
 
-  const getColor = (xp: number, isToday: boolean) => {
-    if (isToday && xp === 0) return 'rgba(0,245,212,0.12)'
-    if (xp === 0) return 'rgba(255,255,255,0.04)'
-    const intensity = xp / maxVal
-    if (intensity < 0.2)  return 'rgba(0,180,160,0.3)'
-    if (intensity < 0.4)  return 'rgba(0,200,180,0.5)'
-    if (intensity < 0.6)  return 'rgba(0,220,200,0.7)'
-    if (intensity < 0.8)  return 'rgba(0,235,210,0.85)'
-    return 'rgba(0,245,212,1)'
+  const getColor = (km: number, isToday: boolean) => {
+    if (isToday && km === 0) return 'rgba(0,245,212,0.1)'
+    if (km === 0) return 'rgba(255,255,255,0.04)'
+    const intensity = km / maxKm
+    if (intensity < 0.15) return 'rgba(0,160,140,0.4)'
+    if (intensity < 0.35) return 'rgba(0,190,165,0.55)'
+    if (intensity < 0.6)  return 'rgba(0,215,190,0.72)'
+    if (intensity < 0.85) return 'rgba(0,235,210,0.88)'
+    return '#00f5d4'
   }
 
-  // Grouper par semaines
   const weeks: DayData[][] = []
-  for (let w = 0; w < WEEKS; w++) {
-    weeks.push(grid.slice(w * DAYS, (w + 1) * DAYS))
-  }
+  for (let w = 0; w < WEEKS; w++) weeks.push(grid.slice(w * DAYS, (w + 1) * DAYS))
 
-  // Labels des mois (au-dessus)
+  // Labels mois
   const monthLabels: { label: string; col: number }[] = []
   weeks.forEach((week, wi) => {
-    const firstDay = week[0]
-    if (wi === 0 || firstDay.date.endsWith('-01') || (wi > 0 && weeks[wi-1][0].monthLabel !== firstDay.monthLabel)) {
-      monthLabels.push({ label: firstDay.monthLabel, col: wi })
+    const d = new Date(week[0].date)
+    if (wi === 0 || d.getDate() <= 7) {
+      if (wi === 0 || weeks[wi-1][0].date.substring(0,7) !== week[0].date.substring(0,7)) {
+        monthLabels.push({ label: MONTHS[d.getMonth()], col: wi })
+      }
     }
   })
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  }
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
     <div>
-      {/* Titre + résumé */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase' }}>
-          Activité · {WEEKS} semaines
-        </div>
-        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace' }}>
-          {totalActiveDays}j actifs · +{totalXP.toLocaleString()} XP
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 4 }}>
+            Activité · {WEEKS} semaines
+          </div>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 'bold', color: '#00f5d4', fontFamily: 'monospace' }}>{totalKm.toFixed(1)} km</div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total période</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 'bold', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{totalActiveDays}j</div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Jours actifs</div>
+            </div>
+            {totalActiveDays > 0 && (
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 'bold', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{(totalKm / totalActiveDays).toFixed(1)} km</div>
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Moy/jour actif</div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Labels mois */}
-      <div style={{ display: 'flex', marginLeft: 18, marginBottom: 3, gap: GAP }}>
+      <div style={{ display: 'flex', marginLeft: 18, marginBottom: 4, gap: GAP }}>
         {weeks.map((_, wi) => {
           const ml = monthLabels.find(m => m.col === wi)
           return (
-            <div key={wi} style={{ width: CELL, fontSize: 7, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', overflow: 'visible', whiteSpace: 'nowrap' }}>
+            <div key={wi} style={{ width: CELL, fontSize: 7, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', overflow: 'visible', whiteSpace: 'nowrap' }}>
               {ml ? ml.label : ''}
             </div>
           )
@@ -119,7 +149,7 @@ export default function ActivityGraph({ log }: Props) {
       {/* Grille */}
       <div style={{ display: 'flex', gap: 2 }}>
         {/* Labels jours */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: GAP, paddingTop: 1, marginRight: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: GAP, marginRight: 2 }}>
           {DAY_LABELS.map((d, i) => (
             <div key={i} style={{ width: 10, height: CELL, fontSize: 7, color: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', fontFamily: 'monospace' }}>
               {i % 2 === 0 ? d : ''}
@@ -128,7 +158,7 @@ export default function ActivityGraph({ log }: Props) {
         </div>
 
         {/* Cellules */}
-        <div style={{ display: 'flex', gap: GAP, overflowX: 'hidden' }}>
+        <div style={{ display: 'flex', gap: GAP }}>
           {weeks.map((week, wi) => (
             <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>
               {week.map((cell, di) => (
@@ -137,16 +167,18 @@ export default function ActivityGraph({ log }: Props) {
                   onClick={() => setSelected(selected?.date === cell.date ? null : cell)}
                   style={{
                     width: CELL, height: CELL, borderRadius: 3,
-                    background: getColor(cell.xp, cell.isToday),
+                    background: getColor(cell.km, cell.isToday),
                     border: selected?.date === cell.date
-                      ? '1.5px solid rgba(0,245,212,0.9)'
+                      ? '1.5px solid #00f5d4'
                       : cell.isToday
-                        ? '1px solid rgba(0,245,212,0.4)'
+                        ? '1px solid rgba(0,245,212,0.5)'
                         : '1px solid transparent',
                     cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    boxShadow: cell.xp > maxVal * 0.7 ? '0 0 4px rgba(0,245,212,0.5)' : 'none',
+                    transition: 'transform 0.1s',
+                    boxShadow: cell.km > maxKm * 0.7 ? `0 0 5px rgba(0,245,212,0.5)` : 'none',
                   }}
+                  onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.2)')}
+                  onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                 />
               ))}
             </div>
@@ -154,49 +186,59 @@ export default function ActivityGraph({ log }: Props) {
         </div>
       </div>
 
-      {/* Détail du jour sélectionné */}
+      {/* Détail jour sélectionné */}
       {selected && (
         <div style={{
-          marginTop: 10, padding: '10px 12px', borderRadius: 10,
-          background: 'rgba(0,245,212,0.06)',
-          border: '1px solid rgba(0,245,212,0.2)',
+          marginTop: 12, padding: '12px 14px', borderRadius: 10,
+          background: 'rgba(0,245,212,0.05)', border: '1px solid rgba(0,245,212,0.2)',
           animation: 'toastIn 0.2s ease-out',
         }}>
-          <div style={{ fontSize: 11, fontWeight: 'bold', color: '#fff', marginBottom: 4, textTransform: 'capitalize' }}>
-            {formatDate(selected.date)}
-            {selected.isToday && <span style={{ marginLeft: 8, fontSize: 9, color: '#00f5d4', background: 'rgba(0,245,212,0.15)', padding: '2px 6px', borderRadius: 4 }}>Aujourd'hui</span>}
-          </div>
-          {selected.xp > 0 ? (
-            <div style={{ display: 'flex', gap: 16 }}>
-              <div>
-                <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>XP gagné</div>
-                <div style={{ fontSize: 16, fontWeight: 'bold', color: '#00f5d4', fontFamily: 'monospace' }}>+{selected.xp.toLocaleString()}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 'bold', color: '#fff', marginBottom: 2, textTransform: 'capitalize' }}>
+                {formatDate(selected.date)}
+                {selected.isToday && <span style={{ marginLeft: 8, fontSize: 9, color: '#00f5d4', background: 'rgba(0,245,212,0.15)', padding: '2px 6px', borderRadius: 4 }}>Aujourd'hui</span>}
               </div>
-              {selected.discoveries > 0 && (
-                <div>
-                  <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Découvertes</div>
-                  <div style={{ fontSize: 16, fontWeight: 'bold', color: '#f59e0b', fontFamily: 'monospace' }}>{selected.discoveries}</div>
+              {selected.km > 0 ? (
+                <div style={{ display: 'flex', gap: 20, marginTop: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 22, fontWeight: 'bold', color: '#00f5d4', fontFamily: 'monospace' }}>{selected.km.toFixed(2)} km</div>
+                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Parcourus</div>
+                  </div>
+                  {selected.xp > 0 && (
+                    <div>
+                      <div style={{ fontSize: 22, fontWeight: 'bold', color: '#f59e0b', fontFamily: 'monospace' }}>+{selected.xp.toLocaleString()}</div>
+                      <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>XP gagné</div>
+                    </div>
+                  )}
+                  {selected.discoveries > 0 && (
+                    <div>
+                      <div style={{ fontSize: 22, fontWeight: 'bold', color: '#a855f7', fontFamily: 'monospace' }}>{selected.discoveries}</div>
+                      <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Découvertes</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic', marginTop: 4 }}>
+                  Pas d'exploration ce jour
                 </div>
               )}
             </div>
-          ) : (
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
-              Pas d'exploration ce jour
-            </div>
-          )}
+            <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>✕</button>
+          </div>
         </div>
       )}
 
       {/* Légende */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8, justifyContent: 'flex-end' }}>
-        <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.2)' }}>Moins</span>
-        {[0, 0.2, 0.4, 0.7, 1].map((v, i) => (
+        <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.2)' }}>0 km</span>
+        {[0, 0.15, 0.35, 0.6, 0.85, 1].map((v, i) => (
           <div key={i} style={{
             width: 10, height: 10, borderRadius: 2,
-            background: v === 0 ? 'rgba(255,255,255,0.04)' : getColor(v * maxVal, false),
+            background: getColor(v * maxKm, false),
           }} />
         ))}
-        <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.2)' }}>Plus</span>
+        <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.2)' }}>{maxKm.toFixed(1)} km</span>
       </div>
     </div>
   )

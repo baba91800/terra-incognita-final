@@ -17,7 +17,8 @@ interface Props {
   score: number; xp: number; level: number; levelTitle: string
   totalTiles: number; totalDist: number
   badges: Badge[]; monuments: Monument[]; countries: CountryDiscovery[]
-  log: Array<{ timestamp: string; points?: number }>
+  log: Array<{ timestamp: string; points?: number; type?: string }>
+  path: Array<{ lat: number; lng: number; timestamp: number }>
   tiles: Set<string>; playerLat: number; playerLng: number
   territory: TerritoryData
   t: Translations
@@ -145,7 +146,7 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
 
               {/* Graphique activité */}
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                <ActivityGraph log={log} />
+                <ActivityGraph log={log} path={path} />
               </div>
 
               {/* Badges proches */}
