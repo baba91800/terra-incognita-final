@@ -102,25 +102,64 @@ export function useGameEngine() {
       }
     }
 
+    // Calculs supplémentaires pour nouveaux badges
+    const caves = dm.filter(m=>m.type==='cave')
+    const peaks = dm.filter(m=>m.type==='peak')
+    const lighthouses = dm.filter(m=>m.type==='lighthouse')
+    const windmills = dm.filter(m=>m.type==='windmill')
+    const km2 = tiles.current.size * 0.0001 // chaque tuile = 100m² = 0.0001 km²
+    const hasEpicCountry = countriesR.current.some(c=>c.rarity==='epic')
+    const hasLegendaryCountry = countriesR.current.some(c=>c.rarity==='legendary')
+    const hour = new Date().getHours()
+    const day = new Date().getDay() // 0=dim, 6=sam
+    const lastWeekendKey = 'ti2_weekend'
+    const weekendData = JSON.parse(localStorage.getItem(lastWeekendKey)||'{"sat":false,"sun":false}')
+    if (day===6) { weekendData.sat=true; localStorage.setItem(lastWeekendKey,JSON.stringify(weekendData)) }
+    if (day===0) { weekendData.sun=true; localStorage.setItem(lastWeekendKey,JSON.stringify(weekendData)) }
+
     const checks=[
-      {id:'b1', ok:tiles.current.size>=10},
-      {id:'b10',ok:tiles.current.size>=200},
-      {id:'b2', ok:tiles.current.size>=500},
-      {id:'b3', ok:tiles.current.size>=2000},
-      {id:'b4', ok:dm.length>=1},
-      {id:'b5', ok:dm.length>=5},
-      {id:'b6', ok:dm.length>=10},
-      {id:'b7', ok:legendaryCount>=1},
-      {id:'b8', ok:scoreR.current>=5000},
-      {id:'b9', ok:dm.some(m=>m.rarity==='epic')},
-      {id:'b11',ok:countriesR.current.length>=5},
-      {id:'b12',ok:legendaryCount>=3},
-      {id:'b13',ok:distR.current>=10000},
-      {id:'b14',ok:tiles.current.size>=100},
-      {id:'b15',ok:streak>=7},
-      {id:'b16',ok:naturalSites.length>=5},
-      {id:'b17',ok:epicHistoric.length>=3},
-      {id:'b18',ok:distR.current>=50000},
+      // Surface
+      {id:'b1',  ok: km2>=0.01},
+      {id:'b14', ok: km2>=0.1},
+      {id:'b2',  ok: km2>=1},
+      {id:'b3',  ok: km2>=10},
+      {id:'b19', ok: km2>=50},
+      // Distance
+      {id:'b13', ok: distR.current>=10000},
+      {id:'b18', ok: distR.current>=42000},
+      {id:'b20', ok: distR.current>=100000},
+      // Monuments généraux
+      {id:'b4',  ok: dm.length>=1},
+      {id:'b5',  ok: dm.length>=5},
+      {id:'b6',  ok: dm.length>=10},
+      {id:'b7',  ok: legendaryCount>=1},
+      {id:'b9',  ok: dm.some(m=>m.rarity==='epic')},
+      {id:'b12', ok: legendaryCount>=3},
+      // Monuments spécifiques
+      {id:'b16', ok: naturalSites.length>=5},
+      {id:'b17', ok: epicHistoric.length>=3},
+      {id:'b21', ok: caves.length>=3},
+      {id:'b22', ok: peaks.length>=3},
+      {id:'b23', ok: lighthouses.length>=2},
+      {id:'b24', ok: windmills.length>=3},
+      // Scores
+      {id:'b8',  ok: scoreR.current>=5000},
+      {id:'b25', ok: scoreR.current>=10000},
+      {id:'b26', ok: scoreR.current>=100000},
+      // Pays
+      {id:'b10', ok: countriesR.current.length>=3},
+      {id:'b11', ok: countriesR.current.length>=5},
+      {id:'b27', ok: countriesR.current.length>=10},
+      {id:'b28', ok: countriesR.current.length>=20},
+      {id:'b29', ok: hasEpicCountry},
+      {id:'b30', ok: hasLegendaryCountry},
+      // Régularité
+      {id:'b15', ok: streak>=7},
+      {id:'b31', ok: streak>=30},
+      // Temps
+      {id:'b32', ok: hour<8 && tiles.current.size>0},
+      {id:'b33', ok: hour>=22 && tiles.current.size>0},
+      {id:'b34', ok: weekendData.sat && weekendData.sun},
     ]
     let changed=false
     const nb=badgesR.current.map(b=>{
@@ -206,13 +245,12 @@ export function useGameEngine() {
     if(pathR.current.length%10===0) savePath(pathR.current)
   },[])
 
-  const move=useCallback((lat:number,lng:number,newLat:number,newLng:number,updateHeading?:(lat:number,lng:number)=>void)=>{
+  const move=useCallback((lat:number,lng:number,newLat:number,newLng:number)=>{
     const d=dist(lat,lng,newLat,newLng)
     distR.current+=d; setTotalDist(distR.current); saveDist(distR.current); updateObj('distance',d)
     latR.current=newLat; lngR.current=newLng
     setPlayerLat(newLat); setPlayerLng(newLng); savePlayer(newLat,newLng)
     trackPath(newLat,newLng)
-    if(updateHeading) updateHeading(newLat,newLng)
     const updated=revealAt(newLat,newLng,monR.current)
     monR.current=updated; detectCountry(newLat,newLng); fetchNearby(newLat,newLng)
     // Update territory every ~100m
@@ -269,5 +307,28 @@ export function useGameEngine() {
   }
 }
 
-// Export heading — utilise useHeading depuis useHeading.ts
-export { useHeading } from './useHeading'
+// Export heading tracking - added separately
+export function useHeading() {
+  const [heading, setHeading] = useState<number | null>(null)
+  const prevPos = useRef<{ lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    // Try device orientation first
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      const alpha = (e as any).webkitCompassHeading ?? e.alpha
+      if (alpha !== null) setHeading(Math.round(alpha))
+    }
+
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientationabsolute', handleOrientation as any, true)
+      window.addEventListener('deviceorientation', handleOrientation as any, true)
+    }
+
+    return () => {
+      window.removeEventListener('deviceorientationabsolute', handleOrientation as any, true)
+      window.removeEventListener('deviceorientation', handleOrientation as any, true)
+    }
+  }, [])
+
+  return { heading }
+}
