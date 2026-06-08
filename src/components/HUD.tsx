@@ -124,6 +124,14 @@ export default function HUD(p:Props) {
               <span style={{fontSize:11}}>{p.gpsActive?t.gpsOn:t.gps}</span>
             </button>
 
+            {/* Wake Lock indicator */}
+            {p.gpsActive && (
+              <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 10px',borderRadius:8,background:'rgba(255,165,0,0.08)',border:'1px solid rgba(255,165,0,0.2)',fontSize:10,color:'rgba(255,165,0,0.7)'}}>
+                <span>☀️</span>
+                <span>Écran actif</span>
+              </div>
+            )}
+
             {/* Profil */}
             <button className="hud-btn" onClick={p.onOpenProfile} style={{fontSize:11}}>
               <span>👤</span><span>Profil</span>
