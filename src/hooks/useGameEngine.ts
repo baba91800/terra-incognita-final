@@ -23,6 +23,7 @@ export function useGameEngine() {
   const [path,setPath]=useState<ExplorationPath[]>([])
   const [notifications,setNotifications]=useState<Notification[]>([])
   const [gpsActive,setGpsActive]=useState(false)
+  const [gpsHeading,setGpsHeading]=useState<number|null>(null)
   const [initialized,setInitialized]=useState(false)
   const [totalDist,setTotalDist]=useState(0)
   const [territory,setTerritory]=useState<TerritoryData>({city:null,department:null,country:null,lastUpdated:''})
@@ -317,7 +318,7 @@ export function useGameEngine() {
     gpsActive,initialized,totalTiles:tiles.current.size,
     totalDist,tiles:tiles.current,territory,
     explorationPercent:(Math.min(100,tiles.current.size/100)).toFixed(1),
-    startGPS,stopGPS,
+    startGPS,stopGPS,gpsHeading,
   }
 }
 

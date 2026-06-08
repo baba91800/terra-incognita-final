@@ -91,7 +91,7 @@ export default function App() {
         playerLat={engine.playerLat} playerLng={engine.playerLng}
         tiles={engine.tiles} monuments={engine.monuments}
         personalMarkers={personalMarkers}
-        heading={heading}
+        heading={engine.gpsHeading}
         onMapReady={m => { mapRef.current = m }}
         onMonumentClick={m => !m.discovered && setNavTarget(m)}
         onLongPress={(lat, lng) => setMarkerEditor({ lat, lng })}
@@ -125,7 +125,7 @@ export default function App() {
 
       {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
-      <Compass heading={heading} />
+      <Compass heading={engine.gpsHeading} />
       <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} t={t} />
 
       {/* Proximity alert */}
