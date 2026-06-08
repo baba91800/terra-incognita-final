@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import type { Badge, Monument, CountryDiscovery, DailyObjective, DiscoveryLog, ExplorationPath } from '../types/game'
+import { loadWeeklyObjectives, saveWeeklyObjectives, getDaysLeftInWeek, type WeeklyObjective } from '../lib/weeklyObjectives'
 import { RARITY_COLORS, RARITY_LABELS } from '../lib/constants'
 import { type Lang, type Translations } from '../lib/i18n'
 
-type Panel = 'none'|'badges'|'monuments'|'countries'|'objectives'|'log'|'stats'
+type Panel = 'none'|'badges'|'monuments'|'countries'|'objectives'|'weekly'|'log'|'stats'
 
 interface Props {
   score:number; xp:number; level:number; xpIntoLevel:number; xpForNext:number; levelTitle:string
@@ -21,6 +22,7 @@ export default function HUD(p:Props) {
   const [installEvt, setInstallEvt] = useState<any>(null)
   const [showLang, setShowLang] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<Badge|null>(null)
+  const [weeklyObj, setWeeklyObj] = useState<WeeklyObjective[]>(() => loadWeeklyObjectives())
   const t = p.t
   const earnedB = p.badges.filter(b=>b.earned)
   const discM = p.monuments.filter(m=>m.discovered)
@@ -54,6 +56,7 @@ export default function HUD(p:Props) {
     { id:'monuments' as Panel, icon:'🏛️', count:discM.length },
     { id:'countries' as Panel, icon:'🌍', count:p.countries.length },
     { id:'objectives'as Panel, icon:'🎯', count:todayDone },
+    { id:'weekly'    as Panel, icon:'📅', count:null },
     { id:'log'       as Panel, icon:'📜', count:null },
     { id:'stats'     as Panel, icon:'📊', count:null },
   ]
@@ -209,6 +212,31 @@ export default function HUD(p:Props) {
                 <div style={{fontSize:9,color:'rgba(255,255,255,0.2)',fontFamily:'monospace',marginLeft:24,marginTop:2}}>
                   {o.current}/{o.target}
                   {o.completed&&<span style={{color:'rgba(34,197,94,0.6)',marginLeft:8}}>✓ Complété</span>}
+                </div>
+              </div>
+            )
+          })}
+        </Panel>
+      )}
+
+      {panel==='weekly' && (
+        <Panel title={`Objectifs semaine — ${getDaysLeftInWeek()}j restants`} left onClose={()=>setPanel('none')}>
+          {weeklyObj.map(o => {
+            const pct = Math.min(100, o.target > 0 ? o.current / o.target * 100 : 0)
+            return (
+              <div key={o.id} style={{opacity: o.completed ? 0.55 : 1}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
+                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <span style={{fontSize:16}}>{o.icon}</span>
+                    <span style={{fontSize:11,color:o.completed?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.75)',textDecoration:o.completed?'line-through':'none'}}>{o.description}</span>
+                  </div>
+                  <span style={{fontSize:10,color:'rgba(255,200,50,0.8)',fontFamily:'monospace',marginLeft:8,flexShrink:0}}>+{o.reward}</span>
+                </div>
+                <div style={{height:4,background:'rgba(255,255,255,0.06)',borderRadius:2,overflow:'hidden',marginLeft:24}}>
+                  <div style={{width:`${pct}%`,height:'100%',borderRadius:2,transition:'width 0.4s',background:o.completed?'linear-gradient(90deg,#f59e0b,#fcd34d)':'linear-gradient(90deg,#f59e0b,#fbbf24)'}} />
+                </div>
+                <div style={{fontSize:9,color:'rgba(255,255,255,0.2)',fontFamily:'monospace',marginLeft:24,marginTop:2}}>
+                  {o.current}/{o.target}{o.completed&&<span style={{color:'rgba(251,191,36,0.6)',marginLeft:8}}>✓ Complété</span>}
                 </div>
               </div>
             )

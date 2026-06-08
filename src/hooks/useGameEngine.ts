@@ -5,6 +5,7 @@ import { dist, tilesInRadius, movePos } from '../lib/geo'
 import { saveTiles,loadTiles,saveScore,loadScore,saveXP,loadXP,saveDist,loadDist,saveBadges,loadBadges,saveMonuments,loadMonuments,savePlayer,loadPlayer,saveCountries,loadCountries,saveObjectives,loadObjectives,saveLog,loadLog,savePath,loadPath } from '../lib/storage'
 import { fetchMonuments } from '../lib/overpass'
 import { fetchTerritory, loadTerritory, type TerritoryData } from '../lib/territory'
+import { loadWeeklyObjectives, saveWeeklyObjectives } from '../lib/weeklyObjectives'
 
 export function useGameEngine() {
   const [playerLat,setPlayerLat]=useState(48.8566)
@@ -35,6 +36,7 @@ export function useGameEngine() {
   const badgesR=useRef<Badge[]>([]); const objR=useRef<DailyObjective[]>([])
   const logR=useRef<DiscoveryLog[]>([]); const pathR=useRef<ExplorationPath[]>([])
   const distR=useRef(0); const gpsId=useRef<number|null>(null)
+  const weeklyR=useRef(loadWeeklyObjectives())
   const discovCodes=useRef<Set<string>>(new Set())
   const lastGeoKey=useRef(''); const geoTimer=useRef<ReturnType<typeof setTimeout>|null>(null)
   const smoothedHeading=useRef<number|null>(null)
@@ -77,6 +79,23 @@ export function useGameEngine() {
     setXP(xpR.current); setLevel(levelR.current)
     setXpIntoLevel(into); setXpForNext(fn); saveXP(xpR.current)
   },[notify,addLog])
+
+  const updateWeekly=useCallback((type:string,inc:number)=>{
+    let changed=false
+    const updated=weeklyR.current.map(o=>{
+      if(o.type!==type||o.completed) return o
+      const cur=Math.min(o.current+inc,o.target)
+      if(cur>=o.target&&!o.completed){
+        changed=true
+        applyXP(o.reward); scoreR.current+=o.reward; setScore(scoreR.current); saveScore(scoreR.current)
+        notify({type:'objective',title:'Objectif semaine !',subtitle:o.description,points:o.reward,icon:o.icon})
+        return {...o,current:cur,completed:true}
+      }
+      if(cur!==o.current) changed=true
+      return {...o,current:cur}
+    })
+    if(changed){weeklyR.current=updated;saveWeeklyObjectives(updated)}
+  },[applyXP,notify])
 
   const updateObj=useCallback((type:DailyObjective['type'],inc:number)=>{
     let changed=false
@@ -131,6 +150,15 @@ export function useGameEngine() {
     if (day===6) { weekendData.sat=true; localStorage.setItem(lastWeekendKey,JSON.stringify(weekendData)) }
     if (day===0) { weekendData.sun=true; localStorage.setItem(lastWeekendKey,JSON.stringify(weekendData)) }
 
+    // Badges saisonniers
+    const month = new Date().getMonth() + 1
+    const isWinter = month === 12 || month <= 2
+    const isSpring = month >= 3 && month <= 5
+    const isSummer = month >= 6 && month <= 8
+    const isAutumn = month >= 9 && month <= 11
+    const hasGarden = dm.some(m => m.type === 'garden')
+    const km2 = tiles.current.size * 0.0001
+
     const checks=[
       // Surface
       {id:'b1',  ok: km2>=0.01},
@@ -174,6 +202,11 @@ export function useGameEngine() {
       {id:'b32', ok: hour<8 && tiles.current.size>0},
       {id:'b33', ok: hour>=22 && tiles.current.size>0},
       {id:'b34', ok: weekendData.sat && weekendData.sun},
+      // Saisonniers
+      {id:'bs1', ok: isWinter && tiles.current.size > 0},
+      {id:'bs2', ok: isSpring && hasGarden},
+      {id:'bs3', ok: isSummer && km2 >= 1},
+      {id:'bs4', ok: isAutumn && dm.length > 0},
     ]
     let changed=false
     const nb=badgesR.current.map(b=>{
@@ -199,6 +232,7 @@ export function useGameEngine() {
       scoreR.current+=pts; setScore(scoreR.current); saveScore(scoreR.current)
       applyXP(pts); saveTiles(tiles.current)
       updateObj('tiles',newK.length); updateObj('score',pts)
+      updateWeekly('tiles',newK.length); updateWeekly('score',pts)
     }
     const updated=ms.map(m=>{
       if(m.discovered) return m
@@ -206,6 +240,7 @@ export function useGameEngine() {
         const pts=RARITY_POINTS[m.rarity]
         scoreR.current+=pts; setScore(scoreR.current); saveScore(scoreR.current)
         applyXP(pts); updateObj('monuments',1); updateObj('score',pts)
+        updateWeekly('monuments',1); updateWeekly('score',pts)
         notify({type:'monument',title:m.name,subtitle:m.type,points:pts,rarity:m.rarity,icon:m.icon})
         hapticFeedback(m.rarity==='legendary'||m.rarity==='epic'?'monument':'tile')
         addLog({type:'monument',title:m.name,subtitle:m.type,icon:m.icon||'📍',points:pts,rarity:m.rarity})
