@@ -157,7 +157,6 @@ export function useGameEngine() {
     const isSummer = month >= 6 && month <= 8
     const isAutumn = month >= 9 && month <= 11
     const hasGarden = dm.some(m => m.type === 'garden')
-    const km2 = tiles.current.size * 0.0001
 
     const checks=[
       // Surface
@@ -205,7 +204,7 @@ export function useGameEngine() {
       // Saisonniers
       {id:'bs1', ok: isWinter && tiles.current.size > 0},
       {id:'bs2', ok: isSpring && hasGarden},
-      {id:'bs3', ok: isSummer && km2Seasonal >= 1},
+      {id:'bs3', ok: isSummer && km2 >= 1},
       {id:'bs4', ok: isAutumn && dm.length > 0},
     ]
     let changed=false
