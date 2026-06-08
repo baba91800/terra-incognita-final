@@ -75,24 +75,53 @@ export const DEFAULT_MONUMENTS = [
 ]
 
 export const DEFAULT_BADGES = [
-  { id:'b1',  name:'First Steps',          description:'Discover 10 tiles',            icon:'👣', earned:false },
-  { id:'b2',  name:'Explorer',             description:'Discover 500 tiles',           icon:'🗺️', earned:false },
-  { id:'b3',  name:'Urban Explorer',       description:'Discover 2000 tiles',          icon:'🏙️', earned:false },
-  { id:'b4',  name:'Monument Hunter',      description:'Find your first monument',     icon:'🏛️', earned:false },
-  { id:'b5',  name:'Castle Seeker',        description:'Find 5 monuments',             icon:'🏰', earned:false },
-  { id:'b6',  name:'Capital Explorer',     description:'Find 10 monuments',            icon:'🌆', earned:false },
-  { id:'b7',  name:'Legendary Discoverer', description:'Find a Legendary monument',    icon:'⭐', earned:false },
-  { id:'b8',  name:'Century',              description:'Reach 5000 points',            icon:'💯', earned:false },
-  { id:'b9',  name:'Epic Hunter',          description:'Find an Epic monument',        icon:'💎', earned:false },
-  { id:'b10', name:'Night Wanderer',       description:'Discover 200 tiles',           icon:'🌙', earned:false },
-  { id:'b11', name:'Globe-Trotter',        description:'Visiter 5 pays',               icon:'🌍', earned:false },
-  { id:'b12', name:'Roi des Légendes',     description:'Trouver 3 monuments légendaires', icon:'👑', earned:false },
-  { id:'b13', name:'Marathonien',          description:'Marcher 10 km',                icon:'🏃', earned:false },
-  { id:'b14', name:'Cartographe',          description:'Explorer 10 000 m²',           icon:'🗺️', earned:false },
-  { id:'b15', name:'Fidèle',               description:'Explorer 7 jours consécutifs', icon:'📅', earned:false },
-  { id:'b16', name:'Naturaliste',          description:'Trouver 5 sites naturels',     icon:'🌿', earned:false },
-  { id:'b17', name:'Archéologue',          description:'Trouver 3 monuments épiques',  icon:'⛏️', earned:false },
-  { id:'b18', name:'Grand Voyageur',       description:'Marcher 50 km au total',       icon:'✈️', earned:false },
+  // ── Surface ──────────────────────────────────────────────
+  { id:'b1',  name:'Premiers Pas',              description:'Explorer 0.01 km²',                    icon:'👣', earned:false },
+  { id:'b14', name:'Explorateur Débutant',      description:'Explorer 0.1 km²',                     icon:'🗺️', earned:false },
+  { id:'b2',  name:'Explorateur',               description:'Explorer 1 km²',                       icon:'🧭', earned:false },
+  { id:'b3',  name:'Grand Explorateur',         description:'Explorer 10 km²',                      icon:'🏙️', earned:false },
+  { id:'b19', name:'Maître Explorateur',        description:'Explorer 50 km²',                      icon:'🌐', earned:false },
+  // ── Distance ─────────────────────────────────────────────
+  { id:'b13', name:'Marcheur',                  description:'Marcher 10 km',                        icon:'🚶', earned:false },
+  { id:'b18', name:'Randonneur',                description:'Marcher 42 km',                        icon:'🏃', earned:false },
+  { id:'b20', name:'Ultra Marcheur',            description:'Marcher 100 km',                       icon:'✈️', earned:false },
+  // ── Monuments généraux ───────────────────────────────────
+  { id:'b4',  name:'Chasseur de Monuments',     description:'Trouver ton premier monument',         icon:'🏛️', earned:false },
+  { id:'b5',  name:'Chercheur de Châteaux',     description:'Trouver 5 monuments',                  icon:'🏰', earned:false },
+  { id:'b6',  name:'Explorateur de Villes',     description:'Trouver 10 monuments',                 icon:'🌆', earned:false },
+  { id:'b7',  name:'Découvreur Légendaire',     description:'Trouver un monument Légendaire',       icon:'⭐', earned:false },
+  { id:'b9',  name:'Chasseur Épique',           description:'Trouver un monument Épique',           icon:'💎', earned:false },
+  { id:'b12', name:'Roi des Légendes',          description:'Trouver 3 monuments légendaires',      icon:'👑', earned:false },
+  // ── Monuments spécifiques ────────────────────────────────
+  { id:'b16', name:'Naturaliste',               description:'Trouver 5 sites naturels',             icon:'🌿', earned:false },
+  { id:'b17', name:'Archéologue',               description:'Trouver 3 monuments épiques historiques', icon:'⛏️', earned:false },
+  { id:'b21', name:'Spéléologue',               description:'Trouver 3 grottes',                    icon:'🕳️', earned:false },
+  { id:'b22', name:'Alpiniste',                 description:'Trouver 3 sommets',                    icon:'⛰️', earned:false },
+  { id:'b23', name:'Gardien de Phare',          description:'Trouver 2 phares',                     icon:'🗼', earned:false },
+  { id:'b24', name:'Chasseur de Moulins',       description:'Trouver 3 moulins',                    icon:'🌀', earned:false },
+  // ── Scores ───────────────────────────────────────────────
+  { id:'b8',  name:'Centenaire',                description:'Atteindre 5 000 points',               icon:'💯', earned:false },
+  { id:'b25', name:'Millionnaire',              description:'Atteindre 10 000 points',              icon:'🏆', earned:false },
+  { id:'b26', name:'Légende',                  description:'Atteindre 100 000 points',              icon:'🌟', earned:false },
+  // ── Pays ─────────────────────────────────────────────────
+  { id:'b10', name:'Voyageur',                  description:'Visiter 3 pays',                       icon:'🌍', earned:false },
+  { id:'b11', name:'Globe-Trotter',             description:'Visiter 5 pays',                       icon:'✈️', earned:false },
+  { id:'b27', name:'Explorateur International', description:'Visiter 10 pays',                      icon:'🗺️', earned:false },
+  { id:'b28', name:'Aventurier Mondial',        description:'Visiter 20 pays',                      icon:'🌐', earned:false },
+  { id:'b29', name:'Terre Rare',                description:'Découvrir un pays épique',             icon:'💜', earned:false },
+  { id:'b30', name:'Légende Vivante',           description:'Découvrir un pays légendaire',         icon:'🔮', earned:false },
+  // ── Régularité ───────────────────────────────────────────
+  { id:'b15', name:'Fidèle',                   description:'Explorer 7 jours consécutifs',          icon:'📅', earned:false },
+  { id:'b31', name:'Acharné',                  description:'Explorer 30 jours consécutifs',         icon:'🔥', earned:false },
+  // ── Temps ────────────────────────────────────────────────
+  { id:'b32', name:'Lève-tôt',                 description:'Explorer avant 8h du matin',            icon:'🌅', earned:false },
+  { id:'b33', name:'Noctambule',               description:'Explorer après 22h',                    icon:'🌙', earned:false },
+  { id:'b34', name:'Week-end Warrior',         description:'Explorer samedi ET dimanche',           icon:'⚔️', earned:false },
+  // ── Saisons ──────────────────────────────────────────────
+  { id:'bs1', name:'Explorateur Hivernal',     description:'Explorer en hiver (déc-fév)',           icon:'❄️', earned:false },
+  { id:'bs2', name:'Esprit du Printemps',      description:'Trouver un jardin au printemps',        icon:'🌸', earned:false },
+  { id:'bs3', name:'Aventurier Estival',       description:'Explorer 1 km² en été',                icon:'☀️', earned:false },
+  { id:'bs4', name:"Chasseur d'Automne",       description:'Trouver un monument en automne',        icon:'🍂', earned:false },
 ]
 
 export interface CountryBonus { code:string; name:string; flag:string; rarity:Rarity; points:number; reason:string }
