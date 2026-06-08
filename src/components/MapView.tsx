@@ -21,7 +21,7 @@ async function fetchCityPolygon(lat: number, lng: number): Promise<[number,numbe
   try {
     const r = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=12`,
-      { headers: { 'User-Agent':'TerraIncognita/0.1', 'Accept-Language':'fr' } }
+      { headers: { 'User-Agent':'TerraIncognita/0.1','Accept-Language':'fr' } }
     )
     const d = await r.json()
     const osmType = d.osm_type, osmId = d.osm_id
@@ -49,13 +49,11 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const fogCanvas = useRef<HTMLCanvasElement>(null)
   const personalMarkersRef = useRef<Map<string,any>>(new Map())
   const markersRef = useRef<Map<string,any>>(new Map())
-  const cityPolygonRef = useRef<any>(null)
   const cityPolygonPoints = useRef<[number,number][]>([])
   const animRef = useRef<number>(0)
   const [effects, setEffects] = useState<Effect[]>([])
   const prevMonuments = useRef<Set<string>>(new Set())
   const lastCityKey = useRef('')
-  // Pour le bouton recentrer
   const [showRecenter, setShowRecenter] = useState(false)
   const mapMovedRef = useRef(false)
 
@@ -154,40 +152,48 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     return () => { running=false; cancelAnimationFrame(animRef.current) }
   },[drawFog])
 
-  // Init map
+  // Init map avec leaflet-rotate
   useEffect(() => {
     if (!containerRef.current||mapRef.current) return
-    import('leaflet').then(({default:L}) => {
-      const map = L.map(containerRef.current!,{
-        center:[playerLat,playerLng],zoom:17,
-        zoomControl:false,attributionControl:false,
+    import('leaflet').then(async ({default:L}) => {
+      // Charger leaflet-rotate
+      try { await import('leaflet-rotate') } catch {}
+
+      const map = (L as any).map(containerRef.current!, {
+        center:[playerLat,playerLng], zoom:17,
+        zoomControl:false, attributionControl:false,
+        rotate: true,
+        bearing: 0,
       })
+
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
         attribution:'©OSM ©CARTO',maxZoom:19,subdomains:'abcd',
       }).addTo(map)
+
+      // Boutons zoom bien positionnés
       L.control.zoom({position:'bottomright'}).addTo(map)
       L.control.attribution({position:'bottomleft',prefix:false}).addTo(map)
+
       playerMarker.current = L.marker([playerLat,playerLng],{
         icon:L.divIcon({
-          html:`<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 10px rgba(0,245,212,0.8)"></div>`,
-          className:'',iconSize:[18,18],iconAnchor:[9,9],
+          html:`<div style="width:16px;height:16px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 10px rgba(0,245,212,0.8)"></div>`,
+          className:'',iconSize:[16,16],iconAnchor:[8,8],
         })
       }).addTo(map)
 
-      // Détection déplacement manuel → bouton recentrer
       map.on('dragstart',()=>{ mapMovedRef.current=true; setShowRecenter(true) })
 
       map.on('click',(e:any) => {
         if (!onMonumentClick) return
-        const clickLat=e.latlng.lat, clickLng=e.latlng.lng
         let nearest:Monument|null=null, nearestDist=Infinity
         monuments.forEach(m => {
           if (m.discovered) return
-          const d=Math.sqrt(Math.pow(clickLat-m.lat,2)+Math.pow(clickLng-m.lng,2))
+          const d=Math.sqrt(Math.pow(e.latlng.lat-m.lat,2)+Math.pow(e.latlng.lng-m.lng,2))
           if (d<nearestDist&&d<0.001){nearest=m;nearestDist=d}
         })
         if (nearest) onMonumentClick(nearest)
       })
+
       let pressTimer:ReturnType<typeof setTimeout>|null=null
       map.on('mousedown touchstart',(e:any)=>{
         pressTimer=setTimeout(()=>{
@@ -201,12 +207,11 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     return () => { if (mapRef.current){mapRef.current.remove();mapRef.current=null} }
   },[]) // eslint-disable-line
 
-  // Contour de la ville — stocké dans ref, dessiné sur le fog canvas
+  // Contour de la ville
   useEffect(() => {
     const key=`${playerLat.toFixed(2)},${playerLng.toFixed(2)}`
     if (key===lastCityKey.current) return
     lastCityKey.current=key
-    // Reset pour forcer le rechargement
     cityPolygonPoints.current = []
     fetchCityPolygon(playerLat, playerLng).then(polygon => {
       if (polygon && polygon.length > 3) {
@@ -218,45 +223,30 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     }).catch(e => console.error('Erreur contour ville:', e))
   },[playerLat,playerLng])
 
-  // Player marker + rotation carte heading-up
+  // Player marker + rotation carte heading-up via leaflet-rotate
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({default:L}) => {
       const map=mapRef.current!; if (!map) return
 
-      // Icône simple cercle
-      const makeIcon = () => L.divIcon({
-        html:`<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:3px solid white;box-shadow:0 0 12px rgba(0,245,212,0.9),0 0 0 4px rgba(0,245,212,0.2)"></div>`,
+      const icon = L.divIcon({
+        html:`<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:3px solid white;box-shadow:0 0 12px rgba(0,245,212,0.9)"></div>`,
         className:'',iconSize:[18,18],iconAnchor:[9,9],
       })
 
       if (playerMarker.current) {
         playerMarker.current.setLatLng([playerLat,playerLng])
-        playerMarker.current.setIcon(makeIcon())
+        playerMarker.current.setIcon(icon)
       } else {
-        playerMarker.current=L.marker([playerLat,playerLng],{icon:makeIcon()}).addTo(map)
+        playerMarker.current=L.marker([playerLat,playerLng],{icon}).addTo(map)
       }
 
       if (!mapMovedRef.current) {
-        if (heading !== null) {
-          // Heading-up : rotation de la carte + recentrage
-          const container = map.getContainer()
-          container.style.transformOrigin = '50% 50%'
-          container.style.transition = 'transform 0.5s ease'
-          container.style.transform = `rotate(${-heading}deg)`
-          // Rotation du fog canvas aussi
-          const fogEl = container.querySelector('canvas')
-          if (fogEl) {
-            fogEl.style.transformOrigin = '50% 50%'
-            fogEl.style.transform = `rotate(${heading}deg)` // contre-rotation pour le fog
-          }
-          map.panTo([playerLat,playerLng],{animate:true,duration:0.3})
-        } else {
-          // Pas de heading : carte normale orientée Nord
-          const container = map.getContainer()
-          container.style.transform = 'rotate(0deg)'
-          map.panTo([playerLat,playerLng],{animate:true,duration:0.3})
+        // Rotation fluide via leaflet-rotate
+        if (heading !== null && (map as any).setBearing) {
+          ;(map as any).setBearing(heading)
         }
+        map.panTo([playerLat,playerLng],{animate:true,duration:0.3})
       }
     })
   },[playerLat,playerLng,heading])
@@ -272,33 +262,25 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
           prevMonuments.current.add(m.id)
           try {
             const pt=mapRef.current.latLngToContainerPoint([m.lat,m.lng])
-            const effect:Effect={
-              id:m.id+Date.now(),x:pt.x,y:pt.y,label:m.name,color,
-              points:m.rarity==='legendary'?1000:m.rarity==='epic'?300:m.rarity==='rare'?150:50,
-            }
+            const effect:Effect={id:m.id+Date.now(),x:pt.x,y:pt.y,label:m.name,color,points:m.rarity==='legendary'?1000:m.rarity==='epic'?300:m.rarity==='rare'?150:50}
             setEffects(prev=>[...prev,effect])
             setTimeout(()=>setEffects(prev=>prev.filter(e=>e.id!==effect.id)),3500)
           } catch {}
         } else if (m.discovered) prevMonuments.current.add(m.id)
         if (ex) {
-          ex.setStyle({
-            fillColor:m.discovered?color:'transparent',fillOpacity:m.discovered?0.95:0,
-            color:m.discovered?color:'transparent',weight:m.discovered?2.5:0,
-          })
+          ex.setStyle({fillColor:m.discovered?color:'transparent',fillOpacity:m.discovered?0.95:0,color:m.discovered?color:'transparent',weight:m.discovered?2.5:0})
         } else {
           const mk=L.circleMarker([m.lat,m.lng],{
             radius:m.rarity==='legendary'?11:m.rarity==='epic'?9:7,
             fillColor:m.discovered?color:'transparent',fillOpacity:m.discovered?0.95:0,
             color:m.discovered?color:'transparent',weight:m.discovered?2.5:0,
           }).addTo(mapRef.current)
-          mk.bindPopup(`
-            <div style="background:rgba(5,12,24,0.97);border:1px solid ${color}70;color:#fff;padding:12px 16px;border-radius:10px;min-width:140px;font-family:monospace;">
-              <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon||'📍'}</div>
-              <div style="font-size:9px;color:${color};letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px">${m.rarity}</div>
-              <div style="font-size:13px;font-weight:bold">${m.discovered?m.name:'???'}</div>
-              ${m.discovered&&m.discoveredAt?`<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:6px">${new Date(m.discoveredAt).toLocaleDateString()}</div>`:''}
-            </div>
-          `,{className:'custom-popup'})
+          mk.bindPopup(`<div style="background:rgba(5,12,24,0.97);border:1px solid ${color}70;color:#fff;padding:12px 16px;border-radius:10px;min-width:140px;font-family:monospace;">
+            <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon||'📍'}</div>
+            <div style="font-size:9px;color:${color};letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px">${m.rarity}</div>
+            <div style="font-size:13px;font-weight:bold">${m.discovered?m.name:'???'}</div>
+            ${m.discovered&&m.discoveredAt?`<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:6px">${new Date(m.discoveredAt).toLocaleDateString()}</div>`:''}
+          </div>`,{className:'custom-popup'})
           markersRef.current.set(m.id,mk)
         }
       })
@@ -323,14 +305,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
           })
         }).addTo(map)
         mk.on('click',()=>onMarkerClick&&onMarkerClick(m))
-        mk.bindPopup(`
-          <div style="background:rgba(5,12,24,0.97);border:1px solid rgba(255,200,50,0.4);color:#fff;padding:10px 14px;border-radius:10px;min-width:130px;font-family:monospace;">
-            <div style="font-size:20px;text-align:center;margin-bottom:5px">${m.icon}</div>
-            <div style="font-size:13px;font-weight:bold;margin-bottom:3px">${m.name}</div>
-            ${m.note?`<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:4px">${m.note}</div>`:''}
-            <div style="font-size:8px;color:rgba(255,255,255,0.2)">${new Date(m.createdAt).toLocaleDateString()}</div>
-          </div>
-        `,{className:'custom-popup'})
         personalMarkersRef.current.set(m.id,mk)
       })
     })
@@ -338,7 +312,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
 
   const recenter = () => {
     if (!mapRef.current) return
-    mapRef.current.setView([playerLat,playerLng], 17, {animate:true, duration:0.5})
+    mapRef.current.setView([playerLat,playerLng], 17, {animate:true,duration:0.5})
     mapMovedRef.current = false
     setShowRecenter(false)
   }
@@ -348,24 +322,15 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       <div ref={containerRef} className="w-full h-full" />
       <canvas ref={fogCanvas} className="absolute inset-0 pointer-events-none" style={{zIndex:500}} />
       <DiscoveryEffect effects={effects} />
-
-      {/* Bouton recentrer */}
       {showRecenter && (
-        <button
-          onClick={recenter}
-          style={{
-            position:'absolute',bottom:200,right:12,zIndex:600,
-            width:44,height:44,borderRadius:10,
-            background:'rgba(5,12,24,0.94)',
-            border:'1px solid rgba(0,245,212,0.3)',
-            color:'#00f5d4',cursor:'pointer',fontSize:20,
-            display:'flex',alignItems:'center',justifyContent:'center',
-            boxShadow:'0 0 16px rgba(0,0,0,0.5)',
-          }}
-          title="Recentrer sur ma position"
-        >
-          🎯
-        </button>
+        <button onClick={recenter} style={{
+          position:'absolute',bottom:200,right:12,zIndex:600,
+          width:44,height:44,borderRadius:10,
+          background:'rgba(5,12,24,0.94)',border:'1px solid rgba(0,245,212,0.3)',
+          color:'#00f5d4',cursor:'pointer',fontSize:20,
+          display:'flex',alignItems:'center',justifyContent:'center',
+          boxShadow:'0 0 16px rgba(0,0,0,0.5)',
+        }}>🎯</button>
       )}
     </div>
   )
