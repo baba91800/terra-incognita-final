@@ -206,9 +206,16 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     const key=`${playerLat.toFixed(2)},${playerLng.toFixed(2)}`
     if (key===lastCityKey.current) return
     lastCityKey.current=key
+    // Reset pour forcer le rechargement
+    cityPolygonPoints.current = []
     fetchCityPolygon(playerLat, playerLng).then(polygon => {
-      if (polygon) cityPolygonPoints.current = polygon
-    })
+      if (polygon && polygon.length > 3) {
+        cityPolygonPoints.current = polygon
+        console.log('Contour ville chargé:', polygon.length, 'points')
+      } else {
+        console.warn('Contour ville: pas de polygone retourné')
+      }
+    }).catch(e => console.error('Erreur contour ville:', e))
   },[playerLat,playerLng])
 
   // Player marker — AMÉLIORATION : flèche directionnelle claire
