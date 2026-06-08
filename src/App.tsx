@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
-import { useGameEngine } from './hooks/useGameEngine'
-import { useHeading } from './hooks/useHeading'
+import { useGameEngine, useHeading } from './hooks/useGameEngine'
 import MapView from './components/MapView'
 import HUD from './components/HUD'
 import Toast from './components/Toast'
@@ -20,7 +19,7 @@ const ONBOARD_KEY = 'ti2_onboarded'
 
 export default function App() {
   const engine = useGameEngine()
-  const { heading, updateGPSHeading } = useHeading()
+  const { heading } = useHeading()
   const mapRef = useRef<any>(null)
   const [showOnboard, setShowOnboard] = useState(false)
   const [lang, setLang] = useState<Lang>('fr')
@@ -92,7 +91,7 @@ export default function App() {
         playerLat={engine.playerLat} playerLng={engine.playerLng}
         tiles={engine.tiles} monuments={engine.monuments}
         personalMarkers={personalMarkers}
-        heading={heading}
+        heading={engine.gpsHeading}
         onMapReady={m => { mapRef.current = m }}
         onMonumentClick={m => !m.discovered && setNavTarget(m)}
         onLongPress={(lat, lng) => setMarkerEditor({ lat, lng })}
@@ -126,8 +125,8 @@ export default function App() {
 
       {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
-      <Compass heading={heading} playerLat={engine.playerLat} playerLng={engine.playerLng} />
-      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} />
+      <Compass heading={engine.gpsHeading} />
+      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} t={t} />
 
       {/* Proximity alert */}
       <ProximityAlert
@@ -169,6 +168,7 @@ export default function App() {
           totalTiles={engine.totalTiles} totalDist={engine.totalDist}
           badges={engine.badges} monuments={engine.monuments} countries={engine.countries}
           log={engine.log}
+          path={engine.path}
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
           territory={engine.territory}
           t={t}
