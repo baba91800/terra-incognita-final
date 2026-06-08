@@ -37,6 +37,7 @@ export function useGameEngine() {
   const distR=useRef(0); const gpsId=useRef<number|null>(null)
   const discovCodes=useRef<Set<string>>(new Set())
   const lastGeoKey=useRef(''); const geoTimer=useRef<ReturnType<typeof setTimeout>|null>(null)
+  const smoothedHeading=useRef<number|null>(null)
   const lastFetchKey=useRef('')
 
   // Feedback haptique et sonore
