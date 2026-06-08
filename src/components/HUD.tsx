@@ -111,8 +111,7 @@ export default function HUD(p:Props) {
           {/* CENTER */}
           <div style={{flex:1,display:'flex',justifyContent:'center',alignItems:'flex-start',paddingTop:6,pointerEvents:'none'}}>
             <div style={{textAlign:'center'}}>
-              <img src="/logo.png" alt="Terra" style={{width:48,height:48,borderRadius:'50%',objectFit:'cover',border:'1.5px solid rgba(0,245,212,0.3)',marginBottom:5,boxShadow:'0 0 16px rgba(0,245,212,0.25)'}} />
-              <div style={{fontSize:8,letterSpacing:'0.18em',color:'rgba(255,255,255,0.25)',textTransform:'uppercase',fontFamily:'monospace'}}>Terra Incognita</div>
+              <img src="/logo.png" alt="Terra" style={{width:56,height:56,borderRadius:'50%',objectFit:'cover',border:'1.5px solid rgba(0,245,212,0.3)',boxShadow:'0 0 16px rgba(0,245,212,0.25)'}} />
             </div>
           </div>
 
