@@ -413,3 +413,13 @@ export function loadLang(): Lang {
 }
 export function saveLang(lang: Lang) { localStorage.setItem(LANG_KEY, lang) }
 export function useT(lang: Lang): Translations { return T[lang] }
+
+// Helper — récupère le nom et la description d'un badge traduit
+export function getBadgeName(t: Translations, id: string): string {
+  const key = `badge_${id}_name` as keyof Translations
+  return (t[key] as string) || ''
+}
+export function getBadgeDesc(t: Translations, id: string): string {
+  const key = `badge_${id}_desc` as keyof Translations
+  return (t[key] as string) || ''
+}

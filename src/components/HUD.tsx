@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Badge, Monument, CountryDiscovery, DailyObjective, DiscoveryLog, ExplorationPath } from '../types/game'
 import { loadWeeklyObjectives, saveWeeklyObjectives, getDaysLeftInWeek, type WeeklyObjective } from '../lib/weeklyObjectives'
 import { RARITY_COLORS, RARITY_LABELS } from '../lib/constants'
-import { type Lang, type Translations } from '../lib/i18n'
+import { type Lang, type Translations, getBadgeName, getBadgeDesc } from '../lib/i18n'
 
 type Panel = 'none'|'badges'|'monuments'|'countries'|'objectives'|'weekly'|'log'|'stats'
 
@@ -192,8 +192,8 @@ export default function HUD(p:Props) {
             >
               <span style={{fontSize:22,flexShrink:0}}>{b.icon}</span>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:12,fontWeight:'bold',color:b.earned?'#fff':'rgba(255,255,255,0.4)'}}>{b.name}</div>
-                <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',marginTop:2,lineHeight:1.4}}>{b.description}</div>
+                <div style={{fontSize:12,fontWeight:'bold',color:b.earned?'#fff':'rgba(255,255,255,0.4)'}}>{getBadgeName(t,b.id)||b.name}</div>
+                <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',marginTop:2,lineHeight:1.4}}>{getBadgeDesc(t,b.id)||b.description}</div>
               </div>
               <span style={{fontSize:14,flexShrink:0}}>{b.earned?'✅':'🔒'}</span>
             </button>
