@@ -218,26 +218,45 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     }).catch(e => console.error('Erreur contour ville:', e))
   },[playerLat,playerLng])
 
-  // Player marker — AMÉLIORATION : flèche directionnelle claire
+  // Player marker + rotation carte heading-up
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({default:L}) => {
       const map=mapRef.current!; if (!map) return
-      const makeIcon=(_h:number|null) => {
-        return L.divIcon({
-          html:`<div style="width:16px;height:16px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 8px rgba(0,245,212,0.8)"></div>`,
-          className:'',iconSize:[16,16],iconAnchor:[8,8],
-        })
-      }
+
+      // Icône simple cercle
+      const makeIcon = () => L.divIcon({
+        html:`<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:3px solid white;box-shadow:0 0 12px rgba(0,245,212,0.9),0 0 0 4px rgba(0,245,212,0.2)"></div>`,
+        className:'',iconSize:[18,18],iconAnchor:[9,9],
+      })
+
       if (playerMarker.current) {
         playerMarker.current.setLatLng([playerLat,playerLng])
-        playerMarker.current.setIcon(makeIcon(heading))
+        playerMarker.current.setIcon(makeIcon())
       } else {
-        playerMarker.current=L.marker([playerLat,playerLng],{icon:makeIcon(heading)}).addTo(map)
+        playerMarker.current=L.marker([playerLat,playerLng],{icon:makeIcon()}).addTo(map)
       }
-      // Recentrer seulement si pas de déplacement manuel
+
       if (!mapMovedRef.current) {
-        map.panTo([playerLat,playerLng],{animate:true,duration:0.3})
+        if (heading !== null) {
+          // Heading-up : rotation de la carte + recentrage
+          const container = map.getContainer()
+          container.style.transformOrigin = '50% 50%'
+          container.style.transition = 'transform 0.5s ease'
+          container.style.transform = `rotate(${-heading}deg)`
+          // Rotation du fog canvas aussi
+          const fogEl = container.querySelector('canvas')
+          if (fogEl) {
+            fogEl.style.transformOrigin = '50% 50%'
+            fogEl.style.transform = `rotate(${heading}deg)` // contre-rotation pour le fog
+          }
+          map.panTo([playerLat,playerLng],{animate:true,duration:0.3})
+        } else {
+          // Pas de heading : carte normale orientée Nord
+          const container = map.getContainer()
+          container.style.transform = 'rotate(0deg)'
+          map.panTo([playerLat,playerLng],{animate:true,duration:0.3})
+        }
       }
     })
   },[playerLat,playerLng,heading])
