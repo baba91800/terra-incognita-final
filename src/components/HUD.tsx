@@ -109,8 +109,15 @@ export default function HUD(p:Props) {
           </div>
 
           {/* CENTER */}
+<<<<<<< HEAD
           <div style={{flex:0,display:'flex',justifyContent:'center',alignItems:'flex-start',paddingTop:4,pointerEvents:'none',width:60}}>
             <img src="/logo.png" alt="Terra" style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:'2px solid rgba(0,245,212,0.35)',boxShadow:'0 0 16px rgba(0,245,212,0.3)'}} />
+=======
+          <div style={{flex:1,display:'flex',justifyContent:'center',alignItems:'flex-start',paddingTop:6,pointerEvents:'none'}}>
+            <div style={{textAlign:'center'}}>
+              <img src="/logo.png" alt="Terra" style={{width:56,height:56,borderRadius:'50%',objectFit:'cover',border:'1.5px solid rgba(0,245,212,0.3)',boxShadow:'0 0 16px rgba(0,245,212,0.25)'}} />
+            </div>
+>>>>>>> parent of f394589 (update)
           </div>
 
           {/* RIGHT */}
