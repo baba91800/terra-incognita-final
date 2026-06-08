@@ -28,7 +28,7 @@ async function fetchCityPolygon(lat: number, lng: number): Promise<[number,numbe
     if (!osmId) return null
     const tc = osmType==='relation'?'rel':osmType==='way'?'way':'node'
     const q = `[out:json][timeout:15];${tc}(${osmId});out geom;`
-    const r2 = await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:q,headers:{'Content-Type':'text/plain'}})
+    const r2 = await fetch('https://overpass.kumi.systems/api/interpreter',{method:'POST',body:q,headers:{'Content-Type':'text/plain'}})
     const d2 = await r2.json()
     if (!d2.elements?.length) return null
     const el = d2.elements[0]

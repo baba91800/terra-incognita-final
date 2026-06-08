@@ -97,7 +97,7 @@ export async function fetchTerritory(lat: number, lng: number): Promise<Territor
           try {
             const tc = osmType === 'relation' ? 'rel' : osmType === 'way' ? 'way' : 'node'
             const q = `[out:json][timeout:10];${tc}(${osmId});out tags;`
-            const r2 = await fetch('https://overpass-api.de/api/interpreter', {
+            const r2 = await fetch('https://overpass.kumi.systems/api/interpreter', {
               method: 'POST', body: q,
               headers: { 'Content-Type': 'text/plain' }
             })
@@ -110,7 +110,7 @@ export async function fetchTerritory(lat: number, lng: number): Promise<Territor
             } else {
               // Fallback — récupérer la géométrie et calculer
               const q2 = `[out:json][timeout:15];${tc}(${osmId});out geom;`
-              const r3 = await fetch('https://overpass-api.de/api/interpreter', {
+              const r3 = await fetch('https://overpass.kumi.systems/api/interpreter', {
                 method: 'POST', body: q2,
                 headers: { 'Content-Type': 'text/plain' }
               })
