@@ -22,16 +22,19 @@ function distM(lat1: number, lng1: number, lat2: number, lng2: number): number {
 }
 
 async function fetchRoute(fromLat: number, fromLng: number, toLat: number, toLng: number): Promise<[number,number][]> {
+  const fallback: [number,number][] = [[fromLat, fromLng], [toLat, toLng]]
   try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000) // 5s timeout
     const url = `https://router.project-osrm.org/route/v1/foot/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`
-    const res = await fetch(url)
+    const res = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeout)
     const data = await res.json()
     if (data.routes?.[0]?.geometry?.coordinates) {
-      return data.routes[0].geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
+      return data.routes[0].geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng] as [number,number])
     }
   } catch {}
-  // Fallback ligne droite
-  return [[fromLat, fromLng], [toLat, toLng]]
+  return fallback
 }
 
 export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel, onArrived, onRouteUpdate, t }: Props) {
@@ -64,9 +67,12 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
       lastRouteKey.current = routeKey
       setRouteLoading(true)
 
+      // Afficher ligne droite immédiatement
+      onRouteUpdate([[playerLat, playerLng], [target.lat, target.lng]])
+
       fetchRoute(playerLat, playerLng, target.lat, target.lng).then(coords => {
         setRouteLoading(false)
-        onRouteUpdate(coords)  // Passer au fog canvas
+        onRouteUpdate(coords)  // Remplacer par la vraie route
         if (!mapRef.current) return
 
         import('leaflet').then(({ default: L }) => {
