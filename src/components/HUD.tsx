@@ -114,7 +114,7 @@ export default function HUD(p:Props) {
           </div>
 
           {/* RIGHT */}
-          <div style={{display:'flex',flexDirection:'column',gap:7,alignItems:'flex-end',pointerEvents:'auto'}}>
+          <div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'stretch',pointerEvents:'auto',minWidth:110}}>
             {/* GPS */}
             <button className={`hud-btn ${p.gpsActive?'active':''}`} onClick={p.gpsActive?p.onStopGPS:p.onStartGPS} style={p.gpsActive?{background:'rgba(34,197,94,0.15)',borderColor:'rgba(34,197,94,0.5)',color:'#4ade80',boxShadow:'0 0 12px rgba(34,197,94,0.2)'}:{}}>
               <span>{p.gpsActive?'📡':'📍'}</span>
@@ -159,7 +159,7 @@ export default function HUD(p:Props) {
             </div>
 
             {/* Nav buttons */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5,width:'100%'}}>
               {NAV_BTNS.map(btn=>(
                 <button key={btn.id} className={`hud-btn ${panel===btn.id?'active':''}`} onClick={()=>tp(btn.id)} style={{justifyContent:'center',padding:'7px 10px',fontSize:12}}>
                   <span>{btn.icon}</span>
@@ -299,7 +299,7 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='stats' && (
-        <Panel title={t.statsTitle} onClose={()=>setPanel('none')}>
+        <Panel title="Statistiques" onClose={()=>setPanel('none')}>
           {[
             ['⚡',t.statXP,p.xp.toLocaleString()],
             ['🎖️',t.statLevel,`${p.level} — ${p.levelTitle}`],

@@ -60,7 +60,9 @@ body {
   border: 1px solid rgba(0,245,212,0.25);
   border-radius: 8px;
   color: #00f5d4;
-  background: rgba(0,245,212,0.05);
+  background: rgba(5,12,24,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   cursor: pointer;
   font-family: 'Courier New', monospace;
   transition: all 0.15s;
