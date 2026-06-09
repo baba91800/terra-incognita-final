@@ -73,19 +73,32 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
           // Supprimer l'ancien tracé
           if (routeLayer.current) { routeLayer.current.remove(); routeLayer.current = null }
 
-          // Tracer la route sur les rues
+          // Créer un pane au-dessus du fog canvas (zIndex 500)
+          if (!map.getPane('navPane')) {
+            map.createPane('navPane')
+            map.getPane('navPane')!.style.zIndex = '510'
+            map.getPane('navPane')!.style.pointerEvents = 'none'
+          }
+
+          // Tracer la route sur les rues — AU-DESSUS du fog
           routeLayer.current = L.polyline(coords, {
             color: '#00f5d4',
-            weight: 4,
-            opacity: 0.85,
-            dashArray: '10, 6',
+            weight: 5,
+            opacity: 0.9,
+            dashArray: '12, 7',
             lineCap: 'round',
             lineJoin: 'round',
+            pane: 'navPane',
           }).addTo(map)
 
           // Marqueur destination
           if (markerRef.current) { markerRef.current.remove() }
+          if (!map.getPane('navMarkerPane')) {
+            map.createPane('navMarkerPane')
+            map.getPane('navMarkerPane')!.style.zIndex = '515'
+          }
           markerRef.current = L.marker([target.lat, target.lng], {
+            pane: 'navMarkerPane',
             icon: L.divIcon({
               html: `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
                 <div style="width:44px;height:44px;border-radius:50%;background:rgba(5,12,24,0.95);border:2px solid rgba(0,245,212,0.6);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 20px rgba(0,245,212,0.4)">
