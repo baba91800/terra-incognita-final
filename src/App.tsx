@@ -10,6 +10,7 @@ import Compass from './components/Compass'
 import ProximityAlert from './components/ProximityAlert'
 import ProfileScreen from './components/ProfileScreen'
 import MarkerEditor from './components/MarkerEditor'
+import MonumentDiscovery from './components/MonumentDiscovery'
 import TerritoryBar from './components/TerritoryBar'
 import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
@@ -29,7 +30,9 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false)
   const [personalMarkers, setPersonalMarkers] = useState<PersonalMarker[]>(() => loadMarkers())
   const [markerEditor, setMarkerEditor] = useState<{ lat: number; lng: number; existing?: PersonalMarker } | null>(null)
+  const [discoveredMonument, setDiscoveredMonument] = useState<{ monument: any; points: number } | null>(null)
   const t = useT(lang)
+  const prevDiscovered = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (!localStorage.getItem(ONBOARD_KEY)) setShowOnboard(true)
@@ -75,6 +78,22 @@ export default function App() {
       if (wakeLock) { try { wakeLock.release() } catch {} }
     }
   }, [])
+
+  // Détecter les nouvelles découvertes de monuments
+  useEffect(() => {
+    const newlyDiscovered = engine.monuments.filter(m =>
+      m.discovered && !prevDiscovered.current.has(m.id)
+    )
+    if (newlyDiscovered.length > 0) {
+      const m = newlyDiscovered[0]
+      prevDiscovered.current.add(m.id)
+      const pts = m.rarity === 'legendary' ? 1000 : m.rarity === 'epic' ? 300 : m.rarity === 'rare' ? 150 : 50
+      setTimeout(() => setDiscoveredMonument({ monument: m, points: pts }), 500)
+    }
+    engine.monuments.forEach(m => {
+      if (m.discovered) prevDiscovered.current.add(m.id)
+    })
+  }, [engine.monuments])
 
   const finishOnboard = (selectedLang: Lang) => {
     localStorage.setItem(ONBOARD_KEY, '1')
@@ -218,6 +237,16 @@ export default function App() {
 
       {/* Onboarding */}
       {showOnboard && <Onboarding onDone={finishOnboard} />}
+
+      {/* Monument découvert */}
+      {discoveredMonument && (
+        <MonumentDiscovery
+          monument={discoveredMonument.monument}
+          points={discoveredMonument.points}
+          t={t}
+          onClose={() => setDiscoveredMonument(null)}
+        />
+      )}
 
       {/* Marker editor */}
       {markerEditor && (
