@@ -31,6 +31,7 @@ export default function App() {
   const [personalMarkers, setPersonalMarkers] = useState<PersonalMarker[]>(() => loadMarkers())
   const [markerEditor, setMarkerEditor] = useState<{ lat: number; lng: number; existing?: PersonalMarker } | null>(null)
   const [discoveredMonument, setDiscoveredMonument] = useState<{ monument: any; points: number } | null>(null)
+  const [navRoute, setNavRoute] = useState<[number,number][]>([])
   const t = useT(lang)
   const prevDiscovered = useRef<Set<string>>(new Set())
 
@@ -152,6 +153,7 @@ export default function App() {
         tiles={engine.tiles} monuments={engine.monuments}
         personalMarkers={personalMarkers}
         heading={engine.gpsHeading}
+        navRoute={navRoute}
         onMapReady={m => { mapRef.current = m }}
         onMonumentClick={m => !m.discovered && setNavTarget(m)}
         onLongPress={(lat, lng) => setMarkerEditor({ lat, lng })}
@@ -162,7 +164,8 @@ export default function App() {
       <NavLine
         mapRef={mapRef as any} target={navTarget}
         playerLat={engine.playerLat} playerLng={engine.playerLng}
-        onCancel={() => setNavTarget(null)}
+        onCancel={() => { setNavTarget(null); setNavRoute([]) }}
+        onRouteUpdate={setNavRoute}
         onArrived={handleArrived} t={t}
       />
 

@@ -9,6 +9,7 @@ interface Props {
   playerLng: number
   onCancel: () => void
   onArrived: () => void
+  onRouteUpdate: (coords: [number,number][]) => void
   t: Translations
 }
 
@@ -33,7 +34,7 @@ async function fetchRoute(fromLat: number, fromLng: number, toLat: number, toLng
   return [[fromLat, fromLng], [toLat, toLng]]
 }
 
-export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel, onArrived, t }: Props) {
+export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel, onArrived, onRouteUpdate, t }: Props) {
   const routeLayer = useRef<any>(null)
   const markerRef = useRef<any>(null)
   const [dist, setDist] = useState<number | null>(null)
@@ -44,6 +45,7 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
     if (!target || !mapRef.current) {
       if (routeLayer.current) { routeLayer.current.remove(); routeLayer.current = null }
       if (markerRef.current) { markerRef.current.remove(); markerRef.current = null }
+      onRouteUpdate([])  // Effacer le tracé
       setDist(null)
       return
     }
@@ -64,6 +66,7 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
 
       fetchRoute(playerLat, playerLng, target.lat, target.lng).then(coords => {
         setRouteLoading(false)
+        onRouteUpdate(coords)  // Passer au fog canvas
         if (!mapRef.current) return
 
         import('leaflet').then(({ default: L }) => {

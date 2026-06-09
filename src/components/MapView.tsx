@@ -12,6 +12,7 @@ interface Props {
   tiles: Set<string>; monuments: Monument[]
   personalMarkers: PersonalMarker[]
   heading: number | null
+  navRoute?: [number,number][]
   onMapReady: (map: any) => void
 }
 
@@ -42,7 +43,7 @@ async function fetchCityPolygon(lat: number, lng: number): Promise<[number,numbe
   } catch { return null }
 }
 
-export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading }: Props) {
+export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading, navRoute }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const playerMarker = useRef<any>(null)
@@ -50,6 +51,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const personalMarkersRef = useRef<Map<string,any>>(new Map())
   const markersRef = useRef<Map<string,any>>(new Map())
   const cityPolygonPoints = useRef<[number,number][]>([])
+  const navRoutePoints = useRef<[number,number][]>([])
   const animRef = useRef<number>(0)
   const [effects, setEffects] = useState<Effect[]>([])
   const prevMonuments = useRef<Set<string>>(new Set())
@@ -114,6 +116,31 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     })
     ctx.clearRect(0,0,canvas.width,canvas.height)
     ctx.drawImage(off,0,0)
+
+    // Tracé de navigation PAR-DESSUS le fog
+    if (navRoutePoints.current.length > 1) {
+      try {
+        ctx.save()
+        ctx.setLineDash([14, 8])
+        ctx.strokeStyle = 'rgba(0,245,212,0.95)'
+        ctx.lineWidth = 5
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+        ctx.shadowColor = '#00f5d4'
+        ctx.shadowBlur = 12
+        ctx.beginPath()
+        let firstNav = true
+        navRoutePoints.current.forEach(([lat, lng]) => {
+          try {
+            const pt = map.latLngToContainerPoint([lat, lng])
+            if (firstNav) { ctx.moveTo(pt.x, pt.y); firstNav = false }
+            else ctx.lineTo(pt.x, pt.y)
+          } catch {}
+        })
+        ctx.stroke()
+        ctx.restore()
+      } catch {}
+    }
 
     // Contour ville PAR-DESSUS le fog
     if (cityPolygonPoints.current.length > 2) {
@@ -201,6 +228,11 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     })
     return () => { if (mapRef.current){mapRef.current.remove();mapRef.current=null} }
   },[]) // eslint-disable-line
+
+  // Tracé navigation
+  useEffect(() => {
+    navRoutePoints.current = navRoute || []
+  }, [navRoute])
 
   // Contour de la ville
   useEffect(() => {
