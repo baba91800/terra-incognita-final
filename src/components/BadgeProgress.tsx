@@ -2,6 +2,8 @@
 import { useMemo } from 'react'
 import type { Badge } from '../types/game'
 
+import type { Translations } from '../lib/i18n'
+
 interface Props {
   badges: Badge[]
   tiles: Set<string>
@@ -10,6 +12,7 @@ interface Props {
   monuments: Array<{ discovered: boolean; rarity: string; type: string }>
   countries: Array<{ rarity: string }>
   streak: number
+  t: Translations
 }
 
 interface Progress {
@@ -20,7 +23,7 @@ interface Progress {
   unit: string
 }
 
-export default function BadgeProgress({ badges, tiles, totalDist, score, monuments, countries, streak }: Props) {
+export default function BadgeProgress({ badges, tiles, totalDist, score, monuments, countries, streak, t }: Props) {
   const nearby = useMemo(() => {
     const km2 = tiles.size * 0.0001
     const dm = monuments.filter(m => m.discovered)

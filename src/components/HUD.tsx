@@ -101,7 +101,7 @@ export default function HUD(p:Props) {
               <div className="hud-panel" style={{padding:'6px 12px',display:'flex',alignItems:'center',gap:8}}>
                 <span style={{fontSize:16}}>🔥</span>
                 <div>
-                  <div style={{fontSize:13,fontWeight:'bold',color:'rgba(255,165,0,0.9)',fontFamily:'monospace'}}>{streak} jour{streak>1?'s':''}</div>
+                  <div style={{fontSize:13,fontWeight:'bold',color:'rgba(255,165,0,0.9)',fontFamily:'monospace'}}>{streak} {streak>1?t.days:t.day}</div>
                   <div style={{fontSize:8,color:'rgba(255,255,255,0.25)',textTransform:'uppercase',letterSpacing:'0.08em'}}>Série active</div>
                 </div>
               </div>

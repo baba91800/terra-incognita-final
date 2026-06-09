@@ -159,6 +159,7 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
                 monuments={monuments}
                 countries={countries}
                 streak={parseInt(localStorage.getItem('ti2_streak')||'0')}
+                t={t}
               />
 
               {/* Badges */}
