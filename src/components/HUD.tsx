@@ -141,9 +141,13 @@ export default function HUD(p:Props) {
               </button>
             )}
 
-            {/* Langue */}
-            <div style={{position:'relative'}}>
-              <button className="hud-btn" onClick={()=>setShowLang(v=>!v)} style={{fontSize:11,padding:'6px 10px'}}>
+            {/* Langue — dans la grille finale avec Stats */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5,width:'100%'}}>
+              <button className={`hud-btn ${panel==='stats'?'active':''}`} onClick={()=>tp('stats')} style={{justifyContent:'center',padding:'7px 10px',fontSize:12}}>
+                <span>📊</span>
+              </button>
+              <div style={{position:'relative'}}>
+              <button className="hud-btn" onClick={()=>setShowLang(v=>!v)} style={{fontSize:11,padding:'6px 10px',width:'100%',justifyContent:'center'}}>
                 <span>🌐</span><span>{p.lang.toUpperCase()}</span>
               </button>
               {showLang && (
@@ -156,17 +160,19 @@ export default function HUD(p:Props) {
                   ))}
                 </div>
               )}
+              </div>
             </div>
 
-            {/* Nav buttons */}
+            {/* Nav buttons — grille 2 colonnes, langue sur la même ligne que Stats */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5,width:'100%'}}>
-              {NAV_BTNS.map(btn=>(
+              {NAV_BTNS.filter(btn=>btn.id!=='stats').map(btn=>(
                 <button key={btn.id} className={`hud-btn ${panel===btn.id?'active':''}`} onClick={()=>tp(btn.id)} style={{justifyContent:'center',padding:'7px 10px',fontSize:12}}>
                   <span>{btn.icon}</span>
                   {btn.count!==null&&<span style={{fontSize:10,opacity:0.7}}>{btn.count}</span>}
                 </button>
               ))}
             </div>
+
           </div>
         </div>
       </div>
