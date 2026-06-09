@@ -299,7 +299,7 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='stats' && (
-        <Panel title="Statistiques" onClose={()=>setPanel('none')}>
+        <Panel title={t.statsTitle} onClose={()=>setPanel('none')}>
           {[
             ['⚡',t.statXP,p.xp.toLocaleString()],
             ['🎖️',t.statLevel,`${p.level} — ${p.levelTitle}`],

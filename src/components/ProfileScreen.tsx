@@ -120,7 +120,7 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
 
                 {streak > 0 && (
                   <div style={{ fontSize: 11, color: 'rgba(255,165,0,0.8)', fontFamily: 'monospace' }}>
-                    🔥 {streak} jour{streak > 1 ? 's' : ''} — {t.streakActive}
+                    🔥 {streak} {streak > 1 ? t.days : t.day} — {t.streakActive}
                   </div>
                 )}
               </div>

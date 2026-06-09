@@ -45,25 +45,25 @@ export default function BadgeProgress({ badges, tiles, totalDist, score, monumen
       { id: 'b13', current: totalDist/1000, target: 10,   unit: 'km' },
       { id: 'b18', current: totalDist/1000, target: 42,   unit: 'km' },
       { id: 'b20', current: totalDist/1000, target: 100,  unit: 'km' },
-      { id: 'b4',  current: dm.length,    target: 1,      unit: 'sites' },
-      { id: 'b5',  current: dm.length,    target: 5,      unit: 'sites' },
-      { id: 'b6',  current: dm.length,    target: 10,     unit: 'sites' },
-      { id: 'b7',  current: legendary,    target: 1,      unit: 'légendaires' },
-      { id: 'b12', current: legendary,    target: 3,      unit: 'légendaires' },
+      { id: 'b4',  current: dm.length,    target: 1,      unit: t.unitSites || 'sites' },
+      { id: 'b5',  current: dm.length,    target: 5,      unit: t.unitSites || 'sites' },
+      { id: 'b6',  current: dm.length,    target: 10,     unit: t.unitSites || 'sites' },
+      { id: 'b7',  current: legendary,    target: 1,      unit: t.legendary || 'légendaires' },
+      { id: 'b12', current: legendary,    target: 3,      unit: t.legendary || 'légendaires' },
       { id: 'b16', current: natural,      target: 5,      unit: 'naturels' },
-      { id: 'b17', current: epicHistoric, target: 3,      unit: 'épiques' },
-      { id: 'b21', current: caves,        target: 3,      unit: 'grottes' },
-      { id: 'b22', current: peaks,        target: 3,      unit: 'sommets' },
-      { id: 'b23', current: lighthouses,  target: 2,      unit: 'phares' },
-      { id: 'b24', current: windmills,    target: 3,      unit: 'moulins' },
+      { id: 'b17', current: epicHistoric, target: 3,      unit: t.epic || 'épiques' },
+      { id: 'b21', current: caves,        target: 3,      unit: t.unitCaves || 'grottes' },
+      { id: 'b22', current: peaks,        target: 3,      unit: t.unitPeaks || 'sommets' },
+      { id: 'b23', current: lighthouses,  target: 2,      unit: t.unitLighthouses || 'phares' },
+      { id: 'b24', current: windmills,    target: 3,      unit: t.unitMills || 'moulins' },
       { id: 'b8',  current: score,        target: 5000,   unit: 'pts' },
       { id: 'b25', current: score,        target: 10000,  unit: 'pts' },
       { id: 'b26', current: score,        target: 100000, unit: 'pts' },
-      { id: 'b10', current: countries.length, target: 3,  unit: 'pays' },
-      { id: 'b11', current: countries.length, target: 5,  unit: 'pays' },
-      { id: 'b27', current: countries.length, target: 10, unit: 'pays' },
-      { id: 'b15', current: streak,       target: 7,      unit: 'jours' },
-      { id: 'b31', current: streak,       target: 30,     unit: 'jours' },
+      { id: 'b10', current: countries.length, target: 3,  unit: t.unitCountries || 'pays' },
+      { id: 'b11', current: countries.length, target: 5,  unit: t.unitCountries || 'pays' },
+      { id: 'b27', current: countries.length, target: 10, unit: t.unitCountries || 'pays' },
+      { id: 'b15', current: streak,       target: 7,      unit: t.days || 'jours' },
+      { id: 'b31', current: streak,       target: 30,     unit: t.days || 'jours' },
     ]
 
     const result: Progress[] = []
@@ -86,7 +86,7 @@ export default function BadgeProgress({ badges, tiles, totalDist, score, monumen
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(255,165,0,0.6)', textTransform: 'uppercase', marginBottom: 8 }}>
-        🎯 Badges proches
+        🎯 {t.badgesNearby}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {nearby.map(p => (
@@ -95,8 +95,8 @@ export default function BadgeProgress({ badges, tiles, totalDist, score, monumen
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 18 }}>{p.badge.icon}</span>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 'bold', color: '#fff' }}>{p.badge.name}</div>
-                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>{p.badge.description}</div>
+                  <div style={{ fontSize: 11, fontWeight: 'bold', color: '#fff' }}>{(t as any)[`badge_${p.badge.id}_name`] || p.badge.name}</div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>{(t as any)[`badge_${p.badge.id}_desc`] || p.badge.description}</div>
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>

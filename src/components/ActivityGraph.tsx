@@ -125,7 +125,7 @@ export default function ActivityGraph({ log, path, t }: Props) {
             </div>
             <div>
               <div style={{ fontSize: 18, fontWeight: 'bold', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{totalActiveDays}j</div>
-              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Jours actifs</div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t.activeDays}</div>
             </div>
             {totalActiveDays > 0 && (
               <div>
