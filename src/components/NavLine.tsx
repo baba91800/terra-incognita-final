@@ -57,7 +57,7 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
     if (d < 25) { onArrived(); return }
 
     // Charger la route OSRM (seulement si la position a changé de >10m)
-    const routeKey = `${(playerLat).toFixed(4)},${(playerLng).toFixed(4)}`
+    const routeKey = `${(playerLat).toFixed(4)},${(playerLng).toFixed(4)},${target.id}`
     const shouldRefetch = routeKey !== lastRouteKey.current
 
     if (shouldRefetch) {
