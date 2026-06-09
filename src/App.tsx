@@ -13,6 +13,7 @@ import MarkerEditor from './components/MarkerEditor'
 import TerritoryBar from './components/TerritoryBar'
 import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
+import { scheduleStreakReminder, hasNotificationPermission } from './lib/notifications'
 import type { Monument, PersonalMarker } from './types/game'
 
 const ONBOARD_KEY = 'ti2_onboarded'
@@ -33,6 +34,46 @@ export default function App() {
   useEffect(() => {
     if (!localStorage.getItem(ONBOARD_KEY)) setShowOnboard(true)
     else setLang(loadLang())
+    if (hasNotificationPermission()) scheduleStreakReminder()
+
+    // ── Wake Lock — empêche l'écran de s'éteindre ──
+    let wakeLock: any = null
+    let wakeLockTimer: any = null
+
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          if (wakeLock) { try { await wakeLock.release() } catch {} }
+          wakeLock = await (navigator as any).wakeLock.request('screen')
+          wakeLock.addEventListener('release', () => {
+            setTimeout(requestWakeLock, 500)
+          })
+        }
+      } catch {}
+    }
+
+    requestWakeLock()
+    wakeLockTimer = setInterval(requestWakeLock, 30000)
+
+    // Fix écran noir au retour
+    const handleVisibility = async () => {
+      if (document.visibilityState === 'visible') {
+        await requestWakeLock()
+        setLang(loadLang())
+        window.dispatchEvent(new Event('resize'))
+        const hiddenSince = parseInt(sessionStorage.getItem('ti2_hidden_at') || '0')
+        if (Date.now() - hiddenSince > 30000) window.location.reload()
+      } else {
+        sessionStorage.setItem('ti2_hidden_at', Date.now().toString())
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      clearInterval(wakeLockTimer)
+      if (wakeLock) { try { wakeLock.release() } catch {} }
+    }
   }, [])
 
   const finishOnboard = (selectedLang: Lang) => {
@@ -164,11 +205,11 @@ export default function App() {
       {showProfile && (
         <ProfileScreen
           onClose={() => setShowProfile(false)}
+          onReset={handleReset}
           score={engine.score} xp={engine.xp} level={engine.level} levelTitle={engine.levelTitle}
           totalTiles={engine.totalTiles} totalDist={engine.totalDist}
           badges={engine.badges} monuments={engine.monuments} countries={engine.countries}
-          log={engine.log}
-          path={engine.path}
+          log={engine.log} path={engine.path ?? []}
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
           territory={engine.territory}
           t={t}
