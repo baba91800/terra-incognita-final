@@ -147,7 +147,7 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
 
               {/* Graphique activité */}
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                <ActivityGraph log={log} path={path} />
+                <ActivityGraph log={log} path={path} t={t} />
               </div>
 
               {/* Badges proches */}

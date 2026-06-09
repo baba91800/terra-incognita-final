@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react'
 
+import type { Translations } from '../lib/i18n'
+
 interface Props {
   log: Array<{ timestamp: string; points?: number; type?: string }>
   path: Array<{ lat: number; lng: number; timestamp: number }>
+  t: Translations
 }
 
 const WEEKS = 12
@@ -29,7 +32,7 @@ interface DayData {
   label: string
 }
 
-export default function ActivityGraph({ log, path }: Props) {
+export default function ActivityGraph({ log, path, t }: Props) {
   const [selected, setSelected] = useState<DayData | null>(null)
 
   const { grid, maxKm, totalKm, totalActiveDays } = useMemo(() => {
@@ -113,12 +116,12 @@ export default function ActivityGraph({ log, path }: Props) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 4 }}>
-            Activité · {WEEKS} semaines
+            {t.activityTitle} · {WEEKS} {t.weeksLabel}
           </div>
           <div style={{ display: 'flex', gap: 16 }}>
             <div>
               <div style={{ fontSize: 18, fontWeight: 'bold', color: '#00f5d4', fontFamily: 'monospace' }}>{totalKm.toFixed(1)} km</div>
-              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total période</div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t.totalPeriod}</div>
             </div>
             <div>
               <div style={{ fontSize: 18, fontWeight: 'bold', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{totalActiveDays}j</div>
@@ -127,7 +130,7 @@ export default function ActivityGraph({ log, path }: Props) {
             {totalActiveDays > 0 && (
               <div>
                 <div style={{ fontSize: 18, fontWeight: 'bold', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{(totalKm / totalActiveDays).toFixed(1)} km</div>
-                <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Moy/jour actif</div>
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t.avgPerDay}</div>
               </div>
             )}
           </div>
@@ -197,30 +200,30 @@ export default function ActivityGraph({ log, path }: Props) {
             <div>
               <div style={{ fontSize: 12, fontWeight: 'bold', color: '#fff', marginBottom: 2, textTransform: 'capitalize' }}>
                 {formatDate(selected.date)}
-                {selected.isToday && <span style={{ marginLeft: 8, fontSize: 9, color: '#00f5d4', background: 'rgba(0,245,212,0.15)', padding: '2px 6px', borderRadius: 4 }}>Aujourd'hui</span>}
+                {selected.isToday && <span style={{ marginLeft: 8, fontSize: 9, color: '#00f5d4', background: 'rgba(0,245,212,0.15)', padding: '2px 6px', borderRadius: 4 }}>{t.todayLabel}</span>}
               </div>
               {selected.km > 0 ? (
                 <div style={{ display: 'flex', gap: 20, marginTop: 8 }}>
                   <div>
                     <div style={{ fontSize: 22, fontWeight: 'bold', color: '#00f5d4', fontFamily: 'monospace' }}>{selected.km.toFixed(2)} km</div>
-                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Parcourus</div>
+                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t.kmWalked}</div>
                   </div>
                   {selected.xp > 0 && (
                     <div>
                       <div style={{ fontSize: 22, fontWeight: 'bold', color: '#f59e0b', fontFamily: 'monospace' }}>+{selected.xp.toLocaleString()}</div>
-                      <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>XP gagné</div>
+                      <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t.xpEarned}</div>
                     </div>
                   )}
                   {selected.discoveries > 0 && (
                     <div>
                       <div style={{ fontSize: 22, fontWeight: 'bold', color: '#a855f7', fontFamily: 'monospace' }}>{selected.discoveries}</div>
-                      <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Découvertes</div>
+                      <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t.discoveries}</div>
                     </div>
                   )}
                 </div>
               ) : (
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic', marginTop: 4 }}>
-                  Pas d'exploration ce jour
+                  {t.noExploration}
                 </div>
               )}
             </div>

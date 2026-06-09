@@ -102,7 +102,7 @@ export default function HUD(p:Props) {
                 <span style={{fontSize:16}}>🔥</span>
                 <div>
                   <div style={{fontSize:13,fontWeight:'bold',color:'rgba(255,165,0,0.9)',fontFamily:'monospace'}}>{streak} {streak>1?t.days:t.day}</div>
-                  <div style={{fontSize:8,color:'rgba(255,255,255,0.25)',textTransform:'uppercase',letterSpacing:'0.08em'}}>Série active</div>
+                  <div style={{fontSize:8,color:'rgba(255,255,255,0.25)',textTransform:'uppercase',letterSpacing:'0.08em'}}>{t.streakActive}</div>
                 </div>
               </div>
             )}
@@ -216,7 +216,7 @@ export default function HUD(p:Props) {
                 </div>
                 <div style={{fontSize:9,color:'rgba(255,255,255,0.2)',fontFamily:'monospace',marginLeft:24,marginTop:2}}>
                   {o.current}/{o.target}
-                  {o.completed&&<span style={{color:'rgba(34,197,94,0.6)',marginLeft:8}}>✓ Complété</span>}
+                  {o.completed&&<span style={{color:'rgba(34,197,94,0.6)',marginLeft:8}}>{t.completedLabel}</span>}
                 </div>
               </div>
             )
@@ -225,7 +225,7 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='weekly' && (
-        <Panel title={`Objectifs semaine — ${getDaysLeftInWeek()}j restants`} left onClose={()=>setPanel('none')}>
+        <Panel title={`${t.objectivesTitle} — ${getDaysLeftInWeek()} ${t.weekLeft}`} left onClose={()=>setPanel('none')}>
           {weeklyObj.map(o => {
             const pct = Math.min(100, o.target > 0 ? o.current / o.target * 100 : 0)
             return (
@@ -241,7 +241,7 @@ export default function HUD(p:Props) {
                   <div style={{width:`${pct}%`,height:'100%',borderRadius:2,transition:'width 0.4s',background:o.completed?'linear-gradient(90deg,#f59e0b,#fcd34d)':'linear-gradient(90deg,#f59e0b,#fbbf24)'}} />
                 </div>
                 <div style={{fontSize:9,color:'rgba(255,255,255,0.2)',fontFamily:'monospace',marginLeft:24,marginTop:2}}>
-                  {o.current}/{o.target}{o.completed&&<span style={{color:'rgba(251,191,36,0.6)',marginLeft:8}}>✓ Complété</span>}
+                  {o.current}/{o.target}{o.completed&&<span style={{color:'rgba(251,191,36,0.6)',marginLeft:8}}>{t.completedLabel}</span>}
                 </div>
               </div>
             )
@@ -309,7 +309,7 @@ export default function HUD(p:Props) {
             ['🌍',t.statCountries,p.countries.length.toString()],
             ['🏅',t.statBadges,`${earnedB.length}/${p.badges.length}`],
             ['🎯',t.statObjectives,p.objectives.filter(o=>o.completed).length.toString()],
-            ['🔥','Streak',`${streak} jour${streak>1?'s':''}`],
+            ['🔥',t.streakLabel,`${streak} ${streak>1?t.days:t.day}`],
           ].map(([icon,label,value])=>(
             <div key={label as string} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
               <div style={{display:'flex',gap:10,alignItems:'center'}}>
@@ -333,8 +333,8 @@ export default function HUD(p:Props) {
             style={{background:'rgba(5,12,24,0.98)',border:`1px solid ${selectedBadge.earned?'rgba(0,245,212,0.4)':'rgba(255,255,255,0.1)'}`,borderRadius:24,padding:32,maxWidth:300,width:'100%',textAlign:'center',boxShadow:'0 20px 60px rgba(0,0,0,0.8)',animation:'toastIn 0.3s ease-out'}}
           >
             <div style={{fontSize:72,marginBottom:16,filter:selectedBadge.earned?'none':'grayscale(1) opacity(0.4)'}}>{selectedBadge.icon}</div>
-            <div style={{fontSize:20,fontWeight:'bold',color:selectedBadge.earned?'#fff':'rgba(255,255,255,0.4)',marginBottom:10,fontFamily:'monospace'}}>{selectedBadge.name}</div>
-            <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:20}}>{selectedBadge.description}</div>
+            <div style={{fontSize:20,fontWeight:'bold',color:selectedBadge.earned?'#fff':'rgba(255,255,255,0.4)',marginBottom:10,fontFamily:'monospace'}}>{getBadgeName(t,selectedBadge.id)||selectedBadge.name}</div>
+            <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:20}}>{getBadgeDesc(t,selectedBadge.id)||selectedBadge.description}</div>
             {selectedBadge.earned
               ? <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(0,245,212,0.1)',border:'1px solid rgba(0,245,212,0.3)',borderRadius:20,padding:'8px 18px'}}>
                   <span>✅</span>
@@ -344,12 +344,12 @@ export default function HUD(p:Props) {
                 </div>
               : <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:20,padding:'8px 18px'}}>
                   <span>🔒</span>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',fontFamily:'monospace'}}>Pas encore obtenu</span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',fontFamily:'monospace'}}>{t.notYetEarned}</span>
                 </div>
             }
             <div style={{marginTop:16}}>
               <button onClick={()=>setSelectedBadge(null)} style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:10,padding:'8px 24px',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:12}}>
-                Fermer
+                {t.closeBtn}
               </button>
             </div>
           </div>
