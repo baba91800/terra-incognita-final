@@ -153,3 +153,41 @@ export async function fetchTerritory(lat: number, lng: number): Promise<Territor
     }, 2000)
   })
 }
+
+// ── Tuiles par ville ─────────────────────────────────────
+const CITY_TILES_KEY = 'ti2_city_tiles'
+
+interface CityTilesData {
+  [cityName: string]: number // nombre de tuiles explorées dans cette ville
+}
+
+export function loadCityTiles(): CityTilesData {
+  try {
+    const raw = localStorage.getItem(CITY_TILES_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
+export function saveCityTiles(data: CityTilesData) {
+  try { localStorage.setItem(CITY_TILES_KEY, JSON.stringify(data)) } catch {}
+}
+
+export function updateCityTiles(cityName: string, newTilesCount: number) {
+  if (!cityName) return
+  const data = loadCityTiles()
+  data[cityName] = (data[cityName] || 0) + newTilesCount
+  saveCityTiles(data)
+}
+
+export function getCityTiles(cityName: string): number {
+  if (!cityName) return 0
+  return loadCityTiles()[cityName] || 0
+}
+
+// Calcul % basé sur les tuiles spécifiques à la ville
+export function computeCityPercent(cityName: string, cityAreaKm2?: number): number {
+  if (!cityAreaKm2 || cityAreaKm2 <= 0 || !cityName) return 0
+  const tiles = getCityTiles(cityName)
+  const exploredKm2 = tiles * 0.0001
+  return Math.min(100, (exploredKm2 / cityAreaKm2) * 100)
+}

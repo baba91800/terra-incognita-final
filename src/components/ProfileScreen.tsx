@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import type { Badge, Monument, CountryDiscovery } from '../types/game'
 import { RARITY_COLORS } from '../lib/constants'
-import { computeExplorationPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
+import { computeExplorationPercent, estimateDeptPercent, estimateCountryPercent, computeCityPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
 import type { Translations } from '../lib/i18n'
 import { getBadgeName, getBadgeDesc } from '../lib/i18n'
@@ -50,7 +50,7 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
     localStorage.setItem(PSEUDO_KEY, c)
   }
 
-  const cityPct = computeExplorationPercent(totalTiles, territory.cityAreaKm2)
+  const cityPct = territory.city ? computeCityPercent(territory.city, territory.cityAreaKm2) : computeExplorationPercent(totalTiles, territory.cityAreaKm2)
   const deptPct = estimateDeptPercent(totalTiles)
   const countryPct = estimateCountryPercent(totalTiles)
 

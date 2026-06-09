@@ -1,4 +1,4 @@
-import { computeExplorationPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
+import { computeExplorationPercent, estimateDeptPercent, estimateCountryPercent, computeCityPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
 import type { Translations } from '../lib/i18n'
 
@@ -11,7 +11,7 @@ interface Props {
 export default function TerritoryBar({ territory, totalTiles, t }: Props) {
   if (!territory.city && !territory.department && !territory.country) return null
 
-  const cityPct = computeExplorationPercent(totalTiles, territory.cityAreaKm2)
+  const cityPct = territory.city ? computeCityPercent(territory.city, territory.cityAreaKm2) : computeExplorationPercent(totalTiles, territory.cityAreaKm2)
   const deptPct = estimateDeptPercent(totalTiles)
   const countryPct = estimateCountryPercent(totalTiles)
 

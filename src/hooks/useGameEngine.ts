@@ -4,7 +4,7 @@ import { REVEAL_RADIUS, MONUMENT_RADIUS, TILE_POINTS, RARITY_POINTS, COUNTRY_MAP
 import { dist, tilesInRadius, movePos } from '../lib/geo'
 import { saveTiles,loadTiles,saveScore,loadScore,saveXP,loadXP,saveDist,loadDist,saveBadges,loadBadges,saveMonuments,loadMonuments,savePlayer,loadPlayer,saveCountries,loadCountries,saveObjectives,loadObjectives,saveLog,loadLog,savePath,loadPath } from '../lib/storage'
 import { fetchMonuments } from '../lib/overpass'
-import { fetchTerritory, loadTerritory, type TerritoryData } from '../lib/territory'
+import { fetchTerritory, loadTerritory, type TerritoryData, updateCityTiles } from '../lib/territory'
 import { loadWeeklyObjectives, saveWeeklyObjectives } from '../lib/weeklyObjectives'
 
 export function useGameEngine() {
@@ -232,6 +232,9 @@ export function useGameEngine() {
       applyXP(pts); saveTiles(tiles.current)
       updateObj('tiles',newK.length); updateObj('score',pts)
       updateWeekly('tiles',newK.length); updateWeekly('score',pts)
+      // Enregistrer les tuiles pour la ville actuelle
+      const cityName = territoryR.current?.city
+      if (cityName && newK.length > 0) updateCityTiles(cityName, newK.length)
     }
     const updated=ms.map(m=>{
       if(m.discovered) return m
