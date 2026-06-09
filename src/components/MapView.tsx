@@ -156,14 +156,9 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   useEffect(() => {
     if (!containerRef.current||mapRef.current) return
     import('leaflet').then(async ({default:L}) => {
-      // Charger leaflet-rotate
-      try { await import('leaflet-rotate') } catch {}
-
-      const map = (L as any).map(containerRef.current!, {
+      const map = L.map(containerRef.current!, {
         center:[playerLat,playerLng], zoom:17,
         zoomControl:false, attributionControl:false,
-        rotate: true,
-        bearing: 0,
       })
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
@@ -243,9 +238,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
 
       if (!mapMovedRef.current) {
         // Rotation fluide via leaflet-rotate
-        if (heading !== null && (map as any).setBearing) {
-          ;(map as any).setBearing(heading)
-        }
         map.panTo([playerLat,playerLng],{animate:true,duration:0.3})
       }
     })
