@@ -117,14 +117,14 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
   // Query — only named, notable places
   const q = `[out:json][timeout:20];
 (
-  node["tourism"~"attraction|viewpoint|museum|artwork"]["name"](around:3000,${lat},${lng});
-  node["historic"~"castle|monument|palace|fort|ruins|megalith|dolmen|menhir|mine|tower|cemetery"]["name"](around:3000,${lat},${lng});
-  node["natural"~"volcano|cave_entrance|hot_spring|waterfall|peak|glacier|spring|arch|cliff|cape|gorge"]["name"](around:3000,${lat},${lng});
-  node["waterway"="waterfall"]["name"](around:3000,${lat},${lng});
-  node["amenity"~"cathedral|theatre"]["name"]["historic"](around:3000,${lat},${lng});
-  node["man_made"~"lighthouse|windmill|watermill"]["name"](around:3000,${lat},${lng});
-  node["natural"="tree"]["landmark"="yes"]["name"](around:3000,${lat},${lng});
-  node["historic"="memorial"]["tourism"]["name"](around:3000,${lat},${lng});
+  node["tourism"~"attraction|viewpoint|museum|artwork"]["name"](around:5000,${lat},${lng});
+  node["historic"~"castle|monument|palace|fort|ruins|megalith|dolmen|menhir|mine|tower|cemetery"]["name"](around:5000,${lat},${lng});
+  node["natural"~"volcano|cave_entrance|hot_spring|waterfall|peak|glacier|spring|arch|cliff|cape|gorge"]["name"](around:5000,${lat},${lng});
+  node["waterway"="waterfall"]["name"](around:5000,${lat},${lng});
+  node["amenity"~"cathedral|theatre"]["name"]["historic"](around:5000,${lat},${lng});
+  node["man_made"~"lighthouse|windmill|watermill"]["name"](around:5000,${lat},${lng});
+  node["natural"="tree"]["landmark"="yes"]["name"](around:5000,${lat},${lng});
+  node["historic"="memorial"]["tourism"]["name"](around:5000,${lat},${lng});
 );
 out center;`
 
