@@ -280,13 +280,19 @@ export function useGameEngine() {
   },[applyXP,notify,addLog,updateObj])
 
   const fetchNearby=useCallback(async(lat:number,lng:number)=>{
-    const key=`${Math.floor(lat/0.03)},${Math.floor(lng/0.03)}`
+    const key=`${Math.floor(lat/0.02)},${Math.floor(lng/0.02)}`
     if(key===lastFetchKey.current) return
     lastFetchKey.current=key
-    const existingIds=new Set(monR.current.map(m=>m.id))
+    // Vérifier si on est loin de tous les monuments existants (nouvelle zone)
+    const isNewZone = monR.current.length === 0 || !monR.current.some(m => {
+      const d = Math.sqrt(Math.pow(m.lat-lat,2)+Math.pow(m.lng-lng,2))
+      return d < 0.05 // ~5km
+    })
+    const existingIds = isNewZone ? new Set<string>() : new Set(monR.current.map(m=>m.id))
+    if (isNewZone) console.log('Nouvelle zone détectée — rechargement monuments')
     const newMs=await fetchMonuments(lat,lng,existingIds)
     if(newMs.length>0){
-      const merged=[...monR.current,...newMs]
+      const merged = isNewZone ? newMs : [...monR.current,...newMs]
       monR.current=merged; setMonuments([...merged]); saveMonuments(merged)
     }
   },[])
