@@ -85,39 +85,6 @@ async function fetchCityPolygon(lat: number, lng: number): Promise<[number,numbe
 }
 
 
-async function fetchCountryPolygon(lat: number, lng: number): Promise<[number,number][]|null> {
-  try {
-    const nomRes = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=3&addressdetails=1`,
-      { headers: { 'User-Agent':'TerraIncognita/0.1', 'Accept-Language':'fr' } }
-    )
-    const nomData = await nomRes.json()
-    if (!nomData.osm_id || nomData.osm_type !== 'relation') return null
-    
-    const q = `[out:json][timeout:30];relation(${nomData.osm_id});out geom;`
-    const r2 = await fetch('https://overpass.kumi.systems/api/interpreter', {
-      method: 'POST', body: q,
-      headers: { 'Content-Type': 'text/plain' }
-    })
-    if (!r2.ok) return null
-    const d2 = await r2.json()
-    if (!d2.elements?.length) return null
-    
-    const el = d2.elements[0]
-    let poly: [number,number][] = []
-    
-    if (el.members) {
-      const outer = el.members.find((m:any) => m.role==='outer' && m.geometry?.length > 3)
-      if (outer) poly = outer.geometry.map((p:any) => [p.lat, p.lon] as [number,number])
-    }
-    
-    console.log(`✅ Contour pays: ${poly.length} points`)
-    return poly.length > 3 ? poly : null
-  } catch(e) {
-    console.error('fetchCountryPolygon error:', e)
-    return null
-  }
-}
 
 export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading, navRoute }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -127,8 +94,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const personalMarkersRef = useRef<Map<string,any>>(new Map())
   const markersRef = useRef<Map<string,any>>(new Map())
   const cityPolygonPoints = useRef<[number,number][]>([])
-  const countryPolygonPoints = useRef<[number,number][]>([])
-  const lastCountryKey = useRef('')
   const navRoutePoints = useRef<[number,number][]>([])
   const animRef = useRef<number>(0)
   const [effects, setEffects] = useState<Effect[]>([])
@@ -195,16 +160,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     ctx.clearRect(0,0,canvas.width,canvas.height)
     ctx.drawImage(off,0,0)
 
-    // Contour du pays
-  useEffect(() => {
-    const key = `${(playerLat/10).toFixed(0)},${(playerLng/10).toFixed(0)}`
-    if (key === lastCountryKey.current) return
-    lastCountryKey.current = key
-    fetchCountryPolygon(playerLat, playerLng).then(poly => {
-      if (poly) countryPolygonPoints.current = poly
-    })
-  }, [playerLat, playerLng])
-
+  
   // Tracé de navigation PAR-DESSUS le fog
     if (navRoutePoints.current.length > 1) {
       try {
@@ -225,30 +181,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
             else ctx.lineTo(pt.x, pt.y)
           } catch {}
         })
-        ctx.stroke()
-        ctx.restore()
-      } catch {}
-    }
-
-    // Contour pays — trait fin blanc/gris
-    if (countryPolygonPoints.current.length > 2) {
-      try {
-        ctx.save()
-        ctx.setLineDash([6, 10])
-        ctx.strokeStyle = 'rgba(255,255,255,0.25)'
-        ctx.lineWidth = 1.5
-        ctx.shadowColor = 'rgba(255,255,255,0.15)'
-        ctx.shadowBlur = 4
-        ctx.beginPath()
-        let firstC = true
-        countryPolygonPoints.current.forEach(([lat, lng]) => {
-          try {
-            const pt = map.latLngToContainerPoint([lat, lng])
-            if (firstC) { ctx.moveTo(pt.x, pt.y); firstC = false }
-            else ctx.lineTo(pt.x, pt.y)
-          } catch {}
-        })
-        ctx.closePath()
         ctx.stroke()
         ctx.restore()
       } catch {}
