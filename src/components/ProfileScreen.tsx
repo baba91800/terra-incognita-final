@@ -240,7 +240,7 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
             <>
               <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 16 }}>{t.exploration}</div>
               {[
-                { icon: '🏙️', label: t.cityLabel||'Ville',      name: territory.city||'—',       pct: cityPct,    color: '#00f5d4', extra: territory.cityAreaKm2 ? `${territory.cityAreaKm2.toFixed(1)} km² total` : null, km2: (totalTiles * 0.0001).toFixed(3) },
+                { icon: '🏙️', label: t.cityLabel||'Ville',      name: territory.city||'—',       pct: cityPct,    color: '#00f5d4', extra: territory.cityAreaKm2 ? `sur ${territory.cityAreaKm2.toFixed(1)} km²` : null },
                 { icon: '🗺️', label: t.deptLabel||'Département',       name: territory.department||'—', pct: deptPct,    color: '#3b82f6', extra: null },
                 { icon: '🌍', label: t.countryLabel2||'Pays',  name: territory.country||'—',    pct: countryPct, color: '#a855f7', extra: null },
               ].map(row => (
@@ -255,7 +255,7 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
                       </div>
                     </div>
                     <div style={{ fontSize: 22, fontWeight: 'bold', color: row.color, fontFamily: 'monospace' }}>
-                      {row.pct > 0 ? row.pct.toFixed(3) + '%' : `${(totalTiles * 100).toLocaleString()} m²`}
+                      {row.pct > 0.001 ? row.pct.toFixed(2) + '%' : row.pct > 0 ? '<0.01%' : '0%'}
                     </div>
                   </div>
                   <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
