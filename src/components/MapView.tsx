@@ -20,27 +20,103 @@ const MPL = 111320
 
 async function fetchCityPolygon(lat: number, lng: number): Promise<[number,number][]|null> {
   try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=12`,
-      { headers: { 'User-Agent':'TerraIncognita/0.1','Accept-Language':'fr' } }
+    // Étape 1 : Nominatim pour trouver la commune
+    const nomRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10&addressdetails=1`,
+      { headers: { 'User-Agent':'TerraIncognita/0.1', 'Accept-Language':'fr' } }
     )
-    const d = await r.json()
-    const osmType = d.osm_type, osmId = d.osm_id
-    if (!osmId) return null
+    const nomData = await nomRes.json()
+    console.log('Nominatim:', nomData.display_name, 'osm_type:', nomData.osm_type, 'osm_id:', nomData.osm_id)
+    
+    if (!nomData.osm_id) return null
+    
+    // Étape 2 : Overpass pour récupérer le polygone
+    const osmType = nomData.osm_type
+    const osmId = nomData.osm_id
     const tc = osmType==='relation'?'rel':osmType==='way'?'way':'node'
-    const q = `[out:json][timeout:15];${tc}(${osmId});out geom;`
-    const r2 = await fetch('https://overpass.kumi.systems/api/interpreter',{method:'POST',body:q,headers:{'Content-Type':'text/plain'}})
+    
+    const q = `[out:json][timeout:20];${tc}(${osmId});out geom;`
+    
+    // Essayer plusieurs endpoints
+    const endpoints = [
+      'https://overpass.kumi.systems/api/interpreter',
+      'https://overpass.private.coffee/api/interpreter',
+      'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+    ]
+    
+    for (const endpoint of endpoints) {
+      try {
+        const r2 = await fetch(endpoint, {
+          method: 'POST', body: q,
+          headers: { 'Content-Type': 'text/plain' }
+        })
+        if (!r2.ok) continue
+        const d2 = await r2.json()
+        if (!d2.elements?.length) continue
+        
+        const el = d2.elements[0]
+        let poly: [number,number][] = []
+        
+        if (el.geometry?.length > 3) {
+          poly = el.geometry.map((p:any) => [p.lat, p.lon] as [number,number])
+        } else if (el.members) {
+          const outer = el.members.find((m:any) => m.role==='outer' && m.geometry?.length > 3)
+          if (outer) poly = outer.geometry.map((p:any) => [p.lat, p.lon] as [number,number])
+          else {
+            // Prendre le premier membre avec géométrie
+            const first = el.members.find((m:any) => m.geometry?.length > 3)
+            if (first) poly = first.geometry.map((p:any) => [p.lat, p.lon] as [number,number])
+          }
+        }
+        
+        if (poly.length > 3) {
+          console.log(`✅ Contour depuis ${endpoint}: ${poly.length} points`)
+          return poly
+        }
+      } catch(e) {
+        console.warn(`Endpoint ${endpoint} failed:`, e)
+      }
+    }
+    return null
+  } catch(e) {
+    console.error('fetchCityPolygon error:', e)
+    return null
+  }
+}
+
+
+async function fetchCountryPolygon(lat: number, lng: number): Promise<[number,number][]|null> {
+  try {
+    const nomRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=3&addressdetails=1`,
+      { headers: { 'User-Agent':'TerraIncognita/0.1', 'Accept-Language':'fr' } }
+    )
+    const nomData = await nomRes.json()
+    if (!nomData.osm_id || nomData.osm_type !== 'relation') return null
+    
+    const q = `[out:json][timeout:30];relation(${nomData.osm_id});out geom;`
+    const r2 = await fetch('https://overpass.kumi.systems/api/interpreter', {
+      method: 'POST', body: q,
+      headers: { 'Content-Type': 'text/plain' }
+    })
+    if (!r2.ok) return null
     const d2 = await r2.json()
     if (!d2.elements?.length) return null
+    
     const el = d2.elements[0]
     let poly: [number,number][] = []
-    if (el.geometry) poly = el.geometry.map((p:any)=>[p.lat,p.lon] as [number,number])
-    else if (el.members) {
-      const outer = el.members.find((m:any)=>m.role==='outer'&&m.geometry)
-      if (outer) poly = outer.geometry.map((p:any)=>[p.lat,p.lon] as [number,number])
+    
+    if (el.members) {
+      const outer = el.members.find((m:any) => m.role==='outer' && m.geometry?.length > 3)
+      if (outer) poly = outer.geometry.map((p:any) => [p.lat, p.lon] as [number,number])
     }
+    
+    console.log(`✅ Contour pays: ${poly.length} points`)
     return poly.length > 3 ? poly : null
-  } catch { return null }
+  } catch(e) {
+    console.error('fetchCountryPolygon error:', e)
+    return null
+  }
 }
 
 export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading, navRoute }: Props) {
@@ -51,6 +127,8 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const personalMarkersRef = useRef<Map<string,any>>(new Map())
   const markersRef = useRef<Map<string,any>>(new Map())
   const cityPolygonPoints = useRef<[number,number][]>([])
+  const countryPolygonPoints = useRef<[number,number][]>([])
+  const lastCountryKey = useRef('')
   const navRoutePoints = useRef<[number,number][]>([])
   const animRef = useRef<number>(0)
   const [effects, setEffects] = useState<Effect[]>([])
@@ -117,7 +195,17 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     ctx.clearRect(0,0,canvas.width,canvas.height)
     ctx.drawImage(off,0,0)
 
-    // Tracé de navigation PAR-DESSUS le fog
+    // Contour du pays
+  useEffect(() => {
+    const key = `${(playerLat/10).toFixed(0)},${(playerLng/10).toFixed(0)}`
+    if (key === lastCountryKey.current) return
+    lastCountryKey.current = key
+    fetchCountryPolygon(playerLat, playerLng).then(poly => {
+      if (poly) countryPolygonPoints.current = poly
+    })
+  }, [playerLat, playerLng])
+
+  // Tracé de navigation PAR-DESSUS le fog
     if (navRoutePoints.current.length > 1) {
       try {
         ctx.save()
@@ -137,6 +225,30 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
             else ctx.lineTo(pt.x, pt.y)
           } catch {}
         })
+        ctx.stroke()
+        ctx.restore()
+      } catch {}
+    }
+
+    // Contour pays — trait fin blanc/gris
+    if (countryPolygonPoints.current.length > 2) {
+      try {
+        ctx.save()
+        ctx.setLineDash([6, 10])
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)'
+        ctx.lineWidth = 1.5
+        ctx.shadowColor = 'rgba(255,255,255,0.15)'
+        ctx.shadowBlur = 4
+        ctx.beginPath()
+        let firstC = true
+        countryPolygonPoints.current.forEach(([lat, lng]) => {
+          try {
+            const pt = map.latLngToContainerPoint([lat, lng])
+            if (firstC) { ctx.moveTo(pt.x, pt.y); firstC = false }
+            else ctx.lineTo(pt.x, pt.y)
+          } catch {}
+        })
+        ctx.closePath()
         ctx.stroke()
         ctx.restore()
       } catch {}
