@@ -13,7 +13,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   museum: '#3b82f6', cathedral: '#3b82f6', theatre: '#3b82f6', library: '#3b82f6',
   artwork: '#3b82f6', fountain: '#3b82f6', garden: '#3b82f6', worship: '#3b82f6',
   lighthouse: '#f97316', windmill: '#f97316', watermill: '#f97316', mine: '#f97316',
-  bunker: '#f97316', station: '#f97316', bridge: '#f97316', tunnel: '#f97316',
+  bunker: '#78716c', dovecote: '#a78bfa', lavoir: '#60a5fa', spring: '#38bdf8', well: '#38bdf8', cross: '#e5e7eb', shrine: '#fbbf24', milestone: '#9ca3af', battlefield: '#ef4444', trench: '#78716c', roman_road: '#d97706', tree: '#22c55e', fountain: '#38bdf8', station: '#f97316', bridge: '#f97316', tunnel: '#f97316',
   attraction: '#00f5d4', place: '#00f5d4', viewpoint: '#00f5d4',
 }
 
@@ -115,7 +115,7 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
   }
 
   // Query — only named, notable places
-  const q = `[out:json][timeout:20];
+  const q = `[out:json][timeout:25];
 (
   node["tourism"~"attraction|viewpoint|museum|artwork"]["name"](around:5000,${lat},${lng});
   node["historic"~"castle|monument|palace|fort|ruins|megalith|dolmen|menhir|mine|tower|cemetery"]["name"](around:5000,${lat},${lng});
@@ -125,6 +125,17 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
   node["man_made"~"lighthouse|windmill|watermill"]["name"](around:5000,${lat},${lng});
   node["natural"="tree"]["landmark"="yes"]["name"](around:5000,${lat},${lng});
   node["historic"="memorial"]["tourism"]["name"](around:5000,${lat},${lng});
+  node["natural"="tree"]["denotation"~"natural_monument|landmark"]["name"](around:5000,${lat},${lng});
+  node["amenity"="fountain"]["name"](around:5000,${lat},${lng});
+  node["man_made"="water_well"]["name"](around:5000,${lat},${lng});
+  node["historic"~"wayside_cross|wayside_shrine|lavoir|boundary_stone|milestone"]["name"](around:5000,${lat},${lng});
+  node["man_made"="dovecote"]["name"](around:5000,${lat},${lng});
+  node["military"~"bunker|pillbox"]["name"](around:5000,${lat},${lng});
+  node["historic"~"battlefield|trench"]["name"](around:5000,${lat},${lng});
+  node["waterway"="spring"]["name"](around:5000,${lat},${lng});
+  node["natural"="spring"]["name"](around:5000,${lat},${lng});
+  way["historic"~"castle|ruins|fort|lavoir"]["name"](around:5000,${lat},${lng});
+  way["military"~"bunker"]["name"](around:5000,${lat},${lng});
 );
 out center;`
 
