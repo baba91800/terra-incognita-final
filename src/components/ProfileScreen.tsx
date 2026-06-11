@@ -240,9 +240,9 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
             <>
               <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 16 }}>{t.exploration}</div>
               {[
-                { icon: '🏙️', label: t.statTiles,      name: territory.city,       pct: cityPct,    color: '#00f5d4', extra: territory.cityAreaKm2 ? `${territory.cityAreaKm2.toFixed(1)} km²` : null },
-                { icon: '🗺️', label: t.statDist,       name: territory.department, pct: deptPct,    color: '#3b82f6', extra: null },
-                { icon: '🌍', label: t.statCountries,  name: territory.country,    pct: countryPct, color: '#a855f7', extra: null },
+                { icon: '🏙️', label: t.cityLabel||'Ville',      name: territory.city||'—',       pct: cityPct,    color: '#00f5d4', extra: territory.cityAreaKm2 ? `${territory.cityAreaKm2.toFixed(1)} km²` : null },
+                { icon: '🗺️', label: t.deptLabel||'Département',       name: territory.department||'—', pct: deptPct,    color: '#3b82f6', extra: null },
+                { icon: '🌍', label: t.countryLabel2||'Pays',  name: territory.country||'—',    pct: countryPct, color: '#a855f7', extra: null },
               ].map(row => (
                 <div key={row.label} style={{ marginBottom: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>

@@ -44,15 +44,15 @@ export function getLevelFromXP(xp: number) {
 export function todayStr() { return new Date().toISOString().split('T')[0] }
 
 export const OBJ_TEMPLATES = [
-  { id:'o1', type:'tiles' as ObjType,     target:50,   reward:200, icon:'🗺️', description:'Discover 50 new tiles' },
-  { id:'o2', type:'tiles' as ObjType,     target:150,  reward:500, icon:'🗺️', description:'Discover 150 new tiles' },
-  { id:'o3', type:'monuments' as ObjType, target:1,    reward:300, icon:'🏛️', description:'Discover 1 monument' },
-  { id:'o4', type:'monuments' as ObjType, target:3,    reward:700, icon:'🏛️', description:'Discover 3 monuments' },
+  { id:'o1', type:'tiles' as ObjType,     target:50,   reward:200, icon:'🗺️', description:'obj_tiles_50' },
+  { id:'o2', type:'tiles' as ObjType,     target:150,  reward:500, icon:'🗺️', description:'obj_tiles_150' },
+  { id:'o3', type:'monuments' as ObjType, target:1,    reward:300, icon:'🏛️', description:'obj_monuments_1' },
+  { id:'o4', type:'monuments' as ObjType, target:3,    reward:700, icon:'🏛️', description:'obj_monuments_3' },
   { id:'o5', type:'countries' as ObjType, target:1,    reward:400, icon:'🌍', description:'Discover a new country' },
-  { id:'o6', type:'score' as ObjType,     target:500,  reward:200, icon:'⚡', description:'Earn 500 XP today' },
-  { id:'o7', type:'score' as ObjType,     target:2000, reward:600, icon:'⚡', description:'Earn 2000 XP today' },
-  { id:'o8', type:'distance' as ObjType,  target:500,  reward:300, icon:'👟', description:'Walk 500 meters' },
-  { id:'o9', type:'distance' as ObjType,  target:1000, reward:500, icon:'👟', description:'Walk 1 km' },
+  { id:'o6', type:'score' as ObjType,     target:500,  reward:200, icon:'⚡', description:'obj_xp_500' },
+  { id:'o7', type:'score' as ObjType,     target:2000, reward:600, icon:'⚡', description:'obj_xp_2000' },
+  { id:'o8', type:'distance' as ObjType,  target:500,  reward:300, icon:'👟', description:'obj_dist_500' },
+  { id:'o9', type:'distance' as ObjType,  target:1000, reward:500, icon:'👟', description:'obj_dist_1000' },
 ]
 
 export function genObjectives(date: string) {

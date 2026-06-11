@@ -205,7 +205,7 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='objectives' && (
-        <Panel title={t.objectivesTitle} left onClose={()=>setPanel('none')}>
+        <Panel title={`${t.objectivesToday||t.objectivesTitle||'Objectifs'} — ${todayDone}/${p.objectives.length}`} left onClose={()=>setPanel('none')}>
           {p.objectives.map(o=>{
             const pct=Math.min(100,o.target>0?o.current/o.target*100:0)
             return (
@@ -305,7 +305,7 @@ export default function HUD(p:Props) {
       )}
 
       {panel==='stats' && (
-        <Panel title="Statistiques" onClose={()=>setPanel('none')}>
+        <Panel title={t.statsTitle||'Statistiques'} onClose={()=>setPanel('none')}>
           {[
             ['⚡',t.statXP,p.xp.toLocaleString()],
             ['🎖️',t.statLevel,`${p.level} — ${p.levelTitle}`],
@@ -315,7 +315,7 @@ export default function HUD(p:Props) {
             ['🌍',t.statCountries,p.countries.length.toString()],
             ['🏅',t.statBadges,`${earnedB.length}/${p.badges.length}`],
             ['🎯',t.statObjectives,p.objectives.filter(o=>o.completed).length.toString()],
-            ['🔥',t.streakLabel,`${streak} ${streak>1?t.days:t.day}`],
+            ['🔥',t.streakLabel||'Streak',`${streak} ${t.streakDays||t.days||'jours'}`],
           ].map(([icon,label,value])=>(
             <div key={label as string} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
               <div style={{display:'flex',gap:10,alignItems:'center'}}>
