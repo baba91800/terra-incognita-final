@@ -124,16 +124,16 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       try {
         const pt = map.latLngToContainerPoint([m.lat,m.lng])
         const color = CATEGORY_COLORS[m.type]||(m.rarity==='legendary'?'#a855f7':RARITY_COLORS[m.rarity])
-        const baseR = m.rarity==='legendary'?85:m.rarity==='epic'?65:m.rarity==='rare'?48:32
+        const baseR = m.rarity==='legendary'?130:m.rarity==='epic'?100:m.rarity==='rare'?75:55
         const outerR = baseR+pulse*(m.rarity==='legendary'?20:m.rarity==='epic'?15:10)
-        const baseAlpha = m.rarity==='legendary'?0.4:m.rarity==='epic'?0.35:m.rarity==='rare'?0.3:0.25
+        const baseAlpha = m.rarity==='legendary'?0.75:m.rarity==='epic'?0.65:m.rarity==='rare'?0.55:0.48
         const alpha = baseAlpha+pulse*0.15
         const og = octx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,outerR)
         og.addColorStop(0,color+Math.round(alpha*255).toString(16).padStart(2,'0'))
         og.addColorStop(0.5,color+Math.round(alpha*0.5*255).toString(16).padStart(2,'0'))
         og.addColorStop(1,color+'00')
         octx.fillStyle=og; octx.beginPath(); octx.arc(pt.x,pt.y,outerR,0,Math.PI*2); octx.fill()
-        const innerR=(m.rarity==='legendary'?14:m.rarity==='epic'?10:m.rarity==='rare'?8:5)+pulse*3
+        const innerR=(m.rarity==='legendary'?24:m.rarity==='epic'?18:m.rarity==='rare'?14:10)+pulse*5
         const ig = octx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,innerR)
         ig.addColorStop(0,color+'ff'); ig.addColorStop(0.6,color+'aa'); ig.addColorStop(1,color+'00')
         octx.fillStyle=ig; octx.beginPath(); octx.arc(pt.x,pt.y,innerR,0,Math.PI*2); octx.fill()
@@ -316,17 +316,17 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       setCurrentHeading(heading)
       if (!mapMovedRef.current) {
         map.panTo([playerLat,playerLng],{animate:true,duration:0.5})
-        // Heading-up : rotation CSS du wrapper carte
+        // Heading-up : rotation CSS uniquement sur le pane Leaflet
         if (heading !== null) {
-          const wrapper = containerRef.current
-          if (wrapper) {
-            wrapper.style.transition = 'transform 0.5s ease'
-            wrapper.style.transformOrigin = '50% 50%'
-            wrapper.style.transform = `rotate(${-heading}deg)`
+          const mapPane = containerRef.current?.querySelector('.leaflet-map-pane') as HTMLElement
+          if (mapPane) {
+            mapPane.style.transition = 'transform 0.5s ease'
+            mapPane.style.transformOrigin = '50% 50%'
+            // Récupérer la transform actuelle de Leaflet et y ajouter la rotation
+            const currentTransform = mapPane.style.transform || ''
+            const withoutRotate = currentTransform.replace(/rotate\([^)]*\)/g, '').trim()
+            mapPane.style.transform = withoutRotate + ` rotate(${-heading}deg)`
           }
-        } else {
-          const wrapper = containerRef.current
-          if (wrapper) wrapper.style.transform = 'rotate(0deg)'
         }
       }
     })
@@ -401,12 +401,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   return (
     <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
-      <canvas ref={fogCanvas} className="absolute inset-0 pointer-events-none" style={{
-        zIndex:500,
-        transform: currentHeading !== null ? `rotate(${currentHeading}deg)` : 'rotate(0deg)',
-        transformOrigin: '50% 50%',
-        transition: 'transform 0.5s ease',
-      }} />
+      <canvas ref={fogCanvas} className="absolute inset-0 pointer-events-none" style={{zIndex:500}} />
       <DiscoveryEffect effects={effects} />
       {showRecenter && (
         <button onClick={recenter} style={{

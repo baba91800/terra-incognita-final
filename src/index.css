@@ -25,8 +25,7 @@ body {
   margin-bottom: 90px !important;
   margin-right: 12px !important;
 }
-.leaflet-control-zoom-in,
-.leaflet-control-zoom-out {
+.leaflet-control-zoom-in, .leaflet-control-zoom-out {
   background: transparent !important;
   color: #00f5d4 !important;
   border: none !important;
