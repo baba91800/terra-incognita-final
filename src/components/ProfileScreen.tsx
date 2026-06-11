@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import type { Badge, Monument, CountryDiscovery } from '../types/game'
 import { RARITY_COLORS } from '../lib/constants'
-import { computeExplorationPercent, estimateDeptPercent, estimateCountryPercent, computeCityPercent } from '../lib/territory'
+import { computeExplorationPercent, computeDeptPercent, computeCountryPercent, computeCityPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
 import type { Translations } from '../lib/i18n'
 import { getBadgeName, getBadgeDesc } from '../lib/i18n'
@@ -51,8 +51,8 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
   }
 
   const cityPct = territory.city ? computeCityPercent(territory.city, territory.cityAreaKm2) : computeExplorationPercent(totalTiles, territory.cityAreaKm2)
-  const deptPct = estimateDeptPercent(totalTiles)
-  const countryPct = estimateCountryPercent(totalTiles)
+  const deptPct = territory.department ? computeDeptPercent(totalTiles, territory.department) : 0
+  const countryPct = territory.country ? computeCountryPercent(totalTiles, territory.country) : 0
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -240,7 +240,7 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
             <>
               <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 16 }}>{t.exploration}</div>
               {[
-                { icon: '🏙️', label: t.cityLabel||'Ville',      name: territory.city||'—',       pct: cityPct,    color: '#00f5d4', extra: territory.cityAreaKm2 ? `${territory.cityAreaKm2.toFixed(1)} km²` : null },
+                { icon: '🏙️', label: t.cityLabel||'Ville',      name: territory.city||'—',       pct: cityPct,    color: '#00f5d4', extra: territory.cityAreaKm2 ? `${territory.cityAreaKm2.toFixed(1)} km² total` : null, km2: (totalTiles * 0.0001).toFixed(3) },
                 { icon: '🗺️', label: t.deptLabel||'Département',       name: territory.department||'—', pct: deptPct,    color: '#3b82f6', extra: null },
                 { icon: '🌍', label: t.countryLabel2||'Pays',  name: territory.country||'—',    pct: countryPct, color: '#a855f7', extra: null },
               ].map(row => (
