@@ -10,8 +10,7 @@ interface Props {
 export default function CityProgress({ territory, totalTiles }: Props) {
   const [expanded, setExpanded] = useState(false)
 
-  if (!territory.city) return null
-
+  const cityName = territory.city || 'Localisation...'
   const cityPct = territory.city ? computeCityPercent(territory.city, territory.cityAreaKm2) : 0
   const deptPct = Math.min(100, (totalTiles / 50000) * 100)
   const countryPct = Math.min(100, (totalTiles / 500000) * 100)
@@ -38,7 +37,7 @@ export default function CityProgress({ territory, totalTiles }: Props) {
         <div style={{ fontSize: 16 }}>🏙️</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {territory.city}
+            {cityName}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
             <div style={{ fontSize: 15, fontWeight: 'bold', color: '#00f5d4', fontFamily: 'monospace' }}>
