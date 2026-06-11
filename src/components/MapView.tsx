@@ -100,6 +100,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const prevMonuments = useRef<Set<string>>(new Set())
   const lastCityKey = useRef('')
   const [showRecenter, setShowRecenter] = useState(false)
+  const [currentHeading, setCurrentHeading] = useState<number|null>(null)
   const mapMovedRef = useRef(false)
 
   const drawFog = useCallback((time: number = 0) => {
@@ -312,9 +313,21 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         playerMarker.current=L.marker([playerLat,playerLng],{icon}).addTo(map)
       }
 
+      setCurrentHeading(heading)
       if (!mapMovedRef.current) {
-        // Rotation fluide via leaflet-rotate
-        map.panTo([playerLat,playerLng],{animate:true,duration:0.3})
+        map.panTo([playerLat,playerLng],{animate:true,duration:0.5})
+        // Heading-up : rotation CSS du wrapper carte
+        if (heading !== null) {
+          const wrapper = containerRef.current
+          if (wrapper) {
+            wrapper.style.transition = 'transform 0.5s ease'
+            wrapper.style.transformOrigin = '50% 50%'
+            wrapper.style.transform = `rotate(${-heading}deg)`
+          }
+        } else {
+          const wrapper = containerRef.current
+          if (wrapper) wrapper.style.transform = 'rotate(0deg)'
+        }
       }
     })
   },[playerLat,playerLng,heading])
@@ -388,7 +401,12 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   return (
     <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
-      <canvas ref={fogCanvas} className="absolute inset-0 pointer-events-none" style={{zIndex:500}} />
+      <canvas ref={fogCanvas} className="absolute inset-0 pointer-events-none" style={{
+        zIndex:500,
+        transform: currentHeading !== null ? `rotate(${currentHeading}deg)` : 'rotate(0deg)',
+        transformOrigin: '50% 50%',
+        transition: 'transform 0.5s ease',
+      }} />
       <DiscoveryEffect effects={effects} />
       {showRecenter && (
         <button onClick={recenter} style={{
