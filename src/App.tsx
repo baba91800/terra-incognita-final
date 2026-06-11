@@ -11,7 +11,7 @@ import ProximityAlert from './components/ProximityAlert'
 import ProfileScreen from './components/ProfileScreen'
 import MarkerEditor from './components/MarkerEditor'
 import MonumentDiscovery from './components/MonumentDiscovery'
-import TerritoryBar from './components/TerritoryBar'
+import CityProgress from './components/CityProgress'
 import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
 import { scheduleStreakReminder, hasNotificationPermission } from './lib/notifications'
@@ -189,7 +189,7 @@ export default function App() {
       {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
       <Compass heading={engine.gpsHeading} />
-      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} t={t} />
+      <CityProgress territory={engine.territory} totalTiles={engine.totalTiles} />
 
       {/* Proximity alert */}
       <ProximityAlert
