@@ -2,7 +2,7 @@ import type { Rarity } from '../types/game'
 
 export const TILE_SIZE = 10
 export const REVEAL_RADIUS = 30
-export const MONUMENT_RADIUS = 25
+export const MONUMENT_RADIUS = 35
 export const MOVE_STEP = 10
 export const TILE_POINTS = 10
 export const DEFAULT_LAT = 48.8566

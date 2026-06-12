@@ -112,6 +112,7 @@ export default function App() {
 
   const handleArrived = () => {
     setNavTarget(null)
+    setNavRoute([])
     setShowArrivedMsg(true)
     setTimeout(() => setShowArrivedMsg(false), 3000)
   }
