@@ -102,6 +102,22 @@ const memCache = new Set<string>()
 function zoneKey(lat: number, lng: number) { return `${Math.floor(lat / 0.03)},${Math.floor(lng / 0.03)}` }
 
 // ── Fetch ─────────────────────────────────────────────────────
+
+// Noms par défaut pour les éléments sans nom OSM
+const DEFAULT_NAMES: Record<string, string> = {
+  lavoir: 'Lavoir', well: 'Puits ancien', spring: 'Source naturelle',
+  fountain: 'Fontaine', cross: 'Croix de chemin', shrine: 'Oratoire',
+  milestone: 'Borne historique', dovecote: 'Pigeonnier', bunker: 'Bunker',
+  battlefield: 'Champ de bataille', trench: 'Tranchée', tree: 'Arbre remarquable',
+  roman_road: 'Voie romaine', memorial: 'Mémorial', ruins: 'Ruines',
+  castle: 'Château', fort: 'Fort',
+}
+
+function getMonumentName(tags: Record<string,string>, type: string): string {
+  if (tags.name) return tags.name
+  return DEFAULT_NAMES[type] || type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g,' ')
+}
+
 export async function fetchMonuments(lat: number, lng: number, existingIds: Set<string>): Promise<Monument[]> {
   const key = zoneKey(lat, lng)
   if (memCache.has(key)) return []
@@ -126,16 +142,16 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
   node["natural"="tree"]["landmark"="yes"]["name"](around:5000,${lat},${lng});
   node["historic"="memorial"]["tourism"]["name"](around:5000,${lat},${lng});
   node["natural"="tree"]["denotation"~"natural_monument|landmark"]["name"](around:5000,${lat},${lng});
-  node["amenity"="fountain"]["name"](around:5000,${lat},${lng});
-  node["man_made"="water_well"]["name"](around:5000,${lat},${lng});
-  node["historic"~"wayside_cross|wayside_shrine|lavoir|boundary_stone|milestone"]["name"](around:5000,${lat},${lng});
-  node["man_made"="dovecote"]["name"](around:5000,${lat},${lng});
-  node["military"~"bunker|pillbox"]["name"](around:5000,${lat},${lng});
-  node["historic"~"battlefield|trench"]["name"](around:5000,${lat},${lng});
-  node["waterway"="spring"]["name"](around:5000,${lat},${lng});
-  node["natural"="spring"]["name"](around:5000,${lat},${lng});
-  way["historic"~"castle|ruins|fort|lavoir"]["name"](around:5000,${lat},${lng});
-  way["military"~"bunker"]["name"](around:5000,${lat},${lng});
+  node["amenity"="fountain"](around:5000,${lat},${lng});
+  node["man_made"="water_well"](around:5000,${lat},${lng});
+  node["historic"~"wayside_cross|wayside_shrine|lavoir|boundary_stone|milestone"](around:5000,${lat},${lng});
+  node["man_made"="dovecote"](around:5000,${lat},${lng});
+  node["military"~"bunker|pillbox"](around:5000,${lat},${lng});
+  node["historic"~"battlefield|trench"](around:5000,${lat},${lng});
+  node["waterway"="spring"](around:5000,${lat},${lng});
+  node["natural"="spring"](around:5000,${lat},${lng});
+  way["historic"~"castle|ruins|fort|lavoir"](around:5000,${lat},${lng});
+  way["military"~"bunker"](around:5000,${lat},${lng});
 );
 out center;`
 
@@ -159,7 +175,7 @@ out center;`
       const classified = classify(el.tags)
       if (!classified) continue // Skip unclassified — reduces clutter
 
-      results.push({ id, name: el.tags.name, lat: elLat, lng: elLng, ...classified, discovered: false })
+      results.push({ id, name: getMonumentName(el.tags, classified.type), lat: elLat, lng: elLng, ...classified, discovered: false })
     }
 
     // Limit to 20 most interesting per zone (prioritize by rarity)
