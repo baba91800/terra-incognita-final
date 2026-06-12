@@ -78,6 +78,10 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
   if (tags.historic === 'lavoir' || tags.amenity === 'lavoir') return { rarity: 'common', type: 'lavoir', icon: '🪣' }
   if (tags.historic === 'boundary_stone' || tags.historic === 'milestone') return { rarity: 'common', type: 'milestone', icon: '🪨' }
 
+  // Fallback générique pour tout élément "historic" avec un nom non classé
+  if (tags.historic && tags.name) return { rarity: 'common', type: 'monument', icon: '🏛️' }
+  if (tags.natural === 'tree') return { rarity: 'common', type: 'tree', icon: '🌳' }
+
   return null
 }
 
@@ -119,7 +123,7 @@ const DEFAULT_NAMES: Record<string, string> = {
   milestone: 'Borne historique', dovecote: 'Pigeonnier', bunker: 'Bunker',
   battlefield: 'Champ de bataille', trench: 'Tranchée', tree: 'Arbre remarquable',
   roman_road: 'Voie romaine', memorial: 'Mémorial', ruins: 'Ruines',
-  castle: 'Château', fort: 'Fort', garden: 'Jardin', artwork: "Œuvre d'art",
+  castle: 'Château', fort: 'Fort', garden: 'Jardin', artwork: 'Œuvre d\\'art',
 }
 
 function getMonumentName(tags: Record<string,string>, type: string): string {
@@ -140,35 +144,19 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
     return cached.monuments.filter(m => !existingIds.has(m.id))
   }
 
-  const q = `[out:json][timeout:25];
+  const r = 8000
+  const q = `[out:json][timeout:30];
 (
-  node["tourism"~"attraction|viewpoint|museum|artwork"]["name"](around:5000,${lat},${lng});
-  node["historic"~"castle|monument|palace|fort|ruins|megalith|dolmen|menhir|mine|tower|cemetery"]["name"](around:5000,${lat},${lng});
-  node["natural"~"volcano|cave_entrance|hot_spring|waterfall|peak|glacier|spring|arch|cliff|cape|gorge|rock"]["name"](around:5000,${lat},${lng});
-  node["waterway"="waterfall"]["name"](around:5000,${lat},${lng});
-  node["amenity"~"cathedral|theatre"]["historic"](around:5000,${lat},${lng});
-  node["man_made"~"lighthouse|windmill|watermill"]["name"](around:5000,${lat},${lng});
-  node["natural"="tree"]["landmark"="yes"](around:5000,${lat},${lng});
-  node["natural"="tree"]["heritage"](around:5000,${lat},${lng});
-  node["historic"="memorial"]["tourism"](around:5000,${lat},${lng});
-  node["amenity"="fountain"](around:5000,${lat},${lng});
-  node["leisure"="garden"]["tourism"](around:5000,${lat},${lng});
-  node["tourism"="artwork"](around:5000,${lat},${lng});
-  node["man_made"="water_well"](around:5000,${lat},${lng});
-  node["historic"~"wayside_cross|wayside_shrine"](around:5000,${lat},${lng});
-  node["historic"~"boundary_stone|milestone"](around:5000,${lat},${lng});
-  node["man_made"="dovecote"](around:5000,${lat},${lng});
-  node["military"~"bunker|pillbox"](around:5000,${lat},${lng});
-  node["historic"~"battlefield|trench"](around:5000,${lat},${lng});
-  node["waterway"="spring"](around:5000,${lat},${lng});
-  node["natural"="spring"](around:5000,${lat},${lng});
-  node["historic"="roman_road"](around:5000,${lat},${lng});
-  way["historic"~"castle|ruins|fort"]["name"](around:5000,${lat},${lng});
-  way["historic"~"lavoir"](around:5000,${lat},${lng});
-  way["amenity"="lavoir"](around:5000,${lat},${lng});
-  way["military"~"bunker"](around:5000,${lat},${lng});
+  nwr["tourism"~"attraction|viewpoint|museum|artwork"]["name"](around:${r},${lat},${lng});
+  nwr["historic"](around:${r},${lat},${lng});
+  nwr["natural"~"volcano|cave_entrance|hot_spring|waterfall|peak|glacier|spring|arch|cliff|cape|gorge|rock|tree"](around:${r},${lat},${lng});
+  nwr["waterway"~"waterfall|spring"](around:${r},${lat},${lng});
+  nwr["man_made"~"lighthouse|windmill|watermill|water_well|dovecote"](around:${r},${lat},${lng});
+  nwr["amenity"~"fountain|lavoir|cathedral"](around:${r},${lat},${lng});
+  nwr["leisure"="garden"](around:${r},${lat},${lng});
+  nwr["military"~"bunker|pillbox"](around:${r},${lat},${lng});
 );
-out center;`
+out center 100;`
 
   try {
     const res = await fetch('https://overpass.kumi.systems/api/interpreter', {
