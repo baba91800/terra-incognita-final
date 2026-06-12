@@ -104,7 +104,14 @@ export function saveTerritory(t: TerritoryData) {
   try { localStorage.setItem(TERRITORY_KEY, JSON.stringify(t)) } catch {}
 }
 
+let lastFetchKey = ''
+let lastFetchResult: TerritoryData | null = null
+
 export async function fetchTerritory(lat: number, lng: number): Promise<TerritoryData> {
+  // Cache local pour éviter les appels répétés sur la même zone (~100m)
+  const key = `${lat.toFixed(3)},${lng.toFixed(3)}`
+  if (key === lastFetchKey && lastFetchResult) return lastFetchResult
+  lastFetchKey = key
   try {
     const r = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&zoom=12`,
@@ -136,6 +143,7 @@ export async function fetchTerritory(lat: number, lng: number): Promise<Territor
 
     const territory = { city, department, country, cityAreaKm2 }
     saveTerritory(territory)
+    lastFetchResult = territory
     return territory
   } catch {
     return loadTerritory()
