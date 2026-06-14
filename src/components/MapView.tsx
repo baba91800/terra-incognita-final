@@ -87,7 +87,7 @@ async function fetchCityPolygon(lat: number, lng: number): Promise<[number,numbe
 
 
 
-export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading, navRoute }: Props) {
+export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading, navRoute, onZoomMin }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const playerMarker = useRef<any>(null)
