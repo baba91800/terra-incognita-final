@@ -11,6 +11,7 @@ import ProximityAlert from './components/ProximityAlert'
 import ProfileScreen from './components/ProfileScreen'
 import MarkerEditor from './components/MarkerEditor'
 import MonumentDiscovery from './components/MonumentDiscovery'
+import GlobeView from './components/GlobeView'
 import CityProgress from './components/CityProgress'
 import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
@@ -26,6 +27,7 @@ export default function App() {
   const [showOnboard, setShowOnboard] = useState(false)
   const [lang, setLang] = useState<Lang>('fr')
   const [navTarget, setNavTarget] = useState<Monument | null>(null)
+  const [showGlobe, setShowGlobe] = useState(false)
   const [showArrivedMsg, setShowArrivedMsg] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [personalMarkers, setPersonalMarkers] = useState<PersonalMarker[]>(() => loadMarkers())
@@ -43,21 +45,34 @@ export default function App() {
     // ── Wake Lock — empêche l'écran de s'éteindre ──
     let wakeLock: any = null
     let wakeLockTimer: any = null
+    let wakeLockActive = false
 
     const requestWakeLock = async () => {
+      if (wakeLockActive) return
       try {
-        if ('wakeLock' in navigator) {
-          if (wakeLock) { try { await wakeLock.release() } catch {} }
-          wakeLock = await (navigator as any).wakeLock.request('screen')
-          wakeLock.addEventListener('release', () => {
-            setTimeout(requestWakeLock, 500)
-          })
-        }
-      } catch {}
+        if (!('wakeLock' in navigator)) return
+        wakeLockActive = true
+        wakeLock = await (navigator as any).wakeLock.request('screen')
+        wakeLock.addEventListener('release', () => {
+          wakeLockActive = false
+          // Ré-acquérir immédiatement si la page est visible
+          if (document.visibilityState === 'visible') {
+            setTimeout(requestWakeLock, 1000)
+          }
+        })
+      } catch {
+        wakeLockActive = false
+      }
     }
 
+    // Acquérir au démarrage
     requestWakeLock()
-    wakeLockTimer = setInterval(requestWakeLock, 30000)
+    // Renouveler toutes les 15s pour éviter expiration
+    wakeLockTimer = setInterval(() => {
+      if (document.visibilityState === 'visible' && !wakeLockActive) {
+        requestWakeLock()
+      }
+    }, 15000)
 
     // Fix écran noir au retour
     const handleVisibility = async () => {

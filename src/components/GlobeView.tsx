@@ -224,7 +224,19 @@ export default function GlobeView({ playerLat, playerLng, tiles, countries, onCl
       animRef.current = requestAnimationFrame(draw)
     }
 
-    animRef.current = requestAnimationFrame(draw)
+    // Attendre que le canvas ait une taille avant de démarrer
+    const startDraw = () => {
+      const rect2 = wrap.getBoundingClientRect()
+      if (rect2.width > 0 && rect2.height > 0) {
+        canvas.width = rect2.width
+        canvas.height = rect2.height
+        sizeRef.current = { w: rect2.width, h: rect2.height }
+        animRef.current = requestAnimationFrame(draw)
+      } else {
+        setTimeout(startDraw, 50)
+      }
+    }
+    setTimeout(startDraw, 100)
 
     // Drag
     const onDown = (e: MouseEvent|TouchEvent) => {
