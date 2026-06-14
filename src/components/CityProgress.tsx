@@ -20,7 +20,7 @@ export default function CityProgress({ territory, totalTiles }: Props) {
     <div
       onClick={() => setExpanded(v => !v)}
       style={{
-        position: 'absolute', bottom: 90, left: 12,
+        position: 'absolute', bottom: 12, left: 12,
         zIndex: 600, cursor: 'pointer',
         background: 'rgba(5,12,24,0.92)',
         border: '1px solid rgba(0,245,212,0.2)',
