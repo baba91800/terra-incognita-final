@@ -59,7 +59,6 @@ export default function HUD(p:Props) {
     { id:'weekly'    as Panel, icon:'📅', count:null },
     { id:'log'       as Panel, icon:'📜', count:null },
     { id:'stats'     as Panel, icon:'📊', count:null },
-    { id:'globe'     as Panel, icon:'🌍', count:null },
   ]
 
   return (

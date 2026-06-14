@@ -14,6 +14,7 @@ interface Props {
   heading: number | null
   navRoute?: [number,number][]
   onMapReady: (map: any) => void
+  onZoomMin?: () => void
 }
 
 const MPL = 111320
