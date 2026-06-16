@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { TerritoryData } from '../lib/territory'
-import { computeCityPercent, computeDeptPercent, computeCountryPercent } from '../lib/territory'
+import { computeCityPercent, computeDeptPercent, computeCountryPercent, getCityTiles } from '../lib/territory'
 
 interface Props {
   territory: TerritoryData
@@ -14,7 +14,8 @@ export default function CityProgress({ territory, totalTiles }: Props) {
   const cityPct = territory.city ? computeCityPercent(territory.city, territory.cityAreaKm2) : 0
   const deptPct = territory.department ? computeDeptPercent(totalTiles, territory.department) : 0
   const countryPct = territory.country ? computeCountryPercent(totalTiles, territory.country) : 0
-  const exploredKm2 = (totalTiles * 0.0001).toFixed(3)
+  const cityTiles = territory.city ? getCityTiles(territory.city) : 0
+  const exploredKm2 = (cityTiles * 0.0001).toFixed(3)
 
   return (
     <div

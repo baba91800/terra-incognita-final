@@ -322,7 +322,7 @@ export function useGameEngine() {
     gpsId.current=navigator.geolocation.watchPosition(pos=>{
       const {latitude:nlat,longitude:nlng}=pos.coords
       const d=dist(latR.current,lngR.current,nlat,nlng)
-      if(d<1) return
+      if(d<0.5) return
       move(latR.current,lngR.current,nlat,nlng)
     },()=>setGpsActive(false),{enableHighAccuracy:true,maximumAge:0,timeout:5000})
   },[move])
