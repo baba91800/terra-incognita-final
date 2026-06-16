@@ -4,7 +4,7 @@ import { REVEAL_RADIUS, MONUMENT_RADIUS, TILE_POINTS, RARITY_POINTS, COUNTRY_MAP
 import { dist, tilesInRadius, movePos } from '../lib/geo'
 import { saveTiles,loadTiles,saveScore,loadScore,saveXP,loadXP,saveDist,loadDist,saveBadges,loadBadges,saveMonuments,loadMonuments,savePlayer,loadPlayer,saveCountries,loadCountries,saveObjectives,loadObjectives,saveLog,loadLog,savePath,loadPath } from '../lib/storage'
 import { fetchMonuments } from '../lib/overpass'
-import { fetchTerritory, loadTerritory, type TerritoryData, updateCityTiles } from '../lib/territory'
+import { fetchTerritory, loadTerritory, type TerritoryData, updateCityTiles, getCityTiles } from '../lib/territory'
 import { loadWeeklyObjectives, saveWeeklyObjectives } from '../lib/weeklyObjectives'
 
 export function useGameEngine() {
@@ -352,6 +352,13 @@ export function useGameEngine() {
     setInitialized(true)
     // Load saved territory
     const savedTerr = loadTerritory(); setTerritory(savedTerr); territoryR.current = savedTerr
+    // Rétroactivement attribuer les tuiles à la ville si pas encore fait
+    if (savedTerr.city) {
+      const cityT = getCityTiles(savedTerr.city)
+      if (cityT === 0 && t.size > 0) {
+        updateCityTiles(savedTerr.city, t.size)
+      }
+    }
     setTimeout(()=>{
       revealAt(p.lat,p.lng,ms); detectCountry(p.lat,p.lng); fetchNearby(p.lat,p.lng)
     },100)
