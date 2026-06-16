@@ -20,7 +20,7 @@ interface Props {
 const MPL = 111320
 
 async function fetchCityPolygon(lat: number, lng: number): Promise<[number,number][]|null> {
-  const cacheKey = `ti2_city_poly_${(lat/0.05).toFixed(0)}_${(lng/0.05).toFixed(0)}`
+  const cacheKey = `ti2_city_poly_v2_${(lat/0.05).toFixed(0)}_${(lng/0.05).toFixed(0)}`
   try {
     const cached = localStorage.getItem(cacheKey)
     if (cached) {
