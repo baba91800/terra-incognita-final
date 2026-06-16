@@ -20,10 +20,19 @@ interface Props {
 const MPL = 111320
 
 async function fetchCityPolygon(lat: number, lng: number): Promise<[number,number][]|null> {
+  // Cache localStorage
+  const cacheKey = `ti2_city_poly_${(lat/0.05).toFixed(0)}_${(lng/0.05).toFixed(0)}`
+  try {
+    const cached = localStorage.getItem(cacheKey)
+    if (cached) {
+      const poly = JSON.parse(cached)
+      if (poly.length > 3) { console.log('Contour ville depuis cache'); return poly }
+    }
+  } catch {}
   try {
     // Étape 1 : Nominatim pour trouver la commune
     const nomRes = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10&addressdetails=1`,
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14&addressdetails=1`,
       { headers: { 'User-Agent':'TerraIncognita/0.1', 'Accept-Language':'fr' } }
     )
     const nomData = await nomRes.json()
@@ -72,6 +81,7 @@ async function fetchCityPolygon(lat: number, lng: number): Promise<[number,numbe
         
         if (poly.length > 3) {
           console.log(`✅ Contour depuis ${endpoint}: ${poly.length} points`)
+          try { localStorage.setItem(cacheKey, JSON.stringify(poly)) } catch {}
           return poly
         }
       } catch(e) {
@@ -282,10 +292,9 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
 
   // Contour de la ville
   useEffect(() => {
-    const key=`${playerLat.toFixed(2)},${playerLng.toFixed(2)}`
+    const key=`${(playerLat/0.05).toFixed(0)},${(playerLng/0.05).toFixed(0)}`
     if (key===lastCityKey.current) return
     lastCityKey.current=key
-    cityPolygonPoints.current = []
     fetchCityPolygon(playerLat, playerLng).then(polygon => {
       if (polygon && polygon.length > 3) {
         cityPolygonPoints.current = polygon
