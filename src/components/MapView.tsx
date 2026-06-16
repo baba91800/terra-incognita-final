@@ -111,7 +111,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
 
     // Halos monuments — seulement si zoom suffisant
     const currentZoom = map.getZoom()
-    if (currentZoom >= 13) {
+    if (currentZoom >= 11) {
       const pulse = Math.sin(time*0.002)*0.5+0.5
       monuments.forEach(m => {
         if (m.discovered) return
