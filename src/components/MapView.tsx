@@ -20,73 +20,43 @@ interface Props {
 const MPL = 111320
 
 async function fetchCityPolygon(lat: number, lng: number): Promise<[number,number][]|null> {
-  // Cache localStorage
   const cacheKey = `ti2_city_poly_${(lat/0.05).toFixed(0)}_${(lng/0.05).toFixed(0)}`
   try {
     const cached = localStorage.getItem(cacheKey)
     if (cached) {
       const poly = JSON.parse(cached)
-      if (poly.length > 3) { console.log('Contour ville depuis cache'); return poly }
+      if (poly?.length > 3) return poly
     }
   } catch {}
+
   try {
-    // Étape 1 : Nominatim pour trouver la commune
-    const nomRes = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14&addressdetails=1`,
-      { headers: { 'User-Agent':'TerraIncognita/0.1', 'Accept-Language':'fr' } }
+    // Nominatim reverse avec polygon_geojson=1 — retourne le vrai polygone de la commune
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=geojson&zoom=14&polygon_geojson=1`,
+      { headers: { 'User-Agent': 'TerraIncognita/0.1', 'Accept-Language': 'fr' } }
     )
-    const nomData = await nomRes.json()
-    console.log('Nominatim:', nomData.display_name, 'osm_type:', nomData.osm_type, 'osm_id:', nomData.osm_id)
+    if (!res.ok) return null
+    const data = await res.json()
     
-    if (!nomData.osm_id) return null
+    const feature = data.features?.[0]
+    if (!feature?.geometry) return null
     
-    // Étape 2 : Overpass pour récupérer le polygone
-    const osmType = nomData.osm_type
-    const osmId = nomData.osm_id
-    const tc = osmType==='relation'?'rel':osmType==='way'?'way':'node'
+    const geom = feature.geometry
+    let poly: [number,number][] = []
     
-    const q = `[out:json][timeout:20];${tc}(${osmId});out geom;`
+    if (geom.type === 'Polygon') {
+      // Prendre le contour extérieur
+      poly = geom.coordinates[0].map(([lng, lat]: [number,number]) => [lat, lng] as [number,number])
+    } else if (geom.type === 'MultiPolygon') {
+      // Prendre le plus grand polygone
+      const largest = geom.coordinates.reduce((a: any, b: any) => a[0].length > b[0].length ? a : b)
+      poly = largest[0].map(([lng, lat]: [number,number]) => [lat, lng] as [number,number])
+    }
     
-    // Essayer plusieurs endpoints
-    const endpoints = [
-      'https://overpass.kumi.systems/api/interpreter',
-      'https://overpass.private.coffee/api/interpreter',
-      'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-    ]
-    
-    for (const endpoint of endpoints) {
-      try {
-        const r2 = await fetch(endpoint, {
-          method: 'POST', body: q,
-          headers: { 'Content-Type': 'text/plain' }
-        })
-        if (!r2.ok) continue
-        const d2 = await r2.json()
-        if (!d2.elements?.length) continue
-        
-        const el = d2.elements[0]
-        let poly: [number,number][] = []
-        
-        if (el.geometry?.length > 3) {
-          poly = el.geometry.map((p:any) => [p.lat, p.lon] as [number,number])
-        } else if (el.members) {
-          const outer = el.members.find((m:any) => m.role==='outer' && m.geometry?.length > 3)
-          if (outer) poly = outer.geometry.map((p:any) => [p.lat, p.lon] as [number,number])
-          else {
-            // Prendre le premier membre avec géométrie
-            const first = el.members.find((m:any) => m.geometry?.length > 3)
-            if (first) poly = first.geometry.map((p:any) => [p.lat, p.lon] as [number,number])
-          }
-        }
-        
-        if (poly.length > 3) {
-          console.log(`✅ Contour depuis ${endpoint}: ${poly.length} points`)
-          try { localStorage.setItem(cacheKey, JSON.stringify(poly)) } catch {}
-          return poly
-        }
-      } catch(e) {
-        console.warn(`Endpoint ${endpoint} failed:`, e)
-      }
+    if (poly.length > 3) {
+      console.log(`✅ Contour commune: ${poly.length} points`)
+      try { localStorage.setItem(cacheKey, JSON.stringify(poly)) } catch {}
+      return poly
     }
     return null
   } catch(e) {
@@ -95,21 +65,6 @@ async function fetchCityPolygon(lat: number, lng: number): Promise<[number,numbe
   }
 }
 
-
-
-
-function sortPolygonPoints(points: [number,number][]): [number,number][] {
-  if (points.length < 3) return points
-  // Calculer le centroïde
-  const centLat = points.reduce((s, p) => s + p[0], 0) / points.length
-  const centLng = points.reduce((s, p) => s + p[1], 0) / points.length
-  // Trier par angle depuis le centroïde
-  return [...points].sort((a, b) => {
-    const angleA = Math.atan2(a[1] - centLng, a[0] - centLat)
-    const angleB = Math.atan2(b[1] - centLng, b[0] - centLat)
-    return angleA - angleB
-  })
-}
 
 export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading, navRoute, onZoomMin }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
