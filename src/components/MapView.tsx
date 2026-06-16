@@ -97,6 +97,20 @@ async function fetchCityPolygon(lat: number, lng: number): Promise<[number,numbe
 
 
 
+
+function sortPolygonPoints(points: [number,number][]): [number,number][] {
+  if (points.length < 3) return points
+  // Calculer le centroïde
+  const centLat = points.reduce((s, p) => s + p[0], 0) / points.length
+  const centLng = points.reduce((s, p) => s + p[1], 0) / points.length
+  // Trier par angle depuis le centroïde
+  return [...points].sort((a, b) => {
+    const angleA = Math.atan2(a[1] - centLng, a[0] - centLat)
+    const angleB = Math.atan2(b[1] - centLng, b[0] - centLat)
+    return angleA - angleB
+  })
+}
+
 export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading, navRoute, onZoomMin }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
@@ -299,7 +313,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     lastCityKey.current=key
     fetchCityPolygon(playerLat, playerLng).then(polygon => {
       if (polygon && polygon.length > 3) {
-        cityPolygonPoints.current = polygon
+        cityPolygonPoints.current = sortPolygonPoints(polygon)
         console.log('Contour ville chargé:', polygon.length, 'points')
       } else {
         console.warn('Contour ville: pas de polygone retourné')

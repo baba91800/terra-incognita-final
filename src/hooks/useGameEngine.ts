@@ -28,6 +28,7 @@ export function useGameEngine() {
   const [initialized,setInitialized]=useState(false)
   const [totalDist,setTotalDist]=useState(0)
   const [territory,setTerritory]=useState<TerritoryData>({city:null,department:null,country:null,lastUpdated:''})
+  const territoryR = useRef<TerritoryData>({city:null,department:null,country:null,lastUpdated:''})
 
   const tiles=useRef<Set<string>>(new Set())
   const scoreR=useRef(0); const xpR=useRef(0); const levelR=useRef(1)
@@ -350,7 +351,7 @@ export function useGameEngine() {
     else{const fresh=genObjectives(today);objR.current=fresh;setObjectives(fresh);saveObjectives(fresh)}
     setInitialized(true)
     // Load saved territory
-    setTerritory(loadTerritory())
+    const savedTerr = loadTerritory(); setTerritory(savedTerr); territoryR.current = savedTerr
     setTimeout(()=>{
       revealAt(p.lat,p.lng,ms); detectCountry(p.lat,p.lng); fetchNearby(p.lat,p.lng)
     },100)

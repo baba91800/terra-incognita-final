@@ -262,8 +262,8 @@ export default function HUD(p:Props) {
             <div key={e.id} style={{display:'flex',gap:10,alignItems:'flex-start',paddingBottom:8,borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
               <span style={{fontSize:15,flexShrink:0,marginTop:1}}>{e.icon}</span>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:11,fontWeight:'bold',color:e.rarity?RARITY_COLORS[e.rarity]:'rgba(255,255,255,0.8)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.title}</div>
-                {e.subtitle&&<div style={{fontSize:9,color:'rgba(255,255,255,0.3)',marginTop:1}}>{e.subtitle}</div>}
+                <div style={{fontSize:11,fontWeight:'bold',color:e.rarity?RARITY_COLORS[e.rarity]:'rgba(255,255,255,0.8)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(t as any)[e.title as string] || e.title}</div>
+                {e.subtitle&&<div style={{fontSize:9,color:'rgba(255,255,255,0.3)',marginTop:1}}>{(t as any)[e.subtitle as string] || e.subtitle}</div>}
               </div>
               <div style={{textAlign:'right',flexShrink:0}}>
                 {e.points&&e.points>0&&<div style={{fontSize:9,color:'rgba(0,245,212,0.6)',fontFamily:'monospace'}}>+{e.points}</div>}
