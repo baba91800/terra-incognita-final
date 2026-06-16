@@ -28,43 +28,53 @@ async function fetchCityPolygon(lat: number, lng: number): Promise<[number,numbe
       if (poly?.length > 3) return poly
     }
   } catch {}
-
   try {
-    // Nominatim reverse avec polygon_geojson=1 — retourne le vrai polygone de la commune
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=geojson&zoom=14&polygon_geojson=1`,
+    // Étape 1 : trouver le nom de la commune via reverse geocoding
+    const rev = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10&addressdetails=1`,
       { headers: { 'User-Agent': 'TerraIncognita/0.1', 'Accept-Language': 'fr' } }
     )
-    if (!res.ok) return null
-    const data = await res.json()
-    
-    const feature = data.features?.[0]
+    if (!rev.ok) return null
+    const revData = await rev.json()
+    const addr = revData.address || {}
+    const cityName = addr.city || addr.town || addr.village || addr.municipality || addr.hamlet
+    if (!cityName) return null
+
+    // Étape 2 : chercher la commune par nom avec polygon_geojson=1
+    const search = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=geojson&limit=5&polygon_geojson=1&addressdetails=1&countrycodes=fr`,
+      { headers: { 'User-Agent': 'TerraIncognita/0.1', 'Accept-Language': 'fr' } }
+    )
+    if (!search.ok) return null
+    const searchData = await search.json()
+
+    // Trouver le résultat qui est une commune (type=administrative, class=boundary)
+    const feature = searchData.features?.find((f: any) =>
+      f.properties?.type === 'administrative' ||
+      f.properties?.addresstype === 'municipality' ||
+      f.properties?.addresstype === 'city' ||
+      f.properties?.addresstype === 'town' ||
+      f.properties?.addresstype === 'village'
+    ) || searchData.features?.[0]
+
     if (!feature?.geometry) return null
-    
     const geom = feature.geometry
     let poly: [number,number][] = []
-    
+
     if (geom.type === 'Polygon') {
-      // Prendre le contour extérieur
       poly = geom.coordinates[0].map(([lng, lat]: [number,number]) => [lat, lng] as [number,number])
     } else if (geom.type === 'MultiPolygon') {
-      // Prendre le plus grand polygone
       const largest = geom.coordinates.reduce((a: any, b: any) => a[0].length > b[0].length ? a : b)
       poly = largest[0].map(([lng, lat]: [number,number]) => [lat, lng] as [number,number])
     }
-    
+
     if (poly.length > 3) {
-      console.log(`✅ Contour commune: ${poly.length} points`)
       try { localStorage.setItem(cacheKey, JSON.stringify(poly)) } catch {}
       return poly
     }
     return null
-  } catch(e) {
-    console.error('fetchCityPolygon error:', e)
-    return null
-  }
+  } catch { return null }
 }
-
 
 export default function MapView({ playerLat, playerLng, tiles, monuments, personalMarkers, onMapReady, onMonumentClick, onLongPress, onMarkerClick, heading, navRoute, onZoomMin }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -98,27 +108,33 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     octx.fillStyle = 'rgb(2,5,15)'
     octx.fillRect(0,0,off.width,off.height)
     octx.globalCompositeOperation = 'source-over'
-    const pulse = Math.sin(time*0.002)*0.5+0.5
-    monuments.forEach(m => {
-      if (m.discovered) return
-      try {
-        const pt = map.latLngToContainerPoint([m.lat,m.lng])
-        const color = CATEGORY_COLORS[m.type]||(m.rarity==='legendary'?'#a855f7':RARITY_COLORS[m.rarity])
-        const baseR = m.rarity==='legendary'?130:m.rarity==='epic'?100:m.rarity==='rare'?75:55
-        const outerR = baseR+pulse*(m.rarity==='legendary'?20:m.rarity==='epic'?15:10)
-        const baseAlpha = m.rarity==='legendary'?0.75:m.rarity==='epic'?0.65:m.rarity==='rare'?0.55:0.48
-        const alpha = baseAlpha+pulse*0.15
-        const og = octx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,outerR)
-        og.addColorStop(0,color+Math.round(alpha*255).toString(16).padStart(2,'0'))
-        og.addColorStop(0.5,color+Math.round(alpha*0.5*255).toString(16).padStart(2,'0'))
-        og.addColorStop(1,color+'00')
-        octx.fillStyle=og; octx.beginPath(); octx.arc(pt.x,pt.y,outerR,0,Math.PI*2); octx.fill()
-        const innerR=(m.rarity==='legendary'?24:m.rarity==='epic'?18:m.rarity==='rare'?14:10)+pulse*5
-        const ig = octx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,innerR)
-        ig.addColorStop(0,color+'ff'); ig.addColorStop(0.6,color+'aa'); ig.addColorStop(1,color+'00')
-        octx.fillStyle=ig; octx.beginPath(); octx.arc(pt.x,pt.y,innerR,0,Math.PI*2); octx.fill()
-      } catch {}
-    })
+
+    // Halos monuments — seulement si zoom suffisant
+    const currentZoom = map.getZoom()
+    if (currentZoom >= 13) {
+      const pulse = Math.sin(time*0.002)*0.5+0.5
+      monuments.forEach(m => {
+        if (m.discovered) return
+        try {
+          const pt = map.latLngToContainerPoint([m.lat,m.lng])
+          const color = CATEGORY_COLORS[m.type]||(m.rarity==='legendary'?'#a855f7':RARITY_COLORS[m.rarity])
+          const baseR = m.rarity==='legendary'?130:m.rarity==='epic'?100:m.rarity==='rare'?75:55
+          const outerR = baseR+pulse*(m.rarity==='legendary'?20:m.rarity==='epic'?15:10)
+          const baseAlpha = m.rarity==='legendary'?0.75:m.rarity==='epic'?0.65:m.rarity==='rare'?0.55:0.48
+          const alpha = baseAlpha+pulse*0.15
+          const og = octx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,outerR)
+          og.addColorStop(0,color+Math.round(alpha*255).toString(16).padStart(2,'0'))
+          og.addColorStop(0.5,color+Math.round(alpha*0.5*255).toString(16).padStart(2,'0'))
+          og.addColorStop(1,color+'00')
+          octx.fillStyle=og; octx.beginPath(); octx.arc(pt.x,pt.y,outerR,0,Math.PI*2); octx.fill()
+          const innerR=(m.rarity==='legendary'?24:m.rarity==='epic'?18:m.rarity==='rare'?14:10)+pulse*5
+          const ig = octx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,innerR)
+          ig.addColorStop(0,color+'ff'); ig.addColorStop(0.6,color+'aa'); ig.addColorStop(1,color+'00')
+          octx.fillStyle=ig; octx.beginPath(); octx.arc(pt.x,pt.y,innerR,0,Math.PI*2); octx.fill()
+        } catch {}
+      })
+    }
+
     octx.globalCompositeOperation = 'destination-out'
     const bounds = map.getBounds()
     const zoom = map.getZoom()
@@ -141,8 +157,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     ctx.clearRect(0,0,canvas.width,canvas.height)
     ctx.drawImage(off,0,0)
 
-  
-  // Tracé de navigation PAR-DESSUS le fog
+    // Tracé de navigation PAR-DESSUS le fog
     if (navRoutePoints.current.length > 1) {
       try {
         ctx.save()
@@ -204,32 +219,27 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     return () => { running=false; cancelAnimationFrame(animRef.current) }
   },[drawFog])
 
-  // Init map avec leaflet-rotate
   useEffect(() => {
     if (!containerRef.current||mapRef.current) return
     import('leaflet').then(async ({default:L}) => {
       const map = L.map(containerRef.current!, {
         center:[playerLat,playerLng], zoom:17,
         zoomControl:false, attributionControl:false,
+        zoomSnap:0.5, zoomDelta:0.5,
       })
-
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
         attribution:'©OSM ©CARTO',maxZoom:19,subdomains:'abcd',
       }).addTo(map)
-
-      // Boutons zoom bien positionnés
       L.control.zoom({position:'bottomright'}).addTo(map)
       L.control.attribution({position:'bottomleft',prefix:false}).addTo(map)
-
       playerMarker.current = L.marker([playerLat,playerLng],{
         icon:L.divIcon({
           html:`<div style="width:16px;height:16px;border-radius:50%;background:#00f5d4;border:2.5px solid white;box-shadow:0 0 10px rgba(0,245,212,0.8)"></div>`,
           className:'',iconSize:[16,16],iconAnchor:[8,8],
         })
       }).addTo(map)
-
       map.on('dragstart',()=>{ mapMovedRef.current=true; setShowRecenter(true) })
-
+      map.on('zoom', () => { if (map.getZoom() <= 3 && onZoomMin) onZoomMin() })
       map.on('click',(e:any) => {
         if (!onMonumentClick) return
         let nearest:Monument|null=null, nearestDist=Infinity
@@ -240,7 +250,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         })
         if (nearest) onMonumentClick(nearest)
       })
-
       let pressTimer:ReturnType<typeof setTimeout>|null=null
       map.on('mousedown touchstart',(e:any)=>{
         pressTimer=setTimeout(()=>{
@@ -254,56 +263,44 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     return () => { if (mapRef.current){mapRef.current.remove();mapRef.current=null} }
   },[]) // eslint-disable-line
 
-  // Tracé navigation
   useEffect(() => {
     navRoutePoints.current = navRoute || []
   }, [navRoute])
 
-  // Contour de la ville
   useEffect(() => {
-    // Ignorer la position par défaut Paris
     if (Math.abs(playerLat - 48.8566) < 0.001 && Math.abs(playerLng - 2.3522) < 0.001) return
     const key=`${(playerLat/0.05).toFixed(0)},${(playerLng/0.05).toFixed(0)}`
     if (key===lastCityKey.current) return
     lastCityKey.current=key
     fetchCityPolygon(playerLat, playerLng).then(polygon => {
       if (polygon && polygon.length > 3) {
-        cityPolygonPoints.current = sortPolygonPoints(polygon)
-        console.log('Contour ville chargé:', polygon.length, 'points')
-      } else {
-        console.warn('Contour ville: pas de polygone retourné')
+        cityPolygonPoints.current = polygon
       }
-    }).catch(e => console.error('Erreur contour ville:', e))
+    }).catch(() => {})
   },[playerLat,playerLng])
 
-  // Player marker + rotation carte heading-up via leaflet-rotate
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({default:L}) => {
       const map=mapRef.current!; if (!map) return
-
       const icon = L.divIcon({
         html:`<div style="width:18px;height:18px;border-radius:50%;background:#00f5d4;border:3px solid white;box-shadow:0 0 12px rgba(0,245,212,0.9)"></div>`,
         className:'',iconSize:[18,18],iconAnchor:[9,9],
       })
-
       if (playerMarker.current) {
         playerMarker.current.setLatLng([playerLat,playerLng])
         playerMarker.current.setIcon(icon)
       } else {
         playerMarker.current=L.marker([playerLat,playerLng],{icon}).addTo(map)
       }
-
       setCurrentHeading(heading)
       if (!mapMovedRef.current) {
         map.panTo([playerLat,playerLng],{animate:true,duration:0.5})
-        // Heading-up : rotation CSS uniquement sur le pane Leaflet
         if (heading !== null) {
           const mapPane = containerRef.current?.querySelector('.leaflet-map-pane') as HTMLElement
           if (mapPane) {
             mapPane.style.transition = 'transform 0.5s ease'
             mapPane.style.transformOrigin = '50% 50%'
-            // Récupérer la transform actuelle de Leaflet et y ajouter la rotation
             const currentTransform = mapPane.style.transform || ''
             const withoutRotate = currentTransform.replace(/rotate\([^)]*\)/g, '').trim()
             mapPane.style.transform = withoutRotate + ` rotate(${-heading}deg)`
@@ -313,7 +310,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     })
   },[playerLat,playerLng,heading])
 
-  // Monument markers
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({default:L}) => {
@@ -349,7 +345,6 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     })
   },[monuments])
 
-  // Personal markers
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({default:L}) => {
