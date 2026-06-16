@@ -292,6 +292,8 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
 
   // Contour de la ville
   useEffect(() => {
+    // Ignorer la position par défaut Paris
+    if (Math.abs(playerLat - 48.8566) < 0.001 && Math.abs(playerLng - 2.3522) < 0.001) return
     const key=`${(playerLat/0.05).toFixed(0)},${(playerLng/0.05).toFixed(0)}`
     if (key===lastCityKey.current) return
     lastCityKey.current=key
