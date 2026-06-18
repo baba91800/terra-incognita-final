@@ -109,17 +109,15 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
     octx.fillRect(0,0,off.width,off.height)
     octx.globalCompositeOperation = 'source-over'
 
-    // Halos monuments — seulement si zoom suffisant
-    const currentZoom = map.getZoom()
-    if (currentZoom >= 11) {
+    {
       const pulse = Math.sin(time*0.002)*0.5+0.5
       monuments.forEach(m => {
         if (m.discovered) return
         try {
           const pt = map.latLngToContainerPoint([m.lat,m.lng])
           const color = CATEGORY_COLORS[m.type]||(m.rarity==='legendary'?'#a855f7':RARITY_COLORS[m.rarity])
-          const baseR = m.rarity==='legendary'?130:m.rarity==='epic'?100:m.rarity==='rare'?75:55
-          const outerR = baseR+pulse*(m.rarity==='legendary'?20:m.rarity==='epic'?15:10)
+          const baseR = m.rarity==='legendary'?45:m.rarity==='epic'?35:m.rarity==='rare'?28:20
+          const outerR = baseR+pulse*(m.rarity==='legendary'?8:m.rarity==='epic'?6:4)
           const baseAlpha = m.rarity==='legendary'?0.75:m.rarity==='epic'?0.65:m.rarity==='rare'?0.55:0.48
           const alpha = baseAlpha+pulse*0.15
           const og = octx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,outerR)
@@ -127,7 +125,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
           og.addColorStop(0.5,color+Math.round(alpha*0.5*255).toString(16).padStart(2,'0'))
           og.addColorStop(1,color+'00')
           octx.fillStyle=og; octx.beginPath(); octx.arc(pt.x,pt.y,outerR,0,Math.PI*2); octx.fill()
-          const innerR=(m.rarity==='legendary'?24:m.rarity==='epic'?18:m.rarity==='rare'?14:10)+pulse*5
+          const innerR=(m.rarity==='legendary'?10:m.rarity==='epic'?8:m.rarity==='rare'?6:4)+pulse*2
           const ig = octx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,innerR)
           ig.addColorStop(0,color+'ff'); ig.addColorStop(0.6,color+'aa'); ig.addColorStop(1,color+'00')
           octx.fillStyle=ig; octx.beginPath(); octx.arc(pt.x,pt.y,innerR,0,Math.PI*2); octx.fill()
@@ -246,7 +244,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         monuments.forEach(m => {
           if (m.discovered) return
           const d=Math.sqrt(Math.pow(e.latlng.lat-m.lat,2)+Math.pow(e.latlng.lng-m.lng,2))
-          if (d<nearestDist&&d<0.001){nearest=m;nearestDist=d}
+          if (d<nearestDist&&d<0.003){nearest=m;nearestDist=d}
         })
         if (nearest) onMonumentClick(nearest)
       })

@@ -198,7 +198,10 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {countries.map(c => (
-                      <span key={c.code} title={c.name} style={{ fontSize: 24, filter: `drop-shadow(0 0 4px ${RARITY_COLORS[c.rarity]}60)` }}>{c.flag}</span>
+                      <div key={c.code} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                        <span title={c.name} style={{ fontSize: 24, filter: `drop-shadow(0 0 4px ${RARITY_COLORS[c.rarity]}60)` }}>{c.flag}</span>
+                        <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', textAlign: 'center', maxWidth: 50, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace', letterSpacing: '0.05em' }}>{c.name}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
