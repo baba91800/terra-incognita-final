@@ -92,6 +92,9 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const [showRecenter, setShowRecenter] = useState(false)
   const [currentHeading, setCurrentHeading] = useState<number|null>(null)
   const mapMovedRef = useRef(false)
+  const monumentsRef = useRef<Monument[]>([])
+
+  useEffect(() => { monumentsRef.current = monuments }, [monuments])
 
   const drawFog = useCallback((time: number = 0) => {
     const map = mapRef.current
@@ -241,7 +244,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       map.on('click',(e:any) => {
         if (!onMonumentClick) return
         let nearest:Monument|null=null, nearestDist=Infinity
-        monuments.forEach(m => {
+        monumentsRef.current.forEach(m => {
           if (m.discovered) return
           const d=Math.sqrt(Math.pow(e.latlng.lat-m.lat,2)+Math.pow(e.latlng.lng-m.lng,2))
           if (d<nearestDist&&d<0.003){nearest=m;nearestDist=d}
