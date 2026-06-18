@@ -293,7 +293,10 @@ export function useGameEngine() {
     if (isNewZone) console.log('Nouvelle zone détectée — rechargement monuments')
     const newMs=await fetchMonuments(lat,lng,existingIds)
     if(newMs.length>0){
-      const merged = isNewZone ? newMs : [...monR.current,...newMs]
+      // Préserver les monuments déjà découverts même en nouvelle zone
+      const discoveredMap = new Map(monR.current.filter(m=>m.discovered).map(m=>[m.id,m]))
+      const withDiscovered = newMs.map(m => discoveredMap.has(m.id) ? discoveredMap.get(m.id)! : m)
+      const merged = isNewZone ? withDiscovered : [...monR.current,...withDiscovered]
       monR.current=merged; setMonuments([...merged]); saveMonuments(merged)
     }
   },[])
