@@ -51,6 +51,8 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
   if (tags.man_made === 'watermill')        return { rarity: 'rare', type: 'watermill',  icon: '⚙️' }
   if (tags.historic === 'mine' || tags.historic === 'mineshaft') return { rarity: 'rare', type: 'mine', icon: '⛏️' }
   if (tags.historic === 'tower')            return { rarity: 'rare', type: 'tower',      icon: '🗼' }
+  if (tags.man_made === 'obelisk')          return { rarity: 'rare', type: 'monument',   icon: '🗿' }
+  if (tags.historic === 'wayside_monument') return { rarity: 'rare', type: 'monument',   icon: '🗿' }
   if (tags.natural === 'cliff')             return { rarity: 'rare', type: 'cliff',      icon: '🪨' }
   if (tags.natural === 'gorge')             return { rarity: 'rare', type: 'gorge',      icon: '🏔️' }
   if (tags.historic === 'cemetery')         return { rarity: 'rare', type: 'cemetery',   icon: '⚰️' }
@@ -74,7 +76,7 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
 }
 
 const CACHE_KEY = 'ti2_overpass_cache'
-const CACHE_VERSION = 7
+const CACHE_VERSION = 8
 
 interface CacheEntry { monuments: Monument[]; timestamp: number }
 
@@ -139,7 +141,7 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
   nwr["historic"](around:${r},${lat},${lng});
   nwr["natural"~"volcano|cave_entrance|hot_spring|waterfall|peak|glacier|spring|arch|cliff|cape|gorge|rock|tree"](around:${r},${lat},${lng});
   nwr["waterway"~"waterfall|spring"](around:${r},${lat},${lng});
-  nwr["man_made"~"lighthouse|windmill|watermill|water_well|dovecote"](around:${r},${lat},${lng});
+  nwr["man_made"~"lighthouse|windmill|watermill|water_well|dovecote|obelisk"](around:${r},${lat},${lng});
   nwr["amenity"~"fountain|lavoir|cathedral"](around:${r},${lat},${lng});
   nwr["leisure"="garden"](around:${r},${lat},${lng});
   nwr["military"~"bunker|pillbox"](around:${r},${lat},${lng});
