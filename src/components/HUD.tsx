@@ -213,7 +213,7 @@ export default function HUD(p:Props) {
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
                   <div style={{display:'flex',gap:8,alignItems:'center'}}>
                     <span style={{fontSize:16}}>{o.icon}</span>
-                    <span style={{fontSize:11,color:o.completed?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.75)',textDecoration:o.completed?'line-through':'none'}}>{o.description}</span>
+                    <span style={{fontSize:11,color:o.completed?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.75)',textDecoration:o.completed?'line-through':'none'}}>{(t as any)[o.description as string] || o.description}</span>
                   </div>
                   <span style={{fontSize:10,color:'rgba(0,245,212,0.7)',fontFamily:'monospace',marginLeft:8,flexShrink:0}}>+{o.reward}</span>
                 </div>
@@ -239,7 +239,7 @@ export default function HUD(p:Props) {
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
                   <div style={{display:'flex',gap:8,alignItems:'center'}}>
                     <span style={{fontSize:16}}>{o.icon}</span>
-                    <span style={{fontSize:11,color:o.completed?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.75)',textDecoration:o.completed?'line-through':'none'}}>{o.description}</span>
+                    <span style={{fontSize:11,color:o.completed?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.75)',textDecoration:o.completed?'line-through':'none'}}>{(t as any)[o.description as string] || o.description}</span>
                   </div>
                   <span style={{fontSize:10,color:'rgba(255,200,50,0.8)',fontFamily:'monospace',marginLeft:8,flexShrink:0}}>+{o.reward}</span>
                 </div>
