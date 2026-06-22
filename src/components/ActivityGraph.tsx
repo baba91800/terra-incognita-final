@@ -91,7 +91,7 @@ export default function ActivityGraph({ log, path, t }: Props) {
     const dayData: Record<string, typeof allDays[0]> = {}
     allDays.forEach(d => dayData[d.date] = d)
 
-    return { weeks, dayData, maxKm, totalActiveDays, currentStreak, avgKm }
+    return { weeks, dayData, maxKm, totalActiveDays, currentStreak: streak, avgKm }
   }, [log, path])
 
   const getColor = (km: number, isFuture: boolean, isToday: boolean) => {
