@@ -309,7 +309,7 @@ export default function HUD(p:Props) {
           {[
             ['⚡',t.statXP,p.xp.toLocaleString()],
             ['🎖️',t.statLevel,`${p.level} — ${p.levelTitle}`],
-            ['🗺️',t.statTiles,p.totalTiles.toLocaleString()],
+            ['🗺️',t.statTiles,`${(p.totalTiles*100).toLocaleString()} m²`],
             ['👟',t.statDist,`${(p.totalDist/1000).toFixed(2)} km`],
             ['🏛️',t.statSites,`${discM.length}/${p.monuments.length}`],
             ['🌍',t.statCountries,p.countries.length.toString()],

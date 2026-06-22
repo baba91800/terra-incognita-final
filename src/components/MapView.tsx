@@ -329,11 +329,18 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         if (ex) {
           ex.setStyle({fillColor:m.discovered?color:'transparent',fillOpacity:m.discovered?0.95:0,color:m.discovered?color:'transparent',weight:m.discovered?2.5:0})
         } else {
-          const mk=L.circleMarker([m.lat,m.lng],{
-            radius:m.rarity==='legendary'?11:m.rarity==='epic'?9:7,
-            fillColor:m.discovered?color:'transparent',fillOpacity:m.discovered?0.95:0,
-            color:m.discovered?color:'transparent',weight:m.discovered?2.5:0,
-          }).addTo(mapRef.current)
+          const mk = m.discovered
+            ? L.marker([m.lat,m.lng], {
+                icon: L.divIcon({
+                  html: `<div style="width:32px;height:32px;border-radius:50%;background:rgba(5,12,24,0.9);border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 10px ${color}80">${m.icon||'📍'}</div>`,
+                  className:'',iconSize:[32,32],iconAnchor:[16,16],
+                })
+              }).addTo(mapRef.current)
+            : L.circleMarker([m.lat,m.lng],{
+                radius:m.rarity==='legendary'?11:m.rarity==='epic'?9:7,
+                fillColor:'transparent',fillOpacity:0,
+                color:'transparent',weight:0,
+              }).addTo(mapRef.current)
           mk.bindPopup(`<div style="background:rgba(5,12,24,0.97);border:1px solid ${color}70;color:#fff;padding:12px 16px;border-radius:10px;min-width:140px;font-family:monospace;">
             <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon||'📍'}</div>
             <div style="font-size:9px;color:${color};letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px">${m.rarity}</div>
