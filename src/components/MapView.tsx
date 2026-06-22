@@ -297,16 +297,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       setCurrentHeading(heading)
       if (!mapMovedRef.current) {
         map.panTo([playerLat,playerLng],{animate:true,duration:0.5})
-        if (heading !== null) {
-          const mapPane = containerRef.current?.querySelector('.leaflet-map-pane') as HTMLElement
-          if (mapPane) {
-            mapPane.style.transition = 'transform 0.5s ease'
-            mapPane.style.transformOrigin = '50% 50%'
-            const currentTransform = mapPane.style.transform || ''
-            const withoutRotate = currentTransform.replace(/rotate\([^)]*\)/g, '').trim()
-            mapPane.style.transform = withoutRotate + ` rotate(${-heading}deg)`
-          }
-        }
+// heading-up désactivé — cause désalignement fog
       }
     })
   },[playerLat,playerLng,heading])
