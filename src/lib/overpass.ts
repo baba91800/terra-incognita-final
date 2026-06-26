@@ -76,7 +76,7 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
 }
 
 const CACHE_KEY = 'ti2_overpass_cache'
-const CACHE_VERSION = 8
+const CACHE_VERSION = 9
 
 interface CacheEntry { monuments: Monument[]; timestamp: number }
 
@@ -190,7 +190,7 @@ out center 100;`
       const rarityOrder = { legendary: 0, epic: 1, rare: 2, common: 3 }
       const limited = results
         .sort((a, b) => rarityOrder[a.rarity] - rarityOrder[b.rarity])
-        .slice(0, 30)
+        .slice(0, 50)
 
       cache[key] = { monuments: limited, timestamp: Date.now() }
       saveCache(cache)
