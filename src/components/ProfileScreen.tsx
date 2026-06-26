@@ -266,12 +266,6 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
                 </div>
               )}
 
-              {/* Carte du monde */}
-              <div style={{ marginTop: 24 }}>
-                <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 12 }}>PAYS DÉCOUVERTS — {countries.length}</div>
-                <WorldMapMini countries={countries} playerLat={playerLat} playerLng={playerLng} />
-              </div>
-
               {/* Export/Import/Share */}
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 14, marginBottom: 12 }}>
                 <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', marginBottom: 10 }}>{t.dataTitle}</div>
@@ -306,6 +300,11 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
           {/* ── TERRITOIRE ── */}
           {tab === 'territory' && (
             <>
+              {/* Carte du monde */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 12 }}>PAYS DÉCOUVERTS — {countries.length}</div>
+                <WorldMapMini countries={countries} playerLat={playerLat} playerLng={playerLng} />
+              </div>
               <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 16 }}>{t.exploration}</div>
               {[
                 { icon: '🏙️', label: t.cityLabel||'Ville',      name: territory.city||'—',       pct: cityPct,    color: '#00f5d4', extra: territory.cityAreaKm2 ? `sur ${territory.cityAreaKm2.toFixed(1)} km²` : null },
