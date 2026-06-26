@@ -29,6 +29,20 @@ const AVATAR_KEY = 'ti2_avatar'
 const PSEUDO_KEY = 'ti2_pseudo'
 
 
+
+// Correspondance ISO2 -> code numérique TopoJSON
+const ISO2_TO_NUMERIC: Record<string, string> = {
+  'FR': '250', 'DE': '276', 'ES': '724', 'IT': '380', 'GB': '826',
+  'PT': '620', 'BE': '056', 'NL': '528', 'CH': '756', 'AT': '040',
+  'PL': '616', 'CZ': '203', 'HU': '348', 'RO': '642', 'GR': '300',
+  'SE': '752', 'NO': '578', 'FI': '246', 'DK': '208', 'IE': '372',
+  'US': '840', 'CA': '124', 'BR': '076', 'AU': '036', 'CN': '156',
+  'JP': '392', 'IN': '356', 'RU': '643', 'MX': '484', 'AR': '032',
+  'ZA': '710', 'NG': '566', 'EG': '818', 'MA': '504', 'KE': '404',
+  'TR': '792', 'SA': '682', 'AE': '784', 'TH': '764', 'VN': '704',
+  'KR': '410', 'ID': '360', 'PH': '608', 'MY': '458', 'SG': '702',
+}
+
 // Mini carte monde intégrée dans le profil
 function WorldMapMini({ countries, playerLat, playerLng }: { countries: CountryDiscovery[], playerLat: number, playerLng: number }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -44,7 +58,7 @@ function WorldMapMini({ countries, playerLat, playerLng }: { countries: CountryD
       import('https://cdn.jsdelivr.net/npm/topojson-client@3/+esm' as any),
     ]).then(([world, d3, topo]) => {
       if (cancelled || !el) return
-      const visited = new Set(countries.map(c => c.code))
+      const visited = new Set(countries.map(c => ISO2_TO_NUMERIC[c.code] || c.code))
       const W = el.clientWidth || 320
       const H = Math.round(W * 0.5)
       el.innerHTML = ''
