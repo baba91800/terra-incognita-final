@@ -318,7 +318,24 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
           } catch {}
         } else if (m.discovered) prevMonuments.current.add(m.id)
         if (ex) {
-          ex.setStyle({fillColor:m.discovered?color:'transparent',fillOpacity:m.discovered?0.95:0,color:m.discovered?color:'transparent',weight:m.discovered?2.5:0})
+          if (m.discovered && ex._isCircleMarker) {
+            // Remplacer le circleMarker par un vrai marqueur avec emoji
+            ex.remove()
+            markersRef.current.delete(m.id)
+            const newMk = L.marker([m.lat,m.lng], {
+              icon: L.divIcon({
+                html: `<div style="width:32px;height:32px;border-radius:50%;background:rgba(5,12,24,0.9);border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 8px ${color}60">${m.icon||'📍'}</div>`,
+                className:'',iconSize:[32,32],iconAnchor:[16,16],
+              })
+            }).addTo(mapRef.current)
+            newMk.bindPopup(`<div style="background:rgba(5,12,24,0.97);border:1px solid ${color}70;color:#fff;padding:12px 16px;border-radius:10px;min-width:140px;font-family:monospace;">
+              <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon||'📍'}</div>
+              <div style="font-size:9px;color:${color};letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px">${m.rarity}</div>
+              <div style="font-size:13px;font-weight:bold">${m.name}</div>
+              ${m.discoveredAt?`<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:6px">${new Date(m.discoveredAt).toLocaleDateString()}</div>`:''}
+            </div>`,{className:'custom-popup'})
+            markersRef.current.set(m.id, newMk)
+          }
         } else {
           const mk = m.discovered
             ? L.marker([m.lat,m.lng], {
@@ -327,11 +344,15 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
                   className:'',iconSize:[32,32],iconAnchor:[16,16],
                 })
               }).addTo(mapRef.current)
-            : L.circleMarker([m.lat,m.lng],{
-                radius:m.rarity==='legendary'?11:m.rarity==='epic'?9:7,
-                fillColor:'transparent',fillOpacity:0,
-                color:'transparent',weight:0,
-              }).addTo(mapRef.current)
+            : (() => {
+                const cm = L.circleMarker([m.lat,m.lng],{
+                  radius:m.rarity==='legendary'?11:m.rarity==='epic'?9:7,
+                  fillColor:'transparent',fillOpacity:0,
+                  color:'transparent',weight:0,
+                }).addTo(mapRef.current);
+                (cm as any)._isCircleMarker = true;
+                return cm;
+              })()
           mk.bindPopup(`<div style="background:rgba(5,12,24,0.97);border:1px solid ${color}70;color:#fff;padding:12px 16px;border-radius:10px;min-width:140px;font-family:monospace;">
             <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon||'📍'}</div>
             <div style="font-size:9px;color:${color};letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px">${m.rarity}</div>

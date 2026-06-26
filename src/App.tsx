@@ -12,6 +12,7 @@ import ProfileScreen from './components/ProfileScreen'
 import MarkerEditor from './components/MarkerEditor'
 import MonumentDiscovery from './components/MonumentDiscovery'
 import GlobeView from './components/GlobeView'
+import WorldMap from './components/WorldMap'
 import CityProgress from './components/CityProgress'
 import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
@@ -28,6 +29,7 @@ export default function App() {
   const [lang, setLang] = useState<Lang>('fr')
   const [navTarget, setNavTarget] = useState<Monument | null>(null)
   const [showGlobe, setShowGlobe] = useState(false)
+  const [showWorldMap, setShowWorldMap] = useState(false)
   const [showArrivedMsg, setShowArrivedMsg] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [personalMarkers, setPersonalMarkers] = useState<PersonalMarker[]>(() => loadMarkers())
@@ -35,7 +37,10 @@ export default function App() {
   const [discoveredMonument, setDiscoveredMonument] = useState<{ monument: any; points: number } | null>(null)
   const [navRoute, setNavRoute] = useState<[number,number][]>([])
   const t = useT(lang)
-  const prevDiscovered = useRef<Set<string>>(new Set())
+  const SHOWN_KEY = 'ti2_shown_discoveries'
+  const prevDiscovered = useRef<Set<string>>(new Set(
+    JSON.parse(localStorage.getItem('ti2_shown_discoveries') || '[]')
+  ))
 
   useEffect(() => {
     if (!localStorage.getItem(ONBOARD_KEY)) setShowOnboard(true)
@@ -103,6 +108,11 @@ export default function App() {
     if (newlyDiscovered.length > 0) {
       const m = newlyDiscovered[0]
       prevDiscovered.current.add(m.id)
+      try {
+        const shown = JSON.parse(localStorage.getItem('ti2_shown_discoveries') || '[]')
+        shown.push(m.id)
+        localStorage.setItem('ti2_shown_discoveries', JSON.stringify(shown))
+      } catch {}
       const pts = m.rarity === 'legendary' ? 1000 : m.rarity === 'epic' ? 300 : m.rarity === 'rare' ? 150 : 50
       setTimeout(() => setDiscoveredMonument({ monument: m, points: pts }), 500)
     }

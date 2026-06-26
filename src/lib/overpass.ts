@@ -51,7 +51,7 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
   if (tags.man_made === 'watermill')        return { rarity: 'rare', type: 'watermill',  icon: '⚙️' }
   if (tags.historic === 'mine' || tags.historic === 'mineshaft') return { rarity: 'rare', type: 'mine', icon: '⛏️' }
   if (tags.historic === 'tower')            return { rarity: 'rare', type: 'tower',      icon: '🗼' }
-  if (tags.man_made === 'obelisk')          return { rarity: 'rare', type: 'monument',   icon: '🗿' }
+  if (tags.man_made === 'obelisk')          return { rarity: 'rare', type: 'obelisk',    icon: '🗿' }
   if (tags.historic === 'wayside_monument') return { rarity: 'rare', type: 'monument',   icon: '🗿' }
   if (tags.natural === 'cliff')             return { rarity: 'rare', type: 'cliff',      icon: '🪨' }
   if (tags.natural === 'gorge')             return { rarity: 'rare', type: 'gorge',      icon: '🏔️' }
@@ -70,7 +70,7 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
   if (tags.historic === 'wayside_shrine')   return { rarity: 'common', type: 'shrine',   icon: '⛩️' }
   if (tags.historic === 'lavoir' || tags.amenity === 'lavoir') return { rarity: 'common', type: 'lavoir', icon: '🪣' }
   if (tags.historic === 'boundary_stone' || tags.historic === 'milestone') return { rarity: 'common', type: 'milestone', icon: '🪨' }
-  if (tags.historic && tags.name)           return { rarity: 'common', type: 'monument', icon: '🏛️' }
+  if (tags.historic && tags.name)           return { rarity: 'rare',   type: 'monument', icon: '🏛️' }
   if (tags.natural === 'tree')              return { rarity: 'common', type: 'tree',     icon: '🌳' }
   return null
 }
