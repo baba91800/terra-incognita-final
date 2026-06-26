@@ -167,10 +167,10 @@ export const COUNTRIES: CountryBonus[] = [
   { code:'MQ', name:'Martinique',      flag:'🇲🇶', rarity:'rare',      points:200,  reason:'Île des Caraïbes' },
   { code:'GF', name:'Guyane française',flag:'🇬🇫', rarity:'epic',      points:400,  reason:'Forêt amazonienne' },
   { code:'RE', name:'La Réunion',      flag:'🇷🇪', rarity:'rare',      points:200,  reason:'Île volcanique' },
-  { code:'YT', name:'Mayotte',         flag:'🇾🇹', rarity:'rare',      points:200,  reason:'Île de l'océan Indien' },
+  { code:'YT', name:'Mayotte',         flag:'🇾🇹', rarity:'rare',      points:200,  reason:"Île de l'océan Indien" },
   { code:'NC', name:'Nouvelle-Calédonie',flag:'🇳🇨',rarity:'epic',     points:400,  reason:'Île du Pacifique' },
   { code:'PF', name:'Polynésie française',flag:'🇵🇫',rarity:'legendary',points:800, reason:'Paradis du Pacifique' },
-  { code:'PM', name:'Saint-Pierre-et-Miquelon',flag:'🇵🇲',rarity:'epic',points:400, reason:'Dernier vestige de l'Amérique française' },
+  { code:'PM', name:'Saint-Pierre-et-Miquelon',flag:'🇵🇲',rarity:'epic',points:400, reason:"Dernier vestige de l'Amérique française" },
 ]
 export const COUNTRY_MAP: Record<string, CountryBonus> = COUNTRIES.reduce((a,c) => ({...a,[c.code]:c}), {})
 
