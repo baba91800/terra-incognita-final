@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { Badge, Monument, CountryDiscovery } from '../types/game'
 import { RARITY_COLORS } from '../lib/constants'
 import { computeExplorationPercent, computeDeptPercent, computeCountryPercent, computeCityPercent } from '../lib/territory'
@@ -27,6 +27,65 @@ interface Props {
 
 const AVATAR_KEY = 'ti2_avatar'
 const PSEUDO_KEY = 'ti2_pseudo'
+
+
+// Mini carte monde intégrée dans le profil
+function WorldMapMini({ countries, playerLat, playerLng }: { countries: CountryDiscovery[], playerLat: number, playerLng: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let cancelled = false
+
+    Promise.all([
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json()),
+      import('https://cdn.jsdelivr.net/npm/d3@7/+esm' as any),
+      import('https://cdn.jsdelivr.net/npm/topojson-client@3/+esm' as any),
+    ]).then(([world, d3, topo]) => {
+      if (cancelled || !el) return
+      const visited = new Set(countries.map(c => c.code))
+      const W = el.clientWidth || 320
+      const H = Math.round(W * 0.5)
+      el.innerHTML = ''
+      const svg = d3.select(el).append('svg')
+        .attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`)
+        .style('border-radius', '10px').style('background', 'rgba(0,20,50,0.6)')
+      const proj = d3.geoNaturalEarth1().scale(W / 6.5).translate([W/2, H/2])
+      const path = d3.geoPath(proj)
+      const feats = topo.feature(world, world.objects.countries)
+      svg.selectAll('path').data(feats.features).join('path')
+        .attr('d', path)
+        .attr('fill', (d: any) => visited.has(String(d.id)) ? '#00f5d4' : 'rgba(255,255,255,0.07)')
+        .attr('stroke', 'rgba(0,0,0,0.4)').attr('stroke-width', 0.3)
+      try {
+        const [px, py] = proj([playerLng, playerLat]) as [number,number]
+        if (px && py) {
+          svg.append('circle').attr('cx', px).attr('cy', py).attr('r', 3)
+            .attr('fill', '#f59e0b').attr('stroke', '#000').attr('stroke-width', 1)
+        }
+      } catch {}
+    }).catch(() => {})
+
+    return () => { cancelled = true }
+  }, [countries, playerLat, playerLng])
+
+  return (
+    <div>
+      <div ref={ref} style={{ width: '100%', borderRadius: 10, overflow: 'hidden', minHeight: 160 }} />
+      {countries.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+          {countries.map(c => (
+            <div key={c.code} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: 24 }}>{c.flag}</span>
+              <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', maxWidth: 48, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ProfileScreen({ onClose, onReset, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, log, path = [], territory, tiles, playerLat, playerLng, t }: Props) {
   const [pseudo, setPseudo] = useState(() => localStorage.getItem(PSEUDO_KEY) || 'Explorer')
@@ -206,6 +265,12 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
                   </div>
                 </div>
               )}
+
+              {/* Carte du monde */}
+              <div style={{ marginTop: 24 }}>
+                <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 12 }}>PAYS DÉCOUVERTS — {countries.length}</div>
+                <WorldMapMini countries={countries} playerLat={playerLat} playerLng={playerLng} />
+              </div>
 
               {/* Export/Import/Share */}
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 14, marginBottom: 12 }}>

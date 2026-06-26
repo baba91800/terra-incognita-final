@@ -343,12 +343,15 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
                 (cm as any)._isCircleMarker = true;
                 return cm;
               })()
+          if (m.discovered) {
+            mk.on('click', () => mk.openPopup())
+          }
           mk.bindPopup(`<div style="background:rgba(5,12,24,0.97);border:1px solid ${color}70;color:#fff;padding:12px 16px;border-radius:10px;min-width:140px;font-family:monospace;">
             <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon||'📍'}</div>
             <div style="font-size:9px;color:${color};letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px">${m.rarity}</div>
             <div style="font-size:13px;font-weight:bold">${m.discovered?m.name:'???'}</div>
             ${m.discovered&&m.discoveredAt?`<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:6px">${new Date(m.discoveredAt).toLocaleDateString()}</div>`:''}
-          </div>`,{className:'custom-popup'})
+          </div>`,{className:'custom-popup',maxWidth:200})
           markersRef.current.set(m.id,mk)
         }
       })
