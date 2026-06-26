@@ -58,7 +58,34 @@ function WorldMapMini({ countries, playerLat, playerLng, onClick, fullscreen }: 
       import('https://cdn.jsdelivr.net/npm/topojson-client@3/+esm' as any),
     ]).then(([world, d3, topo]) => {
       if (cancelled || !el) return
-      const visited = new Set(countries.map(c => ISO2_TO_NUMERIC[c.code] || c.code))
+      // Codes DOM-TOM séparés dans TopoJSON
+      const DOMTOM_CODES: Record<string, string> = {
+        'GP': '312', // Guadeloupe
+        'MQ': '474', // Martinique  
+        'GF': '254', // Guyane française
+        'RE': '638', // Réunion
+        'YT': '175', // Mayotte
+        'PM': '666', // Saint-Pierre-et-Miquelon
+        'NC': '540', // Nouvelle-Calédonie
+        'PF': '258', // Polynésie française
+        'WF': '876', // Wallis-et-Futuna
+      }
+      
+      const visited = new Set<string>()
+      const hasFranceMetro = countries.some(c => c.code === 'FR')
+      
+      countries.forEach(c => {
+        const domtom = DOMTOM_CODES[c.code]
+        if (domtom) {
+          // DOM-TOM visité spécifiquement
+          visited.add(domtom)
+        } else {
+          visited.add(ISO2_TO_NUMERIC[c.code] || c.code)
+        }
+      })
+      
+      // France métro = code 250 mais on va filtrer par bbox dans le rendu
+      // Pour l'instant on garde 250 et on ajoute une note
       const W = el.clientWidth || 320
       const H = Math.round(W * 0.5)
       el.innerHTML = ''
@@ -70,7 +97,24 @@ function WorldMapMini({ countries, playerLat, playerLng, onClick, fullscreen }: 
       const feats = topo.feature(world, world.objects.countries)
       svg.selectAll('path').data(feats.features).join('path')
         .attr('d', path)
-        .attr('fill', (d: any) => visited.has(String(d.id)) ? '#00f5d4' : 'rgba(255,255,255,0.07)')
+        .attr('fill', (d: any) => {
+          const id = String(d.id)
+          if (!visited.has(id)) return 'rgba(255,255,255,0.07)'
+          // Pour la France (250), vérifier si c'est la métropole via centroïde
+          if (id === '250' && !hasFranceMetro) return 'rgba(255,255,255,0.07)'
+          if (id === '250') {
+            // Centroïde du polygone — si hors bbox métro, ne pas colorier
+            try {
+              const centroid = proj.invert ? proj.invert(path.centroid(d)) : null
+              if (centroid) {
+                const [lng, lat] = centroid
+                // bbox France métro approximative
+                if (lat < 41 || lat > 52 || lng < -6 || lng > 10) return 'rgba(0,245,212,0.3)'
+              }
+            } catch {}
+          }
+          return '#00f5d4'
+        })
         .attr('stroke', 'rgba(0,0,0,0.4)').attr('stroke-width', 0.3)
       try {
         const [px, py] = proj([playerLng, playerLat]) as [number,number]
@@ -409,6 +453,23 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
           pseudo={pseudo} avatar={avatar} avatarPhoto={avatarPhoto}
           onClose={() => setShowShare(false)}
         />
+      )}
+
+      {/* Carte du monde plein écran */}
+      {showFullMap && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(2,5,15,0.98)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 10, color: 'rgba(0,245,212,0.6)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 2 }}>Carte du monde</div>
+              <div style={{ fontSize: 20, fontWeight: 'bold', color: '#00f5d4', fontFamily: 'monospace' }}>{countries.length} <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>/ 195 pays</span></div>
+            </div>
+            <button onClick={() => setShowFullMap(false)} style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          </div>
+          <div style={{ flex: 1, margin: '0 12px 12px', borderRadius: 12, overflow: 'hidden' }}>
+            <WorldMapMini countries={countries} playerLat={playerLat} playerLng={playerLng} fullscreen />
+          </div>
+          <div style={{ padding: '8px 20px 24px', fontSize: 9, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>* Les territoires d'outre-mer sont inclus dans leur pays métropolitain</div>
+        </div>
       )}
     </>
   )
