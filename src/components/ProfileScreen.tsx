@@ -44,7 +44,7 @@ const ISO2_TO_NUMERIC: Record<string, string> = {
 }
 
 // Mini carte monde intégrée dans le profil
-function WorldMapMini({ countries, playerLat, playerLng }: { countries: CountryDiscovery[], playerLat: number, playerLng: number }) {
+function WorldMapMini({ countries, playerLat, playerLng, onClick, fullscreen }: { countries: CountryDiscovery[], playerLat: number, playerLng: number, onClick?: () => void, fullscreen?: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -85,8 +85,8 @@ function WorldMapMini({ countries, playerLat, playerLng }: { countries: CountryD
   }, [countries, playerLat, playerLng])
 
   return (
-    <div>
-      <div ref={ref} style={{ width: '100%', borderRadius: 10, overflow: 'hidden', minHeight: 160 }} />
+    <div onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
+      <div ref={ref} style={{ width: '100%', borderRadius: 10, overflow: 'hidden', minHeight: fullscreen ? 300 : 160 }} />
       {countries.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
           {countries.map(c => (
@@ -107,6 +107,7 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
   const [avatarPhoto, setAvatarPhoto] = useState<string | undefined>(() => loadAvatarPhoto())
   const [editing, setEditing] = useState(false)
   const [tab, setTab] = useState<'profile' | 'territory' | 'stats'>('profile')
+  const [showFullMap, setShowFullMap] = useState(false)
   const [showAvatarEditor, setShowAvatarEditor] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null)
@@ -316,8 +317,12 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
             <>
               {/* Carte du monde */}
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 12 }}>PAYS DÉCOUVERTS — {countries.length}</div>
-                <WorldMapMini countries={countries} playerLat={playerLat} playerLng={playerLng} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase' }}>PAYS DÉCOUVERTS — {countries.length}</div>
+                  <button onClick={() => setShowFullMap(true)} style={{ fontSize: 10, color: '#00f5d4', background: 'rgba(0,245,212,0.08)', border: '1px solid rgba(0,245,212,0.2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'monospace' }}>⛶ Agrandir</button>
+                </div>
+                <WorldMapMini countries={countries} playerLat={playerLat} playerLng={playerLng} onClick={() => setShowFullMap(true)} />
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.25)', marginTop: 6, fontStyle: 'italic' }}>* Inclut les territoires d'outre-mer</div>
               </div>
               <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 16 }}>{t.exploration}</div>
               {[
