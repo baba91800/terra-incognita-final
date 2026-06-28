@@ -305,6 +305,17 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   useEffect(() => {
     if (!mapRef.current) return
     import('leaflet').then(({default:L}) => {
+      // Nettoyer les marqueurs qui ne sont plus dans la liste
+      // MAIS préserver les monuments découverts même s'ils ne sont plus dans la liste chargée
+      const currentIds = new Set(monuments.map(m => m.id))
+      markersRef.current.forEach((mk, id) => {
+        const isDiscovered = (mk as any)._isDiscovered
+        if (!currentIds.has(id) && !isDiscovered) {
+          mk.remove()
+          markersRef.current.delete(id)
+        }
+      })
+
       monuments.forEach(m => {
         const color=RARITY_COLORS[m.rarity]
         const ex=markersRef.current.get(m.id)
@@ -345,6 +356,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
               })()
           if (m.discovered) {
             mk.on('click', () => mk.openPopup())
+            ;(mk as any)._isDiscovered = true
           }
           mk.bindPopup(`<div style="background:rgba(5,12,24,0.97);border:1px solid ${color}70;color:#fff;padding:12px 16px;border-radius:10px;min-width:140px;font-family:monospace;">
             <div style="font-size:22px;text-align:center;margin-bottom:6px">${m.icon||'📍'}</div>
