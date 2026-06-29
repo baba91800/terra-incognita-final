@@ -34,6 +34,7 @@ export function useGameEngine() {
   const scoreR=useRef(0); const xpR=useRef(0); const levelR=useRef(1)
   const latR=useRef(48.8566); const lngR=useRef(2.3522)
   const monR=useRef<Monument[]>([]); const countriesR=useRef<CountryDiscovery[]>([])
+  const discoveredMonIds=useRef<Set<string>>(new Set(JSON.parse(localStorage.getItem('ti2_discovered_ids')||'[]')))
   const badgesR=useRef<Badge[]>([]); const objR=useRef<DailyObjective[]>([])
   const logR=useRef<DiscoveryLog[]>([]); const pathR=useRef<ExplorationPath[]>([])
   const distR=useRef(0); const gpsId=useRef<number|null>(null)
@@ -247,6 +248,9 @@ export function useGameEngine() {
         notify({type:'monument',title:m.name,subtitle:m.type,points:pts,rarity:m.rarity,icon:m.icon})
         hapticFeedback(m.rarity==='legendary'||m.rarity==='epic'?'monument':'tile')
         addLog({type:'monument',title:m.name,subtitle:m.type,icon:m.icon||'📍',points:pts,rarity:m.rarity})
+        const newId = m.id
+        discoveredMonIds.current.add(newId)
+        try { localStorage.setItem('ti2_discovered_ids', JSON.stringify([...discoveredMonIds.current])) } catch {}
         return {...m,discovered:true,discoveredAt:new Date().toISOString()}
       }
       return m
@@ -295,7 +299,12 @@ export function useGameEngine() {
     if(newMs.length>0){
       // Préserver les monuments déjà découverts même en nouvelle zone
       const discoveredMap = new Map(monR.current.filter(m=>m.discovered).map(m=>[m.id,m]))
-      const withDiscovered = newMs.map(m => discoveredMap.has(m.id) ? discoveredMap.get(m.id)! : m)
+      const withDiscovered = newMs.map(m => {
+        if (discoveredMap.has(m.id)) return discoveredMap.get(m.id)!
+        // Restaurer depuis le Set persistant si pas dans monR.current
+        if (discoveredMonIds.current.has(m.id)) return {...m, discovered:true}
+        return m
+      })
       const merged = isNewZone ? withDiscovered : [...monR.current,...withDiscovered]
       monR.current=merged; setMonuments([...merged]); saveMonuments(merged)
     }
