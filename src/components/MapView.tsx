@@ -90,6 +90,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const prevMonuments = useRef<Set<string>>(new Set())
   const lastCityKey = useRef('')
   const [showRecenter, setShowRecenter] = useState(false)
+  const [selectedMonument, setSelectedMonument] = useState<Monument|null>(null)
   const [currentHeading, setCurrentHeading] = useState<number|null>(null)
   const mapMovedRef = useRef(false)
   const monumentsRef = useRef<Monument[]>([])
@@ -183,6 +184,36 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       } catch {}
     }
 
+    // Monuments découverts — dessinés sur le canvas (persistants)
+    monuments.filter(m => m.discovered).forEach(m => {
+      try {
+        const pt = map.latLngToContainerPoint([m.lat, m.lng])
+        const color = RARITY_COLORS[m.rarity]
+        const size = m.rarity === 'legendary' ? 20 : m.rarity === 'epic' ? 17 : m.rarity === 'rare' ? 15 : 13
+
+        // Cercle fond
+        ctx.save()
+        ctx.beginPath()
+        ctx.arc(pt.x, pt.y, size, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(5,12,24,0.92)'
+        ctx.fill()
+        ctx.strokeStyle = color
+        ctx.lineWidth = 2
+        ctx.shadowColor = color
+        ctx.shadowBlur = 8
+        ctx.stroke()
+        ctx.restore()
+
+        // Emoji
+        ctx.save()
+        ctx.font = `${size}px serif`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(m.icon || '📍', pt.x, pt.y)
+        ctx.restore()
+      } catch {}
+    })
+
     // Contour ville PAR-DESSUS le fog
     if (cityPolygonPoints.current.length > 2) {
       try {
@@ -242,14 +273,19 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       map.on('dragstart',()=>{ mapMovedRef.current=true; setShowRecenter(true) })
       map.on('zoom', () => { if (map.getZoom() <= 3 && onZoomMin) onZoomMin() })
       map.on('click',(e:any) => {
-        if (!onMonumentClick) return
         let nearest:Monument|null=null, nearestDist=Infinity
+        // Chercher monument découvert ou non
         monumentsRef.current.forEach(m => {
-          if (m.discovered) return
           const d=Math.sqrt(Math.pow(e.latlng.lat-m.lat,2)+Math.pow(e.latlng.lng-m.lng,2))
           if (d<nearestDist&&d<0.003){nearest=m;nearestDist=d}
         })
-        if (nearest) onMonumentClick(nearest)
+        if (nearest) {
+          if (nearest.discovered) {
+            setSelectedMonument(nearest)
+          } else if (onMonumentClick) {
+            onMonumentClick(nearest)
+          }
+        }
       })
       let pressTimer:ReturnType<typeof setTimeout>|null=null
       map.on('mousedown touchstart',(e:any)=>{
@@ -404,6 +440,23 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       <div ref={containerRef} className="w-full h-full" />
       <canvas ref={fogCanvas} className="absolute inset-0 pointer-events-none" style={{zIndex:500}} />
       <DiscoveryEffect effects={effects} />
+      {selectedMonument && (
+        <div style={{
+          position:'absolute', bottom:120, left:'50%', transform:'translateX(-50%)',
+          zIndex:600, background:'rgba(5,12,24,0.97)',
+          border:`1px solid ${RARITY_COLORS[selectedMonument.rarity]}50`,
+          borderRadius:16, padding:'16px 20px', minWidth:220,
+          boxShadow:'0 8px 32px rgba(0,0,0,0.6)',
+        }}>
+          <button onClick={()=>setSelectedMonument(null)} style={{position:'absolute',top:8,right:8,background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:16}}>✕</button>
+          <div style={{textAlign:'center',fontSize:32,marginBottom:8}}>{selectedMonument.icon||'📍'}</div>
+          <div style={{fontSize:9,color:RARITY_COLORS[selectedMonument.rarity],letterSpacing:'0.15em',textTransform:'uppercase',textAlign:'center',marginBottom:4}}>{selectedMonument.rarity}</div>
+          <div style={{fontSize:14,fontWeight:'bold',color:'#fff',textAlign:'center',marginBottom:4}}>{selectedMonument.name}</div>
+          <div style={{fontSize:10,color:'rgba(255,255,255,0.4)',textAlign:'center'}}>{selectedMonument.type}</div>
+          {selectedMonument.discoveredAt && <div style={{fontSize:9,color:'rgba(255,255,255,0.25)',textAlign:'center',marginTop:8}}>Découvert le {new Date(selectedMonument.discoveredAt).toLocaleDateString()}</div>}
+        </div>
+      )}
+
       {showRecenter && (
         <button onClick={recenter} style={{
           position:'absolute',bottom:200,right:12,zIndex:600,
