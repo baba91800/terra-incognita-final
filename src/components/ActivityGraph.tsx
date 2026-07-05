@@ -27,23 +27,29 @@ export default function ActivityGraph({ log, path, t }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
 
   const { kmByDate, xpByDate, monByDate, m2ByDate, maxKm, totalActiveDays, streak } = useMemo(() => {
-    const kmByDate: Record<string, number> = {}
     const xpByDate: Record<string, number> = {}
     const monByDate: Record<string, number> = {}
     const m2ByDate: Record<string, number> = {}
-
-    for (let i = 1; i < path.length; i++) {
-      const prev = path[i-1], cur = path[i]
-      const d = distBetween(prev.lat, prev.lng, cur.lat, cur.lng)
-      const key = new Date(cur.timestamp).toISOString().slice(0, 10)
-      kmByDate[key] = (kmByDate[key] || 0) + d / 1000
-    }
 
     log.forEach(e => {
       const key = new Date(e.timestamp).toISOString().slice(0, 10)
       if (e.points) xpByDate[key] = (xpByDate[key] || 0) + e.points
       if (e.type === 'monument') monByDate[key] = (monByDate[key] || 0) + 1
       if (e.type === 'tile') m2ByDate[key] = (m2ByDate[key] || 0) + 100
+    })
+
+    // Distance basée sur path si disponible
+    const kmByDate: Record<string, number> = {}
+    for (let i = 1; i < path.length; i++) {
+      const prev = path[i-1], cur = path[i]
+      const d = distBetween(prev.lat, prev.lng, cur.lat, cur.lng)
+      if (d > 50) continue // ignorer les sauts GPS aberrants
+      const key = new Date(cur.timestamp).toISOString().slice(0, 10)
+      kmByDate[key] = (kmByDate[key] || 0) + d / 1000
+    }
+    // Si pas de distance calculée mais XP > 0, marquer comme jour actif avec 0.1 km minimum
+    Object.keys(xpByDate).forEach(key => {
+      if (!kmByDate[key]) kmByDate[key] = 0.1
     })
 
     const maxKm = Math.max(...Object.values(kmByDate), 0.1)
@@ -196,12 +202,6 @@ export default function ActivityGraph({ log, path, t }: Props) {
             <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 2, letterSpacing: '0.08em' }}>DISTANCE</div>
-              <div style={{ fontSize: 16, fontWeight: 'bold', color: '#00f5d4', fontFamily: 'monospace' }}>
-                {selData.km > 0 ? `${selData.km.toFixed(2)} km` : '—'}
-              </div>
-            </div>
             <div>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 2, letterSpacing: '0.08em' }}>XP GAGNÉ</div>
               <div style={{ fontSize: 16, fontWeight: 'bold', color: '#f59e0b', fontFamily: 'monospace' }}>
