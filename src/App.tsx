@@ -259,6 +259,9 @@ export default function App() {
           badges={engine.badges} monuments={engine.monuments} countries={engine.countries}
           log={engine.log} path={engine.path ?? []}
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
+          personalMarkers={personalMarkers}
+          onDeleteMarker={handleDeleteMarker}
+          onNavigateMarker={m => { setNavTarget(m as any); setShowProfile(false) }}
           territory={engine.territory}
           t={t}
         />

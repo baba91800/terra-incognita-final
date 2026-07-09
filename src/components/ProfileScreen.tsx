@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import type { Badge, Monument, CountryDiscovery } from '../types/game'
+import type { Badge, Monument, CountryDiscovery, PersonalMarker } from '../types/game'
 import { RARITY_COLORS } from '../lib/constants'
 import { computeExplorationPercent, computeDeptPercent, computeCountryPercent, computeCityPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
@@ -14,6 +14,9 @@ import BadgeProgress from './BadgeProgress'
 
 interface Props {
   onClose: () => void
+  personalMarkers?: PersonalMarker[]
+  onDeleteMarker?: (id: string) => void
+  onNavigateMarker?: (m: PersonalMarker) => void
   onReset: () => void
   score: number; xp: number; level: number; levelTitle: string
   totalTiles: number; totalDist: number
@@ -145,7 +148,7 @@ function WorldMapMini({ countries, playerLat, playerLng, onClick, fullscreen }: 
   )
 }
 
-export default function ProfileScreen({ onClose, onReset, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, log, path = [], territory, tiles, playerLat, playerLng, t }: Props) {
+export default function ProfileScreen({ onClose, onReset, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, log, path = [], territory, tiles, playerLat, playerLng, t, personalMarkers = [], onDeleteMarker, onNavigateMarker }: Props) {
   const [pseudo, setPseudo] = useState(() => localStorage.getItem(PSEUDO_KEY) || 'Explorer')
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '🧭')
   const [avatarPhoto, setAvatarPhoto] = useState<string | undefined>(() => loadAvatarPhoto())
