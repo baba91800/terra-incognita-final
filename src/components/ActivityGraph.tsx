@@ -208,12 +208,7 @@ export default function ActivityGraph({ log, path, t }: Props) {
                 {selData.xp > 0 ? `+${selData.xp.toLocaleString()}` : '—'}
               </div>
             </div>
-            <div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 2, letterSpacing: '0.08em' }}>ZONE EXPLORÉE</div>
-              <div style={{ fontSize: 16, fontWeight: 'bold', color: '#a78bfa', fontFamily: 'monospace' }}>
-                {selData.m2 > 0 ? `${(selData.m2).toLocaleString()} m²` : '—'}
-              </div>
-            </div>
+
             {selData.mon > 0 && (
               <div>
                 <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 2, letterSpacing: '0.08em' }}>MONUMENTS</div>
