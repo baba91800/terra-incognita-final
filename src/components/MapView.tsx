@@ -288,13 +288,25 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         }
       })
       let pressTimer:ReturnType<typeof setTimeout>|null=null
+      let pressStartX = 0, pressStartY = 0
       map.on('mousedown touchstart',(e:any)=>{
+        const touch = e.originalEvent?.touches?.[0] || e.originalEvent
+        pressStartX = touch?.clientX || 0
+        pressStartY = touch?.clientY || 0
         pressTimer=setTimeout(()=>{
           const latlng=e.latlng||map.mouseEventToLatLng(e.originalEvent)
           if (latlng&&onLongPress) onLongPress(latlng.lat,latlng.lng)
-        },600)
+        },700)
       })
-      map.on('mouseup touchend mousemove',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null}})
+      map.on('mouseup touchend',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null}})
+      map.on('mousemove touchmove',(e:any)=>{
+        if (!pressTimer) return
+        const touch = e.originalEvent?.touches?.[0] || e.originalEvent
+        const dx = (touch?.clientX || 0) - pressStartX
+        const dy = (touch?.clientY || 0) - pressStartY
+        // Annuler seulement si mouvement > 10px
+        if (Math.sqrt(dx*dx+dy*dy) > 10) { clearTimeout(pressTimer); pressTimer = null }
+      })
       mapRef.current=map; onMapReady(map)
     })
     return () => { if (mapRef.current){mapRef.current.remove();mapRef.current=null} }
