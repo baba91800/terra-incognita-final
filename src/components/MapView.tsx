@@ -93,6 +93,8 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   const [selectedMonument, setSelectedMonument] = useState<Monument|null>(null)
   const [currentHeading, setCurrentHeading] = useState<number|null>(null)
   const mapMovedRef = useRef(false)
+  const longPressTimer = useRef<any>(null)
+  const longPressStart = useRef<{x:number,y:number}|null>(null)
   const monumentsRef = useRef<Monument[]>([])
 
   useEffect(() => { monumentsRef.current = monuments }, [monuments])
@@ -287,26 +289,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
           }
         }
       })
-      let pressTimer:ReturnType<typeof setTimeout>|null=null
-      let pressStartX = 0, pressStartY = 0
-      map.on('mousedown touchstart',(e:any)=>{
-        const touch = e.originalEvent?.touches?.[0] || e.originalEvent
-        pressStartX = touch?.clientX || 0
-        pressStartY = touch?.clientY || 0
-        pressTimer=setTimeout(()=>{
-          const latlng=e.latlng||map.mouseEventToLatLng(e.originalEvent)
-          if (latlng&&onLongPress) onLongPress(latlng.lat,latlng.lng)
-        },700)
-      })
-      map.on('mouseup touchend',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null}})
-      map.on('mousemove touchmove',(e:any)=>{
-        if (!pressTimer) return
-        const touch = e.originalEvent?.touches?.[0] || e.originalEvent
-        const dx = (touch?.clientX || 0) - pressStartX
-        const dy = (touch?.clientY || 0) - pressStartY
-        // Annuler seulement si mouvement > 10px
-        if (Math.sqrt(dx*dx+dy*dy) > 10) { clearTimeout(pressTimer); pressTimer = null }
-      })
+      // Appui long géré via overlay div
       mapRef.current=map; onMapReady(map)
     })
     return () => { if (mapRef.current){mapRef.current.remove();mapRef.current=null} }
@@ -450,6 +433,38 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   return (
     <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
+      {/* Overlay pour appui long */}
+      <div
+        style={{ position:'absolute', inset:0, zIndex:499, pointerEvents: onLongPress ? 'auto' : 'none' }}
+        onTouchStart={e => {
+          const t = e.touches[0]
+          longPressStart.current = { x: t.clientX, y: t.clientY }
+          longPressTimer.current = setTimeout(() => {
+            if (!mapRef.current || !longPressStart.current) return
+            const map = mapRef.current
+            const rect = containerRef.current!.getBoundingClientRect()
+            const x = longPressStart.current.x - rect.left
+            const y = longPressStart.current.y - rect.top
+            const latlng = map.containerPointToLatLng([x, y])
+            if (onLongPress) onLongPress(latlng.lat, latlng.lng)
+          }, 600)
+        }}
+        onTouchMove={e => {
+          if (!longPressStart.current || !longPressTimer.current) return
+          const t = e.touches[0]
+          const dx = t.clientX - longPressStart.current.x
+          const dy = t.clientY - longPressStart.current.y
+          if (Math.sqrt(dx*dx+dy*dy) > 8) {
+            clearTimeout(longPressTimer.current)
+            longPressTimer.current = null
+          }
+        }}
+        onTouchEnd={() => {
+          clearTimeout(longPressTimer.current)
+          longPressTimer.current = null
+          longPressStart.current = null
+        }}
+      />
       <canvas ref={fogCanvas} className="absolute inset-0 pointer-events-none" style={{zIndex:500}} />
       <DiscoveryEffect effects={effects} />
       {selectedMonument && (
