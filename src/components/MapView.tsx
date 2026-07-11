@@ -290,6 +290,33 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         }
       })
       // Appui long géré via overlay div
+      // Appui long natif sur le container
+      const el = containerRef.current!
+      let lpTimer: any = null
+      let lpStart = { x: 0, y: 0 }
+      const onTouchStart = (e: TouchEvent) => {
+        const t = e.touches[0]
+        lpStart = { x: t.clientX, y: t.clientY }
+        lpTimer = setTimeout(() => {
+          const rect = el.getBoundingClientRect()
+          const x = lpStart.x - rect.left
+          const y = lpStart.y - rect.top
+          const latlng = map.containerPointToLatLng([x, y])
+          if (onLongPress) onLongPress(latlng.lat, latlng.lng)
+        }, 650)
+      }
+      const onTouchMove = (e: TouchEvent) => {
+        if (!lpTimer) return
+        const t = e.touches[0]
+        const dx = t.clientX - lpStart.x
+        const dy = t.clientY - lpStart.y
+        if (Math.sqrt(dx*dx+dy*dy) > 10) { clearTimeout(lpTimer); lpTimer = null }
+      }
+      const onTouchEnd = () => { clearTimeout(lpTimer); lpTimer = null }
+      el.addEventListener('touchstart', onTouchStart, { passive: true })
+      el.addEventListener('touchmove', onTouchMove, { passive: true })
+      el.addEventListener('touchend', onTouchEnd)
+
       mapRef.current=map; onMapReady(map)
     })
     return () => { if (mapRef.current){mapRef.current.remove();mapRef.current=null} }
@@ -433,38 +460,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
   return (
     <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
-      {/* Overlay pour appui long */}
-      <div
-        style={{ position:'absolute', inset:0, zIndex:499, pointerEvents: onLongPress ? 'auto' : 'none' }}
-        onTouchStart={e => {
-          const t = e.touches[0]
-          longPressStart.current = { x: t.clientX, y: t.clientY }
-          longPressTimer.current = setTimeout(() => {
-            if (!mapRef.current || !longPressStart.current) return
-            const map = mapRef.current
-            const rect = containerRef.current!.getBoundingClientRect()
-            const x = longPressStart.current.x - rect.left
-            const y = longPressStart.current.y - rect.top
-            const latlng = map.containerPointToLatLng([x, y])
-            if (onLongPress) onLongPress(latlng.lat, latlng.lng)
-          }, 600)
-        }}
-        onTouchMove={e => {
-          if (!longPressStart.current || !longPressTimer.current) return
-          const t = e.touches[0]
-          const dx = t.clientX - longPressStart.current.x
-          const dy = t.clientY - longPressStart.current.y
-          if (Math.sqrt(dx*dx+dy*dy) > 8) {
-            clearTimeout(longPressTimer.current)
-            longPressTimer.current = null
-          }
-        }}
-        onTouchEnd={() => {
-          clearTimeout(longPressTimer.current)
-          longPressTimer.current = null
-          longPressStart.current = null
-        }}
-      />
+
       <canvas ref={fogCanvas} className="absolute inset-0 pointer-events-none" style={{zIndex:500}} />
       <DiscoveryEffect effects={effects} />
       {selectedMonument && (
