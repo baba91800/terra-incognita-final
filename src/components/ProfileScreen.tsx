@@ -268,7 +268,50 @@ export default function ProfileScreen({ onClose, onReset, score, xp, level, leve
 
               {/* Graphique activité */}
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                <ActivityGraph log={log} path={path} t={t} />
+                {/* Mes lieux */}
+              {personalMarkers && personalMarkers.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 12 }}>MES LIEUX — {personalMarkers.length}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {personalMarkers.map(m => {
+                      const dist = Math.sqrt(Math.pow(m.lat - playerLat, 2) + Math.pow(m.lng - playerLng, 2)) * 111000
+                      const distLabel = dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`
+                      return (
+                        <div key={m.id} style={{
+                          background: 'rgba(255,255,255,0.03)', borderRadius: 12,
+                          border: '1px solid rgba(255,255,255,0.07)', padding: '12px 14px',
+                          display: 'flex', alignItems: 'center', gap: 12,
+                        }}>
+                          <span style={{ fontSize: 26, flexShrink: 0 }}>{m.icon}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 'bold', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+                            {m.note && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{m.note}</div>}
+                            <div style={{ fontSize: 10, color: 'rgba(0,245,212,0.6)', marginTop: 3, fontFamily: 'monospace' }}>📍 {distLabel}</div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                            {onNavigateMarker && (
+                              <button onClick={() => { onNavigateMarker(m); onClose() }} style={{
+                                padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                                background: 'rgba(0,245,212,0.1)', border: '1px solid rgba(0,245,212,0.3)',
+                                color: '#00f5d4', fontSize: 12, fontFamily: 'monospace', whiteSpace: 'nowrap',
+                              }}>🧭 Y aller</button>
+                            )}
+                            {onDeleteMarker && (
+                              <button onClick={() => onDeleteMarker(m.id)} style={{
+                                padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                                color: 'rgba(239,68,68,0.7)', fontSize: 12, fontFamily: 'monospace',
+                              }}>🗑️ Sup.</button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <ActivityGraph log={log} path={path} t={t} />
               </div>
 
               {/* Badges proches */}
