@@ -295,6 +295,8 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
       let lpTimer: any = null
       let lpStart = { x: 0, y: 0 }
       const onTouchStart = (e: TouchEvent) => {
+        // Annuler si plusieurs doigts (pinch-to-zoom)
+        if (e.touches.length > 1) { clearTimeout(lpTimer); lpTimer = null; return }
         const t = e.touches[0]
         lpStart = { x: t.clientX, y: t.clientY }
         lpTimer = setTimeout(() => {
@@ -313,7 +315,11 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         if (Math.sqrt(dx*dx+dy*dy) > 5) { clearTimeout(lpTimer); lpTimer = null }
       }
       const onTouchEnd = () => { clearTimeout(lpTimer); lpTimer = null }
+      const onTouchStart2 = (e: TouchEvent) => {
+        if (e.touches.length > 1) { clearTimeout(lpTimer); lpTimer = null }
+      }
       el.addEventListener('touchstart', onTouchStart, { passive: true })
+      el.addEventListener('touchstart', onTouchStart2, { passive: true })
       el.addEventListener('touchmove', onTouchMove, { passive: true })
       el.addEventListener('touchend', onTouchEnd)
 
