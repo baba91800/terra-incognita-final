@@ -76,7 +76,7 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
 }
 
 const CACHE_KEY = 'ti2_overpass_cache'
-const CACHE_VERSION = 9
+const CACHE_VERSION = 10
 
 interface CacheEntry { monuments: Monument[]; timestamp: number }
 
