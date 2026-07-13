@@ -182,7 +182,32 @@ export default function App() {
         navRoute={navRoute}
         onMapReady={m => { mapRef.current = m }}
         onMonumentClick={m => !m.discovered && setNavTarget(m)}
-        onLongPress={(lat, lng) => setMarkerEditor({ lat, lng })}
+        onLongPress={(lat, lng) => {
+          // Vérifier que la zone est déjà explorée
+          const MPL = 111320
+          const MPG = MPL * Math.cos(lat * Math.PI / 180)
+          const TILE_SIZE = 10
+          const tx = Math.floor(lng * MPG / TILE_SIZE)
+          const ty = Math.floor(lat * MPL / TILE_SIZE)
+          // Chercher une tuile dans un rayon de 2 tuiles
+          let found = false
+          for (let dx = -2; dx <= 2 && !found; dx++) {
+            for (let dy = -2; dy <= 2 && !found; dy++) {
+              if (engine.tiles.has(`${tx+dx}:${ty+dy}`)) found = true
+            }
+          }
+          if (!found) {
+            // Zone non explorée — afficher un message
+            // Toast discret
+            const toast = document.createElement('div')
+            toast.innerText = '🔒 Zone non explorée'
+            toast.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,0.9);color:#fff;padding:10px 20px;border-radius:20px;font-family:monospace;font-size:13px;z-index:9999;pointer-events:none'
+            document.body.appendChild(toast)
+            setTimeout(() => toast.remove(), 2000)
+            return
+          }
+          setMarkerEditor({ lat, lng })
+        }}
         onMarkerClick={m => setMarkerEditor({ lat: m.lat, lng: m.lng, existing: m })}
       />
 
