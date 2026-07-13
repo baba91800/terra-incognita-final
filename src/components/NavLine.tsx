@@ -122,7 +122,7 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 'bold', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {target.discovered ? target.name : '??? Lieu inconnu'}
+          {target.name || '??? Lieu inconnu'}
         </div>
         <div style={{ marginTop: 3 }}>
           {routeLoading

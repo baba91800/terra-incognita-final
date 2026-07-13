@@ -303,14 +303,14 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
           const y = lpStart.y - rect.top
           const latlng = map.containerPointToLatLng([x, y])
           if (onLongPress) onLongPress(latlng.lat, latlng.lng)
-        }, 650)
+        }, 900)
       }
       const onTouchMove = (e: TouchEvent) => {
         if (!lpTimer) return
         const t = e.touches[0]
         const dx = t.clientX - lpStart.x
         const dy = t.clientY - lpStart.y
-        if (Math.sqrt(dx*dx+dy*dy) > 10) { clearTimeout(lpTimer); lpTimer = null }
+        if (Math.sqrt(dx*dx+dy*dy) > 5) { clearTimeout(lpTimer); lpTimer = null }
       }
       const onTouchEnd = () => { clearTimeout(lpTimer); lpTimer = null }
       el.addEventListener('touchstart', onTouchStart, { passive: true })
