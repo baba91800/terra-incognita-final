@@ -10,7 +10,8 @@ export const CATEGORY_COLORS: Record<string, string> = {
   ruins: '#f59e0b', monument: '#f59e0b', memorial: '#f59e0b', megalith: '#f59e0b',
   tower: '#f59e0b', roman: '#f59e0b', statue: '#f59e0b', cemetery: '#f59e0b',
   museum: '#3b82f6', cathedral: '#3b82f6', theatre: '#3b82f6', library: '#3b82f6',
-  artwork: '#3b82f6', fountain: '#38bdf8', garden: '#3b82f6', worship: '#3b82f6',
+  artwork: '#3b82f6', fountain: '#38bdf8', garden: '#3b82f6', worship: '#9333ea',
+  church: '#9333ea', chapel: '#9333ea',
   lighthouse: '#f97316', windmill: '#f97316', watermill: '#f97316', mine: '#f97316',
   bunker: '#78716c', dovecote: '#a78bfa', lavoir: '#60a5fa', well: '#38bdf8',
   cross: '#e5e7eb', shrine: '#fbbf24', milestone: '#9ca3af', battlefield: '#ef4444',
@@ -20,12 +21,15 @@ export const CATEGORY_COLORS: Record<string, string> = {
 }
 
 function classify(tags: Record<string, string>): { rarity: Rarity; type: string; icon: string } | null {
+  // LEGENDARY
   if (tags.natural === 'volcano')           return { rarity: 'legendary', type: 'volcano',    icon: '🌋' }
   if (tags.natural === 'glacier')           return { rarity: 'legendary', type: 'glacier',    icon: '🧊' }
   if (tags.historic === 'palace')           return { rarity: 'legendary', type: 'palace',     icon: '🏯' }
   if (tags['heritage:operator'] === 'UNESCO') return { rarity: 'legendary', type: 'heritage', icon: '🏛️' }
   if (tags.natural === 'peak' && parseInt(tags.ele||'0') > 3000) return { rarity: 'legendary', type: 'peak', icon: '⛰️' }
   if (tags.man_made === 'lighthouse' && tags.tourism === 'attraction') return { rarity: 'legendary', type: 'lighthouse', icon: '🗼' }
+
+  // EPIC
   if (tags.natural === 'cave_entrance')     return { rarity: 'epic', type: 'cave',       icon: '🕳️' }
   if (tags.waterway === 'waterfall' || tags.natural === 'waterfall') return { rarity: 'epic', type: 'waterfall', icon: '💧' }
   if (tags.natural === 'hot_spring')        return { rarity: 'epic', type: 'hot_spring', icon: '♨️' }
@@ -42,6 +46,8 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
   if (tags.natural === 'cape')              return { rarity: 'epic', type: 'cape',       icon: '🏔️' }
   if (tags.military === 'bunker' || tags.military === 'pillbox') return { rarity: 'epic', type: 'bunker', icon: '🪖' }
   if (tags.historic === 'battlefield')      return { rarity: 'epic', type: 'battlefield', icon: '⚔️' }
+
+  // RARE
   if (tags.tourism === 'viewpoint')         return { rarity: 'rare', type: 'viewpoint',  icon: '👁️' }
   if (tags.tourism === 'museum')            return { rarity: 'rare', type: 'museum',     icon: '🏛️' }
   if (tags.historic === 'monument')         return { rarity: 'rare', type: 'monument',   icon: '🗿' }
@@ -62,6 +68,14 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
   if (tags.man_made === 'dovecote')         return { rarity: 'rare', type: 'dovecote',   icon: '🕊️' }
   if (tags.historic === 'roman_road')       return { rarity: 'rare', type: 'roman_road', icon: '🛣️' }
   if (tags.historic === 'trench')           return { rarity: 'rare', type: 'trench',     icon: '🪖' }
+  // Églises et chapelles
+  if (tags.amenity === 'place_of_worship' && tags.religion === 'christian' && tags.building === 'cathedral') return { rarity: 'epic', type: 'cathedral', icon: '⛪' }
+  if (tags.amenity === 'place_of_worship' && tags.religion === 'christian') return { rarity: 'rare', type: 'church', icon: '⛪' }
+  if (tags.building === 'church')           return { rarity: 'rare', type: 'church',     icon: '⛪' }
+  if (tags.building === 'cathedral')        return { rarity: 'epic', type: 'cathedral',  icon: '⛪' }
+  if (tags.building === 'chapel')           return { rarity: 'common', type: 'chapel',   icon: '⛪' }
+
+  // COMMON
   if (tags.tourism === 'artwork')           return { rarity: 'common', type: 'artwork',  icon: '🎨' }
   if (tags.amenity === 'fountain')          return { rarity: 'common', type: 'fountain', icon: '⛲' }
   if (tags.leisure === 'garden')            return { rarity: 'common', type: 'garden',   icon: '🌷' }
@@ -76,7 +90,7 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
 }
 
 const CACHE_KEY = 'ti2_overpass_cache'
-const CACHE_VERSION = 10
+const CACHE_VERSION = 11
 
 interface CacheEntry { monuments: Monument[]; timestamp: number }
 
@@ -115,6 +129,7 @@ const DEFAULT_NAMES: Record<string, string> = {
   roman_road: 'Voie romaine', memorial: 'Memorial', ruins: 'Ruines',
   castle: 'Chateau', fort: 'Fort', garden: 'Jardin', artwork: "Oeuvre d'art",
   monument: 'Monument', viewpoint: 'Point de vue', cemetery: 'Cimetiere',
+  church: 'Eglise', chapel: 'Chapelle', cathedral: 'Cathedrale',
 }
 
 function getMonumentName(tags: Record<string,string>, type: string): string {
@@ -142,7 +157,8 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
   nwr["natural"~"volcano|cave_entrance|hot_spring|waterfall|peak|glacier|spring|arch|cliff|cape|gorge|rock|tree"](around:${r},${lat},${lng});
   nwr["waterway"~"waterfall|spring"](around:${r},${lat},${lng});
   nwr["man_made"~"lighthouse|windmill|watermill|water_well|dovecote|obelisk"](around:${r},${lat},${lng});
-  nwr["amenity"~"fountain|lavoir|cathedral"](around:${r},${lat},${lng});
+  nwr["amenity"~"fountain|lavoir|cathedral|place_of_worship"](around:${r},${lat},${lng});
+  nwr["building"~"church|cathedral|chapel"]["name"](around:${r},${lat},${lng});
   nwr["leisure"="garden"](around:${r},${lat},${lng});
   nwr["military"~"bunker|pillbox"](around:${r},${lat},${lng});
 );
