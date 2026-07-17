@@ -90,7 +90,7 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
 }
 
 const CACHE_KEY = 'ti2_overpass_cache'
-const CACHE_VERSION = 11
+const CACHE_VERSION = 12
 
 interface CacheEntry { monuments: Monument[]; timestamp: number }
 
@@ -116,7 +116,6 @@ function saveCache(cache: Record<string, CacheEntry>) {
   } catch {}
 }
 
-const memCache = new Set<string>()
 function zoneKey(lat: number, lng: number) {
   return `${Math.floor(lat / 0.03)},${Math.floor(lng / 0.03)}`
 }
@@ -139,9 +138,6 @@ function getMonumentName(tags: Record<string,string>, type: string): string {
 
 export async function fetchMonuments(lat: number, lng: number, existingIds: Set<string>): Promise<Monument[]> {
   const key = zoneKey(lat, lng)
-  if (memCache.has(key)) return []
-  memCache.add(key)
-
   const cache = loadCache()
   const cached = cache[key]
   const ONE_WEEK = 7 * 24 * 60 * 60 * 1000
@@ -165,15 +161,16 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
 out center 100;`
 
   const endpoints = [
-    'https://overpass-api.de/api/interpreter',
     'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass-api.de/api/interpreter',
     'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+    'https://overpass.private.coffee/api/interpreter',
   ]
 
   for (const endpoint of endpoints) {
     try {
       const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 25000)
+      const timer = setTimeout(() => controller.abort(), 15000)
       const res = await fetch(endpoint, {
         method: 'POST', body: q,
         headers: { 'Content-Type': 'text/plain' },
@@ -182,7 +179,7 @@ out center 100;`
       clearTimeout(timer)
       if (!res.ok) continue
       const data = await res.json()
-      if (!data.elements?.length) continue
+      if (!data.elements?.length) { console.warn(`Overpass: 0 éléments depuis ${endpoint}`); continue }
 
       console.log(`Overpass OK [${endpoint}]: ${data.elements.length} elements`)
 
