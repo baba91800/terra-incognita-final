@@ -297,16 +297,22 @@ export function useGameEngine() {
     if (isNewZone) console.log('Nouvelle zone détectée — rechargement monuments')
     const newMs=await fetchMonuments(lat,lng,existingIds)
     if(newMs.length>0){
-      // Préserver les monuments déjà découverts même en nouvelle zone
+      // Préserver les monuments déjà découverts
       const discoveredMap = new Map(monR.current.filter(m=>m.discovered).map(m=>[m.id,m]))
       const withDiscovered = newMs.map(m => {
         if (discoveredMap.has(m.id)) return discoveredMap.get(m.id)!
-        // Restaurer depuis le Set persistant si pas dans monR.current
         if (discoveredMonIds.current.has(m.id)) return {...m, discovered:true}
         return m
       })
-      const merged = isNewZone ? withDiscovered : [...monR.current,...withDiscovered]
+      // Toujours garder les monuments découverts même en nouvelle zone
+      const discoveredOnly = monR.current.filter(m=>m.discovered)
+      const merged = isNewZone
+        ? [...withDiscovered, ...discoveredOnly.filter(d=>!withDiscovered.find(w=>w.id===d.id))]
+        : [...monR.current,...withDiscovered]
       monR.current=merged; setMonuments([...merged]); saveMonuments(merged)
+    } else if(newMs.length===0) {
+      // Overpass a échoué — réinitialiser pour réessayer au prochain mouvement
+      lastFetchKey.current=''
     }
   },[])
 
