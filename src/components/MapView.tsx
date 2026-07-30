@@ -478,10 +478,10 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
           boxShadow:'0 8px 32px rgba(0,0,0,0.6)',
         }}>
           <button onClick={()=>setSelectedMonument(null)} style={{position:'absolute',top:8,right:8,background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:16}}>✕</button>
-          <div style={{textAlign:'center',fontSize:32,marginBottom:8}}>{selectedMonument.icon||'📍'}</div>
+          <div style={{textAlign:'center',fontSize:32,marginBottom:8}}>{selectedMonument.discovered ? (selectedMonument.icon||'📍') : '❓'}</div>
           <div style={{fontSize:9,color:RARITY_COLORS[selectedMonument.rarity],letterSpacing:'0.15em',textTransform:'uppercase',textAlign:'center',marginBottom:4}}>{selectedMonument.rarity}</div>
-          <div style={{fontSize:14,fontWeight:'bold',color:'#fff',textAlign:'center',marginBottom:4}}>{selectedMonument.name}</div>
-          <div style={{fontSize:10,color:'rgba(255,255,255,0.4)',textAlign:'center'}}>{selectedMonument.type}</div>
+          <div style={{fontSize:14,fontWeight:'bold',color:'#fff',textAlign:'center',marginBottom:4}}>{selectedMonument.discovered ? selectedMonument.name : '??? Lieu mystérieux'}</div>
+          <div style={{fontSize:10,color:'rgba(255,255,255,0.4)',textAlign:'center'}}>{selectedMonument.discovered ? selectedMonument.type : '— Approchez pour découvrir —'}</div>
           {selectedMonument.discoveredAt && <div style={{fontSize:9,color:'rgba(255,255,255,0.25)',textAlign:'center',marginTop:8}}>Découvert le {new Date(selectedMonument.discoveredAt).toLocaleDateString()}</div>}
         </div>
       )}
