@@ -115,14 +115,15 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
       borderRadius: 16, padding: '12px 20px',
       display: 'flex', alignItems: 'center', gap: 16,
       boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-      minWidth: 260,
+      minWidth: 0,
+      maxWidth: 'calc(100vw - 100px)',
     }}>
       <div style={{ width: 44, height: 44, borderRadius: '50%', flexShrink: 0, background: 'rgba(0,245,212,0.1)', border: '1px solid rgba(0,245,212,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
-        {target.icon || '📍'}
+        {target.discovered ? (target.icon || '📍') : '❓'}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 'bold', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {target.name || '??? Lieu inconnu'}
+          {target.discovered ? (target.name || '???') : '??? Lieu mystérieux'}
         </div>
         <div style={{ marginTop: 3 }}>
           {routeLoading
