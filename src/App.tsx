@@ -164,12 +164,20 @@ export default function App() {
       {showProfile && (
         <ProfileScreen
           onClose={() => setShowProfile(false)}
+          onReset={handleReset}
           score={engine.score} xp={engine.xp} level={engine.level} levelTitle={engine.levelTitle}
           totalTiles={engine.totalTiles} totalDist={engine.totalDist}
           badges={engine.badges} monuments={engine.monuments} countries={engine.countries}
+          log={engine.log} path={engine.path ?? []}
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
           territory={engine.territory}
           t={t}
+          onLocateMonument={m => {
+            if (mapRef.current) {
+              mapRef.current.setView([m.lat, m.lng], 17, {animate:true})
+              setShowProfile(false)
+            }
+          }}
         />
       )}
 
