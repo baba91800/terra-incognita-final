@@ -111,13 +111,11 @@ export default function MonumentStats({ monuments, onLocate }: Props) {
             Découvert le {new Date(selectedMonument.discoveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
         )}
-        {onLocate && (
-          <button onClick={() => { onLocate(selectedMonument); setSelectedMonument(null) }} style={{
+        <button onClick={() => { onLocate?.(selectedMonument); setSelectedMonument(null) }} style={{
             width: '100%', padding: '12px', borderRadius: 10, cursor: 'pointer',
             background: 'rgba(0,245,212,0.1)', border: '1px solid rgba(0,245,212,0.3)',
             color: '#00f5d4', fontSize: 13, fontFamily: 'monospace', fontWeight: 'bold',
           }}>📍 Voir sur la carte</button>
-        )}
       </div>
     )
   }
