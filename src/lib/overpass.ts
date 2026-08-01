@@ -84,13 +84,19 @@ function classify(tags: Record<string, string>): { rarity: Rarity; type: string;
   if (tags.historic === 'wayside_shrine')   return { rarity: 'common', type: 'shrine',   icon: '⛩️' }
   if (tags.historic === 'lavoir' || tags.amenity === 'lavoir') return { rarity: 'common', type: 'lavoir', icon: '🪣' }
   if (tags.historic === 'boundary_stone' || tags.historic === 'milestone') return { rarity: 'common', type: 'milestone', icon: '🪨' }
+  // Monuments Historiques classés France
+  if (tags['heritage:operator'] === 'Ministère de la Culture' || tags.protection_title === 'Classé MH' || tags.protection_title === 'Classé monument historique') return { rarity: 'epic', type: 'heritage', icon: '🏛️' }
+  if (tags.protection_title === 'Inscrit MH' || tags.protection_title === 'Inscrit monument historique') return { rarity: 'rare', type: 'heritage', icon: '🏛️' }
+  if (tags.heritage === '1') return { rarity: 'legendary', type: 'heritage', icon: '🏛️' }
+  if (tags.heritage === '2') return { rarity: 'epic', type: 'heritage', icon: '🏛️' }
+  if (tags.heritage === '3' || tags.heritage === '4') return { rarity: 'rare', type: 'heritage', icon: '🏛️' }
   if (tags.historic && tags.name)           return { rarity: 'rare',   type: 'monument', icon: '🏛️' }
   if (tags.natural === 'tree')              return { rarity: 'common', type: 'tree',     icon: '🌳' }
   return null
 }
 
 const CACHE_KEY = 'ti2_overpass_cache'
-const CACHE_VERSION = 13
+const CACHE_VERSION = 12
 
 interface CacheEntry { monuments: Monument[]; timestamp: number }
 
@@ -150,14 +156,15 @@ export async function fetchMonuments(lat: number, lng: number, existingIds: Set<
 (
   nwr["tourism"~"attraction|viewpoint|museum|artwork"]["name"](around:${r},${lat},${lng});
   nwr["historic"](around:${r},${lat},${lng});
-  nwr["natural"~"volcano|cave_entrance|hot_spring|waterfall|peak|glacier|spring|arch|cliff|cape|gorge|rock"](around:${r},${lat},${lng});
-  nwr["natural"="tree"]["landmark"="yes"](around:${r},${lat},${lng});
-  nwr["natural"="tree"]["heritage"](around:${r},${lat},${lng});
+  nwr["heritage"](around:${r},${lat},${lng});
+  nwr["heritage:operator"](around:${r},${lat},${lng});
+  nwr["protection_title"](around:${r},${lat},${lng});
+  nwr["natural"~"volcano|cave_entrance|hot_spring|waterfall|peak|glacier|spring|arch|cliff|cape|gorge|rock|tree"](around:${r},${lat},${lng});
   nwr["waterway"~"waterfall|spring"](around:${r},${lat},${lng});
   nwr["man_made"~"lighthouse|windmill|watermill|water_well|dovecote|obelisk"](around:${r},${lat},${lng});
   nwr["amenity"~"fountain|lavoir|cathedral|place_of_worship"](around:${r},${lat},${lng});
   nwr["building"~"church|cathedral|chapel"]["name"](around:${r},${lat},${lng});
-  nwr["leisure"="garden"]["tourism"](around:${r},${lat},${lng});
+  nwr["leisure"="garden"](around:${r},${lat},${lng});
   nwr["military"~"bunker|pillbox"](around:${r},${lat},${lng});
 );
 out center 100;`
@@ -205,7 +212,7 @@ out center 100;`
       const rarityOrder = { legendary: 0, epic: 1, rare: 2, common: 3 }
       const limited = results
         .sort((a, b) => rarityOrder[a.rarity] - rarityOrder[b.rarity])
-        .slice(0, 80)
+        .slice(0, 50)
 
       cache[key] = { monuments: limited, timestamp: Date.now() }
       saveCache(cache)
