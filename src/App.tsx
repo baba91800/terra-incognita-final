@@ -28,6 +28,7 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false)
   const [personalMarkers, setPersonalMarkers] = useState<PersonalMarker[]>(() => loadMarkers())
   const [markerEditor, setMarkerEditor] = useState<{ lat: number; lng: number; existing?: PersonalMarker } | null>(null)
+  const [navRoute, setNavRoute] = useState<[number,number][]>([])
   const t = useT(lang)
 
   useEffect(() => {
@@ -93,6 +94,7 @@ export default function App() {
         personalMarkers={personalMarkers}
         heading={heading}
         onMapReady={m => { mapRef.current = m }}
+        navRoute={navRoute}
         onMonumentClick={m => !m.discovered && setNavTarget(m)}
         onLongPress={(lat, lng) => setMarkerEditor({ lat, lng })}
         onMarkerClick={m => setMarkerEditor({ lat: m.lat, lng: m.lng, existing: m })}
@@ -102,7 +104,8 @@ export default function App() {
       <NavLine
         mapRef={mapRef as any} target={navTarget}
         playerLat={engine.playerLat} playerLng={engine.playerLng}
-        onCancel={() => setNavTarget(null)}
+        onRouteUpdate={setNavRoute}
+        onCancel={() => { setNavTarget(null); setNavRoute([]) }}
         onArrived={handleArrived} t={t}
       />
 
@@ -164,20 +167,13 @@ export default function App() {
       {showProfile && (
         <ProfileScreen
           onClose={() => setShowProfile(false)}
-          onReset={handleReset}
           score={engine.score} xp={engine.xp} level={engine.level} levelTitle={engine.levelTitle}
           totalTiles={engine.totalTiles} totalDist={engine.totalDist}
           badges={engine.badges} monuments={engine.monuments} countries={engine.countries}
-          log={engine.log} path={engine.path ?? []}
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
           territory={engine.territory}
           t={t}
-          onLocateMonument={m => {
-            if (mapRef.current) {
-              mapRef.current.setView([m.lat, m.lng], 17, {animate:true})
-              setShowProfile(false)
-            }
-          }}
+          onLocateMonument={m => { if(mapRef.current) { mapRef.current.setView([m.lat, m.lng], 17, {animate:true}); setShowProfile(false) } }}
         />
       )}
 
