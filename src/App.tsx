@@ -10,9 +10,13 @@ import Compass from './components/Compass'
 import ProximityAlert from './components/ProximityAlert'
 import ProfileScreen from './components/ProfileScreen'
 import MarkerEditor from './components/MarkerEditor'
-import TerritoryBar from './components/TerritoryBar'
+import MonumentDiscovery from './components/MonumentDiscovery'
+import GlobeView from './components/GlobeView'
+import WorldMap from './components/WorldMap'
+import CityProgress from './components/CityProgress'
 import { clearAll, loadMarkers, saveMarkers } from './lib/storage'
 import { loadLang, saveLang, useT, type Lang } from './lib/i18n'
+import { scheduleStreakReminder, hasNotificationPermission } from './lib/notifications'
 import type { Monument, PersonalMarker } from './types/game'
 
 const ONBOARD_KEY = 'ti2_onboarded'
@@ -24,17 +28,101 @@ export default function App() {
   const [showOnboard, setShowOnboard] = useState(false)
   const [lang, setLang] = useState<Lang>('fr')
   const [navTarget, setNavTarget] = useState<Monument | null>(null)
+  const [showGlobe, setShowGlobe] = useState(false)
+  const [showWorldMap, setShowWorldMap] = useState(false)
   const [showArrivedMsg, setShowArrivedMsg] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [personalMarkers, setPersonalMarkers] = useState<PersonalMarker[]>(() => loadMarkers())
   const [markerEditor, setMarkerEditor] = useState<{ lat: number; lng: number; existing?: PersonalMarker } | null>(null)
+<<<<<<< HEAD
+=======
+  const [discoveredMonument, setDiscoveredMonument] = useState<{ monument: any; points: number } | null>(null)
+>>>>>>> parent of fc1546f (update)
   const [navRoute, setNavRoute] = useState<[number,number][]>([])
   const t = useT(lang)
+  const SHOWN_KEY = 'ti2_shown_discoveries'
+  const prevDiscovered = useRef<Set<string>>(new Set(
+    JSON.parse(localStorage.getItem('ti2_shown_discoveries') || '[]')
+  ))
 
   useEffect(() => {
     if (!localStorage.getItem(ONBOARD_KEY)) setShowOnboard(true)
     else setLang(loadLang())
+    if (hasNotificationPermission()) scheduleStreakReminder()
+
+    // ── Wake Lock — empêche l'écran de s'éteindre ──
+    let wakeLock: any = null
+    let wakeLockTimer: any = null
+    let wakeLockActive = false
+
+    const requestWakeLock = async () => {
+      if (wakeLockActive) return
+      try {
+        if (!('wakeLock' in navigator)) return
+        wakeLockActive = true
+        wakeLock = await (navigator as any).wakeLock.request('screen')
+        wakeLock.addEventListener('release', () => {
+          wakeLockActive = false
+          // Ré-acquérir immédiatement si la page est visible
+          if (document.visibilityState === 'visible') {
+            setTimeout(requestWakeLock, 1000)
+          }
+        })
+      } catch {
+        wakeLockActive = false
+      }
+    }
+
+    // Acquérir au démarrage
+    requestWakeLock()
+    // Renouveler toutes les 15s pour éviter expiration
+    wakeLockTimer = setInterval(() => {
+      if (document.visibilityState === 'visible' && !wakeLockActive) {
+        requestWakeLock()
+      }
+    }, 15000)
+
+    // Fix écran noir au retour
+    const handleVisibility = async () => {
+      if (document.visibilityState === 'visible') {
+        await requestWakeLock()
+        setLang(loadLang())
+        window.dispatchEvent(new Event('resize'))
+        const hiddenSince = parseInt(sessionStorage.getItem('ti2_hidden_at') || '0')
+        if (Date.now() - hiddenSince > 30000) window.location.reload()
+      } else {
+        sessionStorage.setItem('ti2_hidden_at', Date.now().toString())
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      clearInterval(wakeLockTimer)
+      if (wakeLock) { try { wakeLock.release() } catch {} }
+    }
   }, [])
+
+  // Détecter les nouvelles découvertes de monuments
+  useEffect(() => {
+    const newlyDiscovered = engine.monuments.filter(m =>
+      m.discovered && !prevDiscovered.current.has(m.id)
+    )
+    if (newlyDiscovered.length > 0) {
+      const m = newlyDiscovered[0]
+      prevDiscovered.current.add(m.id)
+      try {
+        const shown = JSON.parse(localStorage.getItem('ti2_shown_discoveries') || '[]')
+        shown.push(m.id)
+        localStorage.setItem('ti2_shown_discoveries', JSON.stringify(shown))
+      } catch {}
+      const pts = m.rarity === 'legendary' ? 1000 : m.rarity === 'epic' ? 300 : m.rarity === 'rare' ? 150 : 50
+      setTimeout(() => setDiscoveredMonument({ monument: m, points: pts }), 500)
+    }
+    engine.monuments.forEach(m => {
+      if (m.discovered) prevDiscovered.current.add(m.id)
+    })
+  }, [engine.monuments])
 
   const finishOnboard = (selectedLang: Lang) => {
     localStorage.setItem(ONBOARD_KEY, '1')
@@ -52,6 +140,7 @@ export default function App() {
 
   const handleArrived = () => {
     setNavTarget(null)
+    setNavRoute([])
     setShowArrivedMsg(true)
     setTimeout(() => setShowArrivedMsg(false), 3000)
   }
@@ -92,11 +181,37 @@ export default function App() {
         playerLat={engine.playerLat} playerLng={engine.playerLng}
         tiles={engine.tiles} monuments={engine.monuments}
         personalMarkers={personalMarkers}
-        heading={heading}
+        heading={engine.gpsHeading}
+        navRoute={navRoute}
         onMapReady={m => { mapRef.current = m }}
         navRoute={navRoute}
         onMonumentClick={m => !m.discovered && setNavTarget(m)}
-        onLongPress={(lat, lng) => setMarkerEditor({ lat, lng })}
+        onLongPress={(lat, lng) => {
+          // Vérifier que la zone est déjà explorée
+          const MPL = 111320
+          const MPG = MPL * Math.cos(lat * Math.PI / 180)
+          const TILE_SIZE = 10
+          const tx = Math.floor(lng * MPG / TILE_SIZE)
+          const ty = Math.floor(lat * MPL / TILE_SIZE)
+          // Chercher une tuile dans un rayon de 2 tuiles
+          let found = false
+          for (let dx = -2; dx <= 2 && !found; dx++) {
+            for (let dy = -2; dy <= 2 && !found; dy++) {
+              if (engine.tiles.has(`${tx+dx}:${ty+dy}`)) found = true
+            }
+          }
+          if (!found) {
+            // Zone non explorée — afficher un message
+            // Toast discret
+            const toast = document.createElement('div')
+            toast.innerText = '🔒 Zone non explorée'
+            toast.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,0.9);color:#fff;padding:10px 20px;border-radius:20px;font-family:monospace;font-size:13px;z-index:9999;pointer-events:none'
+            document.body.appendChild(toast)
+            setTimeout(() => toast.remove(), 2000)
+            return
+          }
+          setMarkerEditor({ lat, lng })
+        }}
         onMarkerClick={m => setMarkerEditor({ lat: m.lat, lng: m.lng, existing: m })}
       />
 
@@ -104,8 +219,13 @@ export default function App() {
       <NavLine
         mapRef={mapRef as any} target={navTarget}
         playerLat={engine.playerLat} playerLng={engine.playerLng}
+<<<<<<< HEAD
         onRouteUpdate={setNavRoute}
         onCancel={() => { setNavTarget(null); setNavRoute([]) }}
+=======
+        onCancel={() => { setNavTarget(null); setNavRoute([]) }}
+        onRouteUpdate={setNavRoute}
+>>>>>>> parent of fc1546f (update)
         onArrived={handleArrived} t={t}
       />
 
@@ -120,7 +240,7 @@ export default function App() {
         gpsActive={engine.gpsActive} onStartGPS={engine.startGPS} onStopGPS={engine.stopGPS}
         onOpenProfile={() => setShowProfile(true)}
         lang={lang} onChangeLang={l => { setLang(l); saveLang(l) }}
-        t={t} onOpenProfile={() => setShowProfile(true)}
+        t={t}
       />
 
       {/* Toasts */}
@@ -128,8 +248,8 @@ export default function App() {
 
       {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
-      <Compass heading={heading} />
-      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} />
+      <Compass heading={engine.gpsHeading} />
+      <CityProgress territory={engine.territory} totalTiles={engine.totalTiles} />
 
       {/* Proximity alert */}
       <ProximityAlert
@@ -173,6 +293,9 @@ export default function App() {
           badges={engine.badges} monuments={engine.monuments} countries={engine.countries}
           log={engine.log} path={engine.path ?? []}
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
+          personalMarkers={personalMarkers}
+          onDeleteMarker={handleDeleteMarker}
+          onNavigateMarker={m => { setNavTarget(m as any); setShowProfile(false) }}
           territory={engine.territory}
           t={t}
           onLocateMonument={m => { if(mapRef.current) { mapRef.current.setView([m.lat, m.lng], 17, {animate:true}); setShowProfile(false) } }}
@@ -181,6 +304,16 @@ export default function App() {
 
       {/* Onboarding */}
       {showOnboard && <Onboarding onDone={finishOnboard} />}
+
+      {/* Monument découvert */}
+      {discoveredMonument && (
+        <MonumentDiscovery
+          monument={discoveredMonument.monument}
+          points={discoveredMonument.points}
+          t={t}
+          onClose={() => setDiscoveredMonument(null)}
+        />
+      )}
 
       {/* Marker editor */}
       {markerEditor && (

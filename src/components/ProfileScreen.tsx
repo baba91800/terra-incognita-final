@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react'
-import type { Badge, Monument, CountryDiscovery } from '../types/game'
+import { useState, useRef, useEffect } from 'react'
+import type { Badge, Monument, CountryDiscovery, PersonalMarker } from '../types/game'
 import { RARITY_COLORS } from '../lib/constants'
-import { computeExplorationPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
+import { computeExplorationPercent, computeDeptPercent, computeCountryPercent, computeCityPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
 import type { Translations } from '../lib/i18n'
 import { getBadgeName, getBadgeDesc } from '../lib/i18n'
@@ -14,8 +14,10 @@ import BadgeProgress from './BadgeProgress'
 
 interface Props {
   onClose: () => void
+  personalMarkers?: PersonalMarker[]
+  onDeleteMarker?: (id: string) => void
+  onNavigateMarker?: (m: PersonalMarker) => void
   onReset: () => void
-  onLocateMonument?: (m: any) => void
   score: number; xp: number; level: number; levelTitle: string
   totalTiles: number; totalDist: number
   badges: Badge[]; monuments: Monument[]; countries: CountryDiscovery[]
@@ -29,12 +31,130 @@ interface Props {
 const AVATAR_KEY = 'ti2_avatar'
 const PSEUDO_KEY = 'ti2_pseudo'
 
-export default function ProfileScreen({ onClose, onReset, onLocateMonument, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, log, path = [], territory, tiles, playerLat, playerLng, t }: Props) {
+
+
+// Correspondance ISO2 -> code numérique TopoJSON
+const ISO2_TO_NUMERIC: Record<string, string> = {
+  'FR': '250', 'DE': '276', 'ES': '724', 'IT': '380', 'GB': '826',
+  'PT': '620', 'BE': '056', 'NL': '528', 'CH': '756', 'AT': '040',
+  'PL': '616', 'CZ': '203', 'HU': '348', 'RO': '642', 'GR': '300',
+  'SE': '752', 'NO': '578', 'FI': '246', 'DK': '208', 'IE': '372',
+  'US': '840', 'CA': '124', 'BR': '076', 'AU': '036', 'CN': '156',
+  'JP': '392', 'IN': '356', 'RU': '643', 'MX': '484', 'AR': '032',
+  'ZA': '710', 'NG': '566', 'EG': '818', 'MA': '504', 'KE': '404',
+  'TR': '792', 'SA': '682', 'AE': '784', 'TH': '764', 'VN': '704',
+  'KR': '410', 'ID': '360', 'PH': '608', 'MY': '458', 'SG': '702',
+}
+
+// Mini carte monde intégrée dans le profil
+function WorldMapMini({ countries, playerLat, playerLng, onClick, fullscreen }: { countries: CountryDiscovery[], playerLat: number, playerLng: number, onClick?: () => void, fullscreen?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let cancelled = false
+
+    Promise.all([
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json()),
+      import('https://cdn.jsdelivr.net/npm/d3@7/+esm' as any),
+      import('https://cdn.jsdelivr.net/npm/topojson-client@3/+esm' as any),
+    ]).then(([world, d3, topo]) => {
+      if (cancelled || !el) return
+      // Codes DOM-TOM séparés dans TopoJSON
+      const DOMTOM_CODES: Record<string, string> = {
+        'GP': '312', // Guadeloupe
+        'MQ': '474', // Martinique  
+        'GF': '254', // Guyane française
+        'RE': '638', // Réunion
+        'YT': '175', // Mayotte
+        'PM': '666', // Saint-Pierre-et-Miquelon
+        'NC': '540', // Nouvelle-Calédonie
+        'PF': '258', // Polynésie française
+        'WF': '876', // Wallis-et-Futuna
+      }
+      
+      const visited = new Set<string>()
+      const hasFranceMetro = countries.some(c => c.code === 'FR')
+      
+      countries.forEach(c => {
+        const domtom = DOMTOM_CODES[c.code]
+        if (domtom) {
+          // DOM-TOM visité spécifiquement
+          visited.add(domtom)
+        } else {
+          visited.add(ISO2_TO_NUMERIC[c.code] || c.code)
+        }
+      })
+      
+      // France métro = code 250 mais on va filtrer par bbox dans le rendu
+      // Pour l'instant on garde 250 et on ajoute une note
+      const W = el.clientWidth || 320
+      const H = Math.round(W * 0.5)
+      el.innerHTML = ''
+      const svg = d3.select(el).append('svg')
+        .attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`)
+        .style('border-radius', '10px').style('background', 'rgba(0,20,50,0.6)')
+      const proj = d3.geoNaturalEarth1().scale(W / 6.5).translate([W/2, H/2])
+      const path = d3.geoPath(proj)
+      const feats = topo.feature(world, world.objects.countries)
+      svg.selectAll('path').data(feats.features).join('path')
+        .attr('d', path)
+        .attr('fill', (d: any) => {
+          const id = String(d.id)
+          if (!visited.has(id)) return 'rgba(255,255,255,0.07)'
+          // Pour la France (250), vérifier si c'est la métropole via centroïde
+          if (id === '250' && !hasFranceMetro) return 'rgba(255,255,255,0.07)'
+          if (id === '250') {
+            // Centroïde du polygone — si hors bbox métro, ne pas colorier
+            try {
+              const centroid = proj.invert ? proj.invert(path.centroid(d)) : null
+              if (centroid) {
+                const [lng, lat] = centroid
+                // bbox France métro approximative
+                if (lat < 41 || lat > 52 || lng < -6 || lng > 10) return 'rgba(0,245,212,0.3)'
+              }
+            } catch {}
+          }
+          return '#00f5d4'
+        })
+        .attr('stroke', 'rgba(0,0,0,0.4)').attr('stroke-width', 0.3)
+      try {
+        const [px, py] = proj([playerLng, playerLat]) as [number,number]
+        if (px && py) {
+          svg.append('circle').attr('cx', px).attr('cy', py).attr('r', 3)
+            .attr('fill', '#f59e0b').attr('stroke', '#000').attr('stroke-width', 1)
+        }
+      } catch {}
+    }).catch(() => {})
+
+    return () => { cancelled = true }
+  }, [countries, playerLat, playerLng])
+
+  return (
+    <div onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
+      <div ref={ref} style={{ width: '100%', borderRadius: 10, overflow: 'hidden', minHeight: fullscreen ? 300 : 160 }} />
+      {countries.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+          {countries.map(c => (
+            <div key={c.code} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: 24 }}>{c.flag}</span>
+              <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', maxWidth: 48, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function ProfileScreen({ onClose, onReset, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, log, path = [], territory, tiles, playerLat, playerLng, t, personalMarkers = [], onDeleteMarker, onNavigateMarker }: Props) {
   const [pseudo, setPseudo] = useState(() => localStorage.getItem(PSEUDO_KEY) || 'Explorer')
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '🧭')
   const [avatarPhoto, setAvatarPhoto] = useState<string | undefined>(() => loadAvatarPhoto())
   const [editing, setEditing] = useState(false)
   const [tab, setTab] = useState<'profile' | 'territory' | 'stats'>('profile')
+  const [showFullMap, setShowFullMap] = useState(false)
   const [showAvatarEditor, setShowAvatarEditor] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null)
@@ -51,9 +171,9 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, scor
     localStorage.setItem(PSEUDO_KEY, c)
   }
 
-  const cityPct = computeExplorationPercent(totalTiles, territory.cityAreaKm2)
-  const deptPct = estimateDeptPercent(totalTiles)
-  const countryPct = estimateCountryPercent(totalTiles)
+  const cityPct = territory.city ? computeCityPercent(territory.city, territory.cityAreaKm2) : computeExplorationPercent(totalTiles, territory.cityAreaKm2)
+  const deptPct = territory.department ? computeDeptPercent(totalTiles, territory.department) : 0
+  const countryPct = territory.country ? computeCountryPercent(totalTiles, territory.country) : 0
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -121,7 +241,7 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, scor
 
                 {streak > 0 && (
                   <div style={{ fontSize: 11, color: 'rgba(255,165,0,0.8)', fontFamily: 'monospace' }}>
-                    🔥 {streak} jour{streak > 1 ? 's' : ''} — {t.streakActive}
+                    🔥 {streak} {streak > 1 ? t.days : t.day} — {t.streakActive}
                   </div>
                 )}
               </div>
@@ -148,7 +268,50 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, scor
 
               {/* Graphique activité */}
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                <ActivityGraph log={log} path={path} t={t} />
+                {/* Mes lieux */}
+              {personalMarkers && personalMarkers.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 12 }}>MES LIEUX — {personalMarkers.length}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {personalMarkers.map(m => {
+                      const dist = Math.sqrt(Math.pow(m.lat - playerLat, 2) + Math.pow(m.lng - playerLng, 2)) * 111000
+                      const distLabel = dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`
+                      return (
+                        <div key={m.id} style={{
+                          background: 'rgba(255,255,255,0.03)', borderRadius: 12,
+                          border: '1px solid rgba(255,255,255,0.07)', padding: '12px 14px',
+                          display: 'flex', alignItems: 'center', gap: 12,
+                        }}>
+                          <span style={{ fontSize: 26, flexShrink: 0 }}>{m.icon}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 'bold', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+                            {m.note && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{m.note}</div>}
+                            <div style={{ fontSize: 10, color: 'rgba(0,245,212,0.6)', marginTop: 3, fontFamily: 'monospace' }}>📍 {distLabel}</div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                            {onNavigateMarker && (
+                              <button onClick={() => { onNavigateMarker(m); onClose() }} style={{
+                                padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                                background: 'rgba(0,245,212,0.1)', border: '1px solid rgba(0,245,212,0.3)',
+                                color: '#00f5d4', fontSize: 12, fontFamily: 'monospace', whiteSpace: 'nowrap',
+                              }}>🧭 Y aller</button>
+                            )}
+                            {onDeleteMarker && (
+                              <button onClick={() => onDeleteMarker(m.id)} style={{
+                                padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                                color: 'rgba(239,68,68,0.7)', fontSize: 12, fontFamily: 'monospace',
+                              }}>🗑️ Sup.</button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <ActivityGraph log={log} path={path} t={t} />
               </div>
 
               {/* Badges proches */}
@@ -199,7 +362,10 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, scor
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {countries.map(c => (
-                      <span key={c.code} title={c.name} style={{ fontSize: 24, filter: `drop-shadow(0 0 4px ${RARITY_COLORS[c.rarity]}60)` }}>{c.flag}</span>
+                      <div key={c.code} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                        <span title={c.name} style={{ fontSize: 24, filter: `drop-shadow(0 0 4px ${RARITY_COLORS[c.rarity]}60)` }}>{c.flag}</span>
+                        <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', textAlign: 'center', maxWidth: 50, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace', letterSpacing: '0.05em' }}>{c.name}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -239,11 +405,20 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, scor
           {/* ── TERRITOIRE ── */}
           {tab === 'territory' && (
             <>
+              {/* Carte du monde */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase' }}>PAYS DÉCOUVERTS — {countries.length}</div>
+                  <button onClick={() => setShowFullMap(true)} style={{ fontSize: 10, color: '#00f5d4', background: 'rgba(0,245,212,0.08)', border: '1px solid rgba(0,245,212,0.2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'monospace' }}>⛶ Agrandir</button>
+                </div>
+                <WorldMapMini countries={countries} playerLat={playerLat} playerLng={playerLng} onClick={() => setShowFullMap(true)} />
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.25)', marginTop: 6, fontStyle: 'italic' }}>* Inclut les territoires d'outre-mer</div>
+              </div>
               <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 16 }}>{t.exploration}</div>
               {[
-                { icon: '🏙️', label: t.statTiles,      name: territory.city,       pct: cityPct,    color: '#00f5d4', extra: territory.cityAreaKm2 ? `${territory.cityAreaKm2.toFixed(1)} km²` : null },
-                { icon: '🗺️', label: t.statDist,       name: territory.department, pct: deptPct,    color: '#3b82f6', extra: null },
-                { icon: '🌍', label: t.statCountries,  name: territory.country,    pct: countryPct, color: '#a855f7', extra: null },
+                { icon: '🏙️', label: t.cityLabel||'Ville',      name: territory.city||'—',       pct: cityPct,    color: '#00f5d4', extra: territory.cityAreaKm2 ? `sur ${territory.cityAreaKm2.toFixed(1)} km²` : null },
+                { icon: '🗺️', label: t.deptLabel||'Département',       name: territory.department||'—', pct: deptPct,    color: '#3b82f6', extra: null },
+                { icon: '🌍', label: t.countryLabel2||'Pays',  name: territory.country||'—',    pct: countryPct, color: '#a855f7', extra: null },
               ].map(row => (
                 <div key={row.label} style={{ marginBottom: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -256,7 +431,7 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, scor
                       </div>
                     </div>
                     <div style={{ fontSize: 22, fontWeight: 'bold', color: row.color, fontFamily: 'monospace' }}>
-                      {row.pct > 0 ? row.pct.toFixed(3) + '%' : `${(totalTiles * 100).toLocaleString()} m²`}
+                      {row.pct > 0.001 ? row.pct.toFixed(2) + '%' : row.pct > 0 ? '<0.01%' : '0%'}
                     </div>
                   </div>
                   <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
@@ -273,7 +448,7 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, scor
               <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 16 }}>
                 {t.sitesDiscovered} — {discMonuments.length}
               </div>
-              <MonumentStats monuments={monuments} onLocate={m => { onLocateMonument?.(m); onClose() }} />
+              <MonumentStats monuments={monuments} />
             </>
           )}
         </div>
@@ -324,6 +499,23 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, scor
           pseudo={pseudo} avatar={avatar} avatarPhoto={avatarPhoto}
           onClose={() => setShowShare(false)}
         />
+      )}
+
+      {/* Carte du monde plein écran */}
+      {showFullMap && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(2,5,15,0.98)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 10, color: 'rgba(0,245,212,0.6)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 2 }}>Carte du monde</div>
+              <div style={{ fontSize: 20, fontWeight: 'bold', color: '#00f5d4', fontFamily: 'monospace' }}>{countries.length} <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>/ 195 pays</span></div>
+            </div>
+            <button onClick={() => setShowFullMap(false)} style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          </div>
+          <div style={{ flex: 1, margin: '0 12px 12px', borderRadius: 12, overflow: 'hidden' }}>
+            <WorldMapMini countries={countries} playerLat={playerLat} playerLng={playerLng} fullscreen />
+          </div>
+          <div style={{ padding: '8px 20px 24px', fontSize: 9, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>* Les territoires d'outre-mer sont inclus dans leur pays métropolitain</div>
+        </div>
       )}
     </>
   )
