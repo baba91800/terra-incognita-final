@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import type { Monument } from '../types/game'
-import { RARITY_COLORS, RARITY_LABELS } from '../lib/constants'
+import { RARITY_COLORS } from '../lib/constants'
+
+const RARITY_LABELS: Record<string, string> = {
+  legendary: 'Légendaire',
+  epic: 'Épique',
+  rare: 'Rare',
+  common: 'Commun',
+}
 import { CATEGORY_COLORS } from '../lib/overpass'
 
 interface Props {
