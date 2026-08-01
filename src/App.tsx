@@ -175,7 +175,7 @@ export default function App() {
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
           territory={engine.territory}
           t={t}
-          onLocateMonument={m => { setShowProfile(false); setTimeout(() => { if(mapRef.current) { mapRef.current.flyTo([m.lat, m.lng], 17) } }, 400) }}
+          onLocateMonument={m => { setShowProfile(false); setTimeout(() => { try { mapRef.current?.panTo([m.lat, m.lng]); mapRef.current?.setZoom(17) } catch(e) { console.error('locate error:', e) } }, 500) }}
         />
       )}
 
