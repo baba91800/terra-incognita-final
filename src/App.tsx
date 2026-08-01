@@ -175,6 +175,9 @@ export default function App() {
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
           territory={engine.territory}
           t={t}
+          personalMarkers={personalMarkers}
+          onDeleteMarker={handleDeleteMarker}
+          onNavigateMarker={m => { setNavTarget(m as any); setShowProfile(false) }}
           onLocateMonument={m => { setShowProfile(false); setTimeout(() => { if(mapRef.current) { mapRef.current.setView([m.lat, m.lng], 17) } }, 800) }}
         />
       )}
