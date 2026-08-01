@@ -178,7 +178,7 @@ export default function App() {
           personalMarkers={personalMarkers}
           onDeleteMarker={handleDeleteMarker}
           onNavigateMarker={m => { setNavTarget(m as any); setShowProfile(false) }}
-          onLocateMonument={m => { setShowProfile(false); setTimeout(() => { if(mapRef.current) { mapRef.current.setView([m.lat, m.lng], 17) } }, 800) }}
+          onLocateMonument={m => { setNavTarget(m); setShowProfile(false) }}
         />
       )}
 
