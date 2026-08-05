@@ -23,13 +23,13 @@ export default function TerritoryBar({ territory, totalTiles, t }: Props) {
 
   return (
     <div style={{
-      position: 'absolute', bottom: 160, left: 12,
+      position: 'absolute', bottom: 90, left: 12,
       zIndex: 600, pointerEvents: 'none', width: 170,
     }}>
       <div style={{
         background: 'rgba(5,12,24,0.88)',
         border: '1px solid rgba(0,245,212,0.12)',
-        borderRadius: 10, padding: '8px 10px',
+        borderRadius: 10, padding: '6px 8px',
         backdropFilter: 'blur(12px)',
       }}>
         <div style={{ fontSize: 8, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 6 }}>
