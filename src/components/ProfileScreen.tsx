@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
-import type { Badge, Monument, CountryDiscovery, PersonalMarker } from '../types/game'
+import type { Badge, Monument, CountryDiscovery } from '../types/game'
 import { RARITY_COLORS } from '../lib/constants'
-import { computeExplorationPercent, estimateDeptPercent, estimateCountryPercent } from '../lib/territory'
+import { computeExplorationPercent, computeDeptPercent, computeCountryPercent, computeCityPercent } from '../lib/territory'
 import type { TerritoryData } from '../lib/territory'
 import type { Translations } from '../lib/i18n'
 import { getBadgeName, getBadgeDesc } from '../lib/i18n'
@@ -16,9 +16,6 @@ interface Props {
   onClose: () => void
   onReset: () => void
   onLocateMonument?: (m: any) => void
-  personalMarkers?: PersonalMarker[]
-  onDeleteMarker?: (id: string) => void
-  onNavigateMarker?: (m: PersonalMarker) => void
   score: number; xp: number; level: number; levelTitle: string
   totalTiles: number; totalDist: number
   badges: Badge[]; monuments: Monument[]; countries: CountryDiscovery[]
@@ -32,7 +29,7 @@ interface Props {
 const AVATAR_KEY = 'ti2_avatar'
 const PSEUDO_KEY = 'ti2_pseudo'
 
-export default function ProfileScreen({ onClose, onReset, onLocateMonument, personalMarkers = [], onDeleteMarker, onNavigateMarker, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, log, path = [], territory, tiles, playerLat, playerLng, t }: Props) {
+export default function ProfileScreen({ onClose, onReset, onLocateMonument, score, xp, level, levelTitle, totalTiles, totalDist, badges, monuments, countries, log, path = [], territory, tiles, playerLat, playerLng, t }: Props) {
   const [pseudo, setPseudo] = useState(() => localStorage.getItem(PSEUDO_KEY) || 'Explorer')
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '🧭')
   const [avatarPhoto, setAvatarPhoto] = useState<string | undefined>(() => loadAvatarPhoto())
@@ -54,9 +51,9 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, pers
     localStorage.setItem(PSEUDO_KEY, c)
   }
 
-  const cityPct = computeExplorationPercent(totalTiles, territory.cityAreaKm2)
-  const deptPct = estimateDeptPercent(totalTiles)
-  const countryPct = estimateCountryPercent(totalTiles)
+  const cityPct = territory.city ? computeCityPercent(territory.city, territory.cityAreaKm2) : computeExplorationPercent(totalTiles, territory.cityAreaKm2)
+  const deptPct = territory.department ? computeDeptPercent(totalTiles, territory.department) : 0
+  const countryPct = territory.country ? computeCountryPercent(totalTiles, territory.country) : 0
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -151,34 +148,7 @@ export default function ProfileScreen({ onClose, onReset, onLocateMonument, pers
 
               {/* Graphique activité */}
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                {/* Mes lieux */}
-              {personalMarkers.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 12 }}>MES LIEUX — {personalMarkers.length}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {personalMarkers.map(m => {
-                      const dist = Math.sqrt(Math.pow(m.lat - playerLat, 2) + Math.pow(m.lng - playerLng, 2)) * 111000
-                      const distLabel = dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`
-                      return (
-                        <div key={m.id} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ fontSize: 26, flexShrink: 0 }}>{m.icon}</span>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 'bold', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
-                            {m.note && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{m.note}</div>}
-                            <div style={{ fontSize: 10, color: 'rgba(0,245,212,0.6)', marginTop: 3, fontFamily: 'monospace' }}>📍 {distLabel}</div>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-                            {onNavigateMarker && <button onClick={() => { onNavigateMarker(m); onClose() }} style={{ padding: '7px 12px', borderRadius: 8, cursor: 'pointer', background: 'rgba(0,245,212,0.1)', border: '1px solid rgba(0,245,212,0.3)', color: '#00f5d4', fontSize: 12, fontFamily: 'monospace' }}>🧭 Y aller</button>}
-                            {onDeleteMarker && <button onClick={() => onDeleteMarker(m.id)} style={{ padding: '7px 12px', borderRadius: 8, cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: 'rgba(239,68,68,0.7)', fontSize: 12, fontFamily: 'monospace' }}>🗑️</button>}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <ActivityGraph log={log} path={path} t={t} />
+                <ActivityGraph log={log} path={path} t={t} />
               </div>
 
               {/* Badges proches */}
