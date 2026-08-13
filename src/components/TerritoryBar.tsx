@@ -24,7 +24,7 @@ export default function TerritoryBar({ territory, totalTiles, t }: Props) {
   return (
     <div style={{
       position: 'absolute', bottom: 90, left: 12,
-      zIndex: 600, pointerEvents: 'none', width: 170,
+      zIndex: 600, pointerEvents: 'none', width: 200,
     }}>
       <div style={{
         background: 'rgba(5,12,24,0.88)',
@@ -32,17 +32,17 @@ export default function TerritoryBar({ territory, totalTiles, t }: Props) {
         borderRadius: 10, padding: '6px 8px',
         backdropFilter: 'blur(12px)',
       }}>
-        <div style={{ fontSize: 8, letterSpacing: '0.15em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 6 }}>
+        <div style={{ fontSize: 9, letterSpacing: '0.12em', color: 'rgba(0,245,212,0.5)', textTransform: 'uppercase', marginBottom: 6 }}>
           {t.exploration}
         </div>
         {rows.map(r => (
           <div key={r.name} style={{ marginBottom: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 10 }}>{r.icon}</span>
-                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 90 }}>{r.name}</span>
+                <span style={{ fontSize: 12 }}>{r.icon}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 90 }}>{r.name}</span>
               </div>
-              <span style={{ fontSize: 9, fontFamily: 'monospace', color: r.color, flexShrink: 0 }}>
+              <span style={{ fontSize: 11, fontFamily: 'monospace', color: r.color, fontWeight: 'bold', flexShrink: 0 }}>
                 {r.pct > 0.01 ? r.pct.toFixed(1) + '%' : r.pct > 0 ? '<0.1%' : '0%'}
               </span>
             </div>

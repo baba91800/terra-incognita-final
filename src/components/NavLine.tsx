@@ -108,7 +108,7 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
 
   return (
     <div style={{
-      position: 'absolute', bottom: 100, left: '50%', transform: 'translateX(-50%)',
+      position: 'absolute', bottom: 140, left: '50%', transform: 'translateX(-50%)',
       zIndex: 600, pointerEvents: 'auto',
       background: 'rgba(5,12,24,0.95)',
       border: '1px solid rgba(0,245,212,0.25)',
@@ -132,7 +132,7 @@ export default function NavLine({ mapRef, target, playerLat, playerLng, onCancel
           }
         </div>
       </div>
-      <button onClick={onCancel} style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: 'rgba(239,68,68,0.8)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+      <button onClick={onCancel} style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, background: 'rgba(239,68,68,0.25)', border: '2px solid rgba(239,68,68,0.3)', color: 'rgba(239,68,68,0.8)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
     </div>
   )
 }
