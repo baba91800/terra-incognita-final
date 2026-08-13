@@ -129,7 +129,7 @@ export default function App() {
       {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
       <Compass heading={heading} />
-      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} t={t} />
+      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} />
 
       {/* Proximity alert */}
       <ProximityAlert
@@ -175,10 +175,7 @@ export default function App() {
           tiles={engine.tiles} playerLat={engine.playerLat} playerLng={engine.playerLng}
           territory={engine.territory}
           t={t}
-          personalMarkers={personalMarkers}
-          onDeleteMarker={handleDeleteMarker}
-          onNavigateMarker={m => { setNavTarget(m as any); setShowProfile(false) }}
-          onLocateMonument={m => { setNavTarget(m); setShowProfile(false) }}
+          onLocateMonument={m => { if(mapRef.current) { mapRef.current.setView([m.lat, m.lng], 17, {animate:true}); setShowProfile(false) } }}
         />
       )}
 

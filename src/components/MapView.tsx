@@ -279,7 +279,7 @@ export default function MapView({ playerLat, playerLng, tiles, monuments, person
         // Chercher monument découvert ou non
         monumentsRef.current.forEach(m => {
           const d=Math.sqrt(Math.pow(e.latlng.lat-m.lat,2)+Math.pow(e.latlng.lng-m.lng,2))
-          if (d<nearestDist&&d<0.003){nearest=m;nearestDist=d}
+          if (d<nearestDist&&d<0.005){nearest=m;nearestDist=d}
         })
         if (nearest) {
           if (nearest.discovered) {
