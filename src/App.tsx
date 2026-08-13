@@ -129,7 +129,7 @@ export default function App() {
       {/* Scale bar */}
       <ScaleBar mapRef={mapRef as any} />
       <Compass heading={heading} />
-      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} />
+      <TerritoryBar territory={engine.territory} totalTiles={engine.totalTiles} t={t} isNavigating={navTarget !== null} />
 
       {/* Proximity alert */}
       <ProximityAlert
